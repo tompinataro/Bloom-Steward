@@ -1,3 +1,16 @@
+-- NB: The 'database starter.sql' file has been replaced by 
+-- this file (Bloom Steward-1730216530 (2))   
+-- The insx in this file needed to be adjusted because it included 
+-- "alter" commands that we no longer needed
+-- and the field_tech_id needed to be made 'unique'
+-- with these changes made to Bloom Steward-1730216530 (2) 
+-- the query succeeded:
+-- CREATE TABLE
+-- CREATE TABLE
+-- CREATE TABLE
+-- ALTER TABLE
+-- ALTER TABLE
+
 CREATE TABLE IF NOT EXISTS "user" (
 	"id" serial NOT NULL UNIQUE,
 	"username" varchar(100) NOT NULL UNIQUE,
@@ -8,8 +21,8 @@ CREATE TABLE IF NOT EXISTS "user" (
 CREATE TABLE IF NOT EXISTS "client_visits" (
 	"id" serial NOT NULL UNIQUE,
 	"client_id" bigint NOT NULL UNIQUE,
-	"field_tech_id" bigint NOT NULL,
-	"assigned_date" date NOT NULL DEFAULT 'today's date',
+	"field_tech_id" bigint NOT NULL UNIQUE,
+	"assigned_date" date NOT NULL DEFAULT CURRENT_DATE,
 	"start_time" timestamp with time zone,
 	"complete_time" timestamp with time zone,
 	"timely_note" varchar(500),
@@ -28,12 +41,5 @@ CREATE TABLE IF NOT EXISTS "client_list" (
 
 ALTER TABLE "user" ADD CONSTRAINT "user_fk0" FOREIGN KEY ("id") REFERENCES "client_visits"("field_tech_id");
 
-ALTER TABLE "user" ADD CONSTRAINT "user_fk1" FOREIGN KEY ("username") REFERENCES "client_visits"("field_tech_name");
-ALTER TABLE "client_visits" ADD CONSTRAINT "client_visits_fk6" FOREIGN KEY ("timely_note") REFERENCES "Task_Lists"("timely_task");
 ALTER TABLE "client_list" ADD CONSTRAINT "client_list_fk0" FOREIGN KEY ("id") REFERENCES "client_visits"("client_id");
 
-ALTER TABLE "client_list" ADD CONSTRAINT "client_list_fk1" FOREIGN KEY ("client_name") REFERENCES "client_visits"("client_name");
-
-ALTER TABLE "client_list" ADD CONSTRAINT "client_list_fk2" FOREIGN KEY ("client_address") REFERENCES "client_visits"("client_address");
-
-ALTER TABLE "client_list" ADD CONSTRAINT "client_list_fk3" FOREIGN KEY ("client_phone") REFERENCES "client_visits"("client_phone");
