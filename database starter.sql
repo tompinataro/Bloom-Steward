@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS client_list CASCADE;
 CREATE TABLE IF NOT EXISTS "user" (
 	"id" serial NOT NULL UNIQUE,
 	"username" varchar(100) NOT NULL UNIQUE,
-    "password" VARCHAR (1000) NOT NULL
+    "password" VARCHAR (1000) NOT NULL,
 	"user_type" bigint NOT NULL,
 	PRIMARY KEY ("id")
 );
