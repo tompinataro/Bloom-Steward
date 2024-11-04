@@ -29,6 +29,8 @@ function LoginForm() {
       {/* <h2>Existing User Log-in</h2> */}
       <input className="btn" type="submit" name="submit" value="User Log-in" />
 
+      {/* <button class="btn-heading" role="heading" aria-level="2">Button Heading</button> */}
+
       {errors.loginMessage && (
         <h3 className="alert" role="alert">
           {errors.loginMessage}
@@ -63,7 +65,7 @@ function LoginForm() {
         </label>
       </div>
       <div>
-        <input className="btn" type="submit" name="submit" value="Log In" />
+        <input className="btn" type="submit" name="submit" value="Log-in" />
       </div>
     </form>
   );
