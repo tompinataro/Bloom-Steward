@@ -15,7 +15,7 @@ import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 import AboutPage from '../AboutPage/AboutPage';
 import UserPage from '../UserPage/UserPage';
-import YourRoutePage from '../YourRoutePage/YourRoutePage';
+import 2YourRoutePage from '../2YourRoutePage/YourRoutePage';
 import InfoPage from '../InfoPage/InfoPage';
 import LandingPage from '../LandingPage/LandingPage';
 import LoginPage from '../LoginPage/LoginPage';
@@ -65,9 +65,9 @@ function App() {
           <ProtectedRoute
             // logged in shows YourRoutePage else shows LoginPage
             exact
-            path="/YourRoutePage"
+            path="/2YourRoutePage"
           >our
-            <YourRoutePage />
+            <2YourRoutePage/>
           </ProtectedRoute>
 
           <ProtectedRoute
