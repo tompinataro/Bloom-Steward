@@ -12,7 +12,7 @@ function GoToYourRouteButton(props) {
             <center>
                 <button
                     type="button"
-                    className="btn btn_asLink"
+                    className={props.className}
                     onClick={() => {
                         history.push('/YourRoutePage');  //????????????????
                     }}

@@ -8,20 +8,18 @@ function RegisterPage() {
 
   return (
     <div>
-      <RegisterForm />
-
       <center>
         <button
           type="button"
-          className="btn btn_asLink"
+          className="btn"
           onClick={() => {
-            history.push('/login');
+            history.push('/ClientVisitPage');
           }}
-        >
-           Already registered? Log in here...
+        >ClientName
         </button>
       </center>
     </div>
+    
   );
 }
 
