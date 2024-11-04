@@ -37,16 +37,25 @@ Button
   font-size: 1.1rem;
   outline: 0;
   cursor: pointer;
+  border-radius: 10px;
 }
 
 .btn_sizeMin {
   min-height: 50px;
   min-width: 100px;
+  background-color: #cab0b0;
+  color: #460510;
+  border-radius: 4px;
+
 }
 
 .btn_sizeSm {
   padding: 10px 15px;
   font-size: 0.8rem;
+  background-color: #cab0b0;
+  color: #460510;
+  border-radius: 4px;
+
 }
 
 .btn_sizeFull {
@@ -67,7 +76,7 @@ Button
   border-radius: 0;
   background: none;
   font: inherit;
-  color: #444;
+  color: #444444;
 }
 
 .btn_asLink:hover {
@@ -97,16 +106,31 @@ Form Treatment
 
 .formPanel {
   box-sizing: border-box;
-  width: 400px;
+  width: 300px;
+  height: 575px;
   max-width: 100%;
   padding: 25px;
   margin: 0 auto 20px;
+  color:#e7bfbf;
   background-color: #e7bfbf;
+  background-image: url('../../images/palms.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 3px;
   box-shadow: 0 1px 2px rgb(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column; /* Align items vertically */
+  align-items: center; /* Center items horizontally */
+  border-radius: 30px; /* Adjust this value as desired */
+
 }
 
 input {
-  margin: 5px;
-  margin-bottom: 10px;
+  margin: 5px;  
+  /* margin and margin-bottom were 5px */
+  margin-bottom: 25px;
+  width: 150px;
+  color:#460510;
+  background-color: #e7bfbf;
 }
