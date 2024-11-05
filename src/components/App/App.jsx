@@ -19,7 +19,7 @@ import YourRoutePage from '../2YourRoutePage/YourRoutePage';
 import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
 import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
 import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
-import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
+// import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
 // import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
 import AdminDataEntryPage from '../8AdminDataEntryPage/AdminDataEntryPage';
 
@@ -52,15 +52,20 @@ function App() {
           <Redirect exact from="/" to="/home" />
           {/* For protected routes, the view could show one of several things on the same route. Visiting localhost:5173/user will show the UserPage if the user is logged in. If the user is not logged in, the ProtectedRoute will show the LoginPage (component). Even though it seems like they are different pages, the user is always on localhost:5173/user */}
 
-          <ProtectedRoute  // AdminDataEntryPage
+
+          <ProtectedRoute  // AdminDataEntry
+            // logged in shows AdminDataEntryPage else shows LoginPage
+            // AdminDataEntryPage
             // logged in shows AdminDataEntryPage else shows LoginPage
             exact
             path="/AdminDataEntryPage"
           >
-            <AdminDataEntryPage />
+            <AdminFieldTechList />
           </ProtectedRoute>
 
           <ProtectedRoute  // AdminFieldTechList
+            // logged in shows AdminFieldTechList else shows LoginPage
+            // AdminFieldTechList
             // logged in shows AdminFieldTechList else shows LoginPage
             exact
             path="/AdminFieldTechList"
@@ -89,8 +94,8 @@ function App() {
             exact
             path="/AdminLandingPage"
           >
-            <AdminLandingPage />
-          </ProtectedRoute>
+            <AdminLandingPage/>
+          </ProtectedRoute> 
 
           <ProtectedRoute  // ClientVisit
             // logged in shows ClientVisitPage else shows LoginPage
@@ -184,7 +189,8 @@ function App() {
         </Switch>
         <Footer />
       </div>
-    </Router>
+    </Router> 
+          
   );
 }
 
