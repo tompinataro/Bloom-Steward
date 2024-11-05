@@ -7,23 +7,29 @@ function ClientVisitPage() {
   return (
     <div>
       <center>
-        
-      <div className="container">
-      <h2>Today's Visit at</h2>
-      <h2>ClientName</h2>
+        <div className="container">
+          <h2>Today's Visit at</h2>
+          <h2>ClientName</h2>
 
-        <button
-          type="button"
-          className="btn"
-          onClick={() => {
-            history.push('/login'); //sends to login page
-          }}
-        >
-        </button>
+          {/* // Arrival Timestamp <Button></Button>
+            // TimelyNoteField - if any
+            // Comment Form <w />
+            // <SubmitButton></SubmitButton>
+            // Departure Timestamp <Button></Button>
+          */}
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              history.push('/_________'); //sends to login page
+            }}
+          > Button Name Goes Here
+          </button>
         </div>
       </center>
     </div>
   );
-}
 
-export default ClientVisitPage;
+
+  export default ClientVisitPage;

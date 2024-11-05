@@ -42,22 +42,65 @@ function App() {
         <Switch>
           {/* Visiting localhost:5173 will redirect to localhost:5173/home */}
           <Redirect exact from="/" to="/home" />
+          {/* For protected routes, the view could show one of several things on the same route. Visiting localhost:5173/user will show the UserPage if the user is logged in. If the user is not logged in, the ProtectedRoute will show the LoginPage (component). Even though it seems like they are different pages, the user is always on localhost:5173/user */}
 
-          {/* Visiting localhost:5173/about will show the about page. */}
-          <Route
-            // shows AboutPage at all times (logged in or not)
+          <ProtectedRoute  // AdminDataEntryPage
+            // logged in shows AdminDataEntryPage else shows LoginPage
             exact
-            path="/about"
+            path="/AdminDataEntryPage"
           >
-            <AboutPage />
-          </Route>
+            <AdminDataEntryPage />
+          </ProtectedRoute>
 
-          {/* For protected routes, the view could show one of several things on the same route.
-            Visiting localhost:5173/user will show the UserPage if the user is logged in.
-            If the user is not logged in, the ProtectedRoute will show the LoginPage (component).
-            Even though it seems like they are different pages, the user is always on localhost:5173/user */}
-         
-          <ProtectedRoute
+          <ProtectedRoute  // AdminFieldTechList
+            // logged in shows AdminFieldTechList else shows LoginPage
+            exact
+            path="/AdminFieldTechList"
+          >
+            <AdminFieldTechList />
+          </ProtectedRoute>
+
+          <ProtectedRoute  // AdminTimelyNote
+            // logged in shows AdminTimelyNotePage else shows LoginPage
+            exact
+            path="/AdminTimelyNotePage"
+          >
+            <AdminTimelyNotePage />
+          </ProtectedRoute>
+
+          <ProtectedRoute  // AdminClientList
+            // logged in shows AdminClientListPage else shows LoginPage
+            exact
+            path="/AdminClientListPage"
+          >
+            <AdminClientListPage/>
+          </ProtectedRoute>
+
+          <ProtectedRoute  // AdminLanding
+            // logged in shows AdminLandingPage else shows LoginPage
+            exact
+            path="/AdminLandingPage"
+          >
+            <AdminLandingPage />
+          </ProtectedRoute>
+
+          <ProtectedRoute  // ClientVisit
+            // logged in shows ClientVisitPage else shows LoginPage
+            exact
+            path="/ClientVisitPage"
+          >
+            <ClientVisitPage />
+          </ProtectedRoute>
+
+          <ProtectedRoute  // YourRoute
+            // logged in shows YourRoutePage else shows LoginPage
+            exact
+            path="/YourRoutePage"
+          >
+            <YourRoutePage />
+          </ProtectedRoute>
+
+          <ProtectedRoute  // user
             // logged in shows UserPage else shows LoginPage
             exact
             path="/user"
@@ -65,15 +108,7 @@ function App() {
             <UserPage />
           </ProtectedRoute>
 
-          <ProtectedRoute
-            // logged in shows YourRoutePage else shows LoginPage
-            exact
-            path="/YourRoutePage"
-          >
-            <YourRoutePage/>
-          </ProtectedRoute>
-
-          <ProtectedRoute
+          <ProtectedRoute // info
             // logged in shows InfoPage else shows LoginPage
             exact
             path="/info"
@@ -81,7 +116,7 @@ function App() {
             <InfoPage />
           </ProtectedRoute>
 
-          <Route
+          <Route  //log-in
             exact
             path="/login"
           >
@@ -95,7 +130,7 @@ function App() {
             }
           </Route>
 
-          <Route
+          <Route  // register
             exact
             path="/registration"
           >
@@ -109,7 +144,7 @@ function App() {
             }
           </Route>
 
-          <Route
+          <Route  // home
             exact
             path="/home"
           >
@@ -121,12 +156,23 @@ function App() {
               // Otherwise, show the Landing page
               <LandingPage />
             }
+          </Route>  
+
+          {/* Visiting localhost:5173/about will show the about page. */}
+          <Route  // about
+            // shows AboutPage at all times (logged in or not)
+            exact
+            path="/about"
+          >
+            <AboutPage />
           </Route>
 
           {/* If none of the other routes matched, we will show a 404. */}
-          <Route>
+          <Route  // 404 
+          >  
             <h1>404</h1>
           </Route>
+
         </Switch>
         <Footer />
       </div>

@@ -9,8 +9,8 @@ function UserPage() {
     <div>
       <center>
         <div className="container">
-          <h2>Welcome, {user.username}!</h2>
-          <p>Your ID is: {user.id}</p>
+          <h1>Welcome, {user.username}!</h1>
+          <h2>Your ID is: {user.id}</h2>
 
           <GoToYourRouteButton className="btn" />
 

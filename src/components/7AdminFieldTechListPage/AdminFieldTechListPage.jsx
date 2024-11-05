@@ -1,28 +1,28 @@
 import React from 'react';
-
 import { useHistory } from 'react-router-dom';
-import RegisterForm from '../RegisterForm/RegisterForm';
 
-function RegisterPage() {
+function AdminFieldTechListPage() {
   const history = useHistory();
 
   return (
     <div>
-      <RegisterForm />
-
       <center>
+      <div className="container">
+      <h1>Field Tech List</h1>
+{/* Insert Field Tech Table
+*/}
         <button
           type="button"
-          className="btn btn_asLink"
+          className="btn"
           onClick={() => {
-            history.push('/login');
+            history.push('/______');
           }}
         >
-           Already registered? Log in here...
         </button>
+        </div>
       </center>
     </div>
   );
 }
 
-export default RegisterPage;
+export default AdminFieldTechListPage;
