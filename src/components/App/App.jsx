@@ -14,7 +14,7 @@ import Footer from '../Footer/Footer';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 import AboutPage from '../AboutPage/AboutPage';
-// import UserPage from '../1UserPage/UserPage';
+import UserPage from '../1UserPage/UserPage';
 // import YourRoutePage from '../2YourRoutePage/YourRoutePage';
 // import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
 // import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
@@ -49,7 +49,7 @@ function App() {
           {/* For protected routes, the view could show one of several things on the same route. Visiting localhost:5173/user will show the UserPage if the user is logged in. If the user is not logged in, the ProtectedRoute will show the LoginPage (component). Even though it seems like they are different pages, the user is always on localhost:5173/user */}
 
 
-          <ProtectedRoute  // AdminDataEntry
+          {/* <ProtectedRoute  // AdminDataEntry
             // logged in shows AdminDataEntryPage else shows LoginPage
             exact
             path="/AdminDataEntryPage"
@@ -103,7 +103,7 @@ function App() {
             path="/YourRoutePage"
           >
             <YourRoutePage />
-          </ProtectedRoute> 
+          </ProtectedRoute>  */}
 
           <ProtectedRoute  // user
             // logged in shows UserPage else shows LoginPage
