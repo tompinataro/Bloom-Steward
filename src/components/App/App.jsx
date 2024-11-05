@@ -48,7 +48,7 @@ function App() {
           <Redirect exact from="/" to="/home" />
           {/* For protected routes, the view could show one of several things on the same route. Visiting localhost:5173/user will show the UserPage if the user is logged in. If the user is not logged in, the ProtectedRoute will show the LoginPage (component). Even though it seems like they are different pages, the user is always on localhost:5173/user */}
 
-{/* 
+
           <ProtectedRoute  // AdminDataEntry
             // logged in shows AdminDataEntryPage else shows LoginPage
             exact
@@ -95,7 +95,7 @@ function App() {
             path="/ClientVisitPage"
           >
             <ClientVisitPage />
-          </ProtectedRoute> */}
+          </ProtectedRoute> 
 
           <ProtectedRoute  // YourRoute
             // logged in shows YourRoutePage else shows LoginPage
@@ -103,7 +103,7 @@ function App() {
             path="/YourRoutePage"
           >
             <YourRoutePage />
-          </ProtectedRoute>
+          </ProtectedRoute> 
 
           <ProtectedRoute  // user
             // logged in shows UserPage else shows LoginPage
@@ -119,7 +119,7 @@ function App() {
             path="/info"
           >
             <InfoPage />
-          </ProtectedRoute>
+          </ProtectedRoute> 
 
           <Route  //log-in
             exact
