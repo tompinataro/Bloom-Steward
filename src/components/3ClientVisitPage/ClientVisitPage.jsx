@@ -30,6 +30,6 @@ function ClientVisitPage() {
       </center>
     </div>
   );
-
+}
 
   export default ClientVisitPage;
