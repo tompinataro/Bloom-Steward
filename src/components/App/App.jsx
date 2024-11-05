@@ -14,8 +14,11 @@ import Footer from '../Footer/Footer';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 import AboutPage from '../AboutPage/AboutPage';
-import UserPage from '../UserPage/UserPage';
-import YourRoutePage from '../YourRoutePage/YourRoutePage';
+import UserPage from '../1UserPage/UserPage';
+import YourRoutePage from '../2YourRoutePage/YourRoutePage';
+import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
+
+
 import InfoPage from '../InfoPage/InfoPage';
 import LandingPage from '../LandingPage/LandingPage';
 import LoginPage from '../LoginPage/LoginPage';
