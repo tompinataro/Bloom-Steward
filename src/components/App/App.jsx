@@ -19,13 +19,9 @@ import YourRoutePage from '../2YourRoutePage/YourRoutePage';
 import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
 import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
 import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
-// import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
-// import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
+import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
+import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
 import AdminDataEntryPage from '../8AdminDataEntryPage/AdminDataEntryPage';
-
-
-
-
 
 import InfoPage from '../InfoPage/InfoPage';
 import LandingPage from '../LandingPage/LandingPage';
