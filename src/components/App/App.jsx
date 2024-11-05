@@ -51,8 +51,6 @@ function App() {
 
           <ProtectedRoute  // AdminDataEntry
             // logged in shows AdminDataEntryPage else shows LoginPage
-            // AdminDataEntryPage
-            // logged in shows AdminDataEntryPage else shows LoginPage
             exact
             path="/AdminDataEntryPage"
           >
@@ -60,8 +58,6 @@ function App() {
           </ProtectedRoute>
 
           <ProtectedRoute  // AdminFieldTechList
-            // logged in shows AdminFieldTechList else shows LoginPage
-            // AdminFieldTechList
             // logged in shows AdminFieldTechList else shows LoginPage
             exact
             path="/AdminFieldTechList"
