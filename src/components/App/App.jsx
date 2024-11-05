@@ -56,7 +56,7 @@ function App() {
             exact
             path="/AdminDataEntryPage"
           >
-            <AdminFieldTechList />
+            <AdminDataEntryPage />
           </ProtectedRoute>
 
           <ProtectedRoute  // AdminFieldTechList
