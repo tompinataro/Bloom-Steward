@@ -4,7 +4,7 @@ import { useHistory } from 'react-router-dom';
 function ClientVisitPage() {
   const history = useHistory();
 
-  return (
+  return ( 
     <div>
       <center>
         <div className="container">
