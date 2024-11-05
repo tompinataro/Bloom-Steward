@@ -14,12 +14,12 @@ import Footer from '../Footer/Footer';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 import AboutPage from '../AboutPage/AboutPage';
-import UserPage from '../1UserPage/UserPage';
-import YourRoutePage from '../2YourRoutePage/YourRoutePage';
-import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
-import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
-import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
-import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
+// import UserPage from '../1UserPage/UserPage';
+// import YourRoutePage from '../2YourRoutePage/YourRoutePage';
+// import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
+// import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
+// import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
+// import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
 // import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
 // import AdminDataEntryPage from '../8AdminDataEntryPage/AdminDataEntryPage';
 
