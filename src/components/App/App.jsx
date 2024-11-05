@@ -95,7 +95,7 @@ function App() {
             path="/ClientVisitPage"
           >
             <ClientVisitPage />
-          </ProtectedRoute> 
+          </ProtectedRoute> */}
 
           <ProtectedRoute  // YourRoute
             // logged in shows YourRoutePage else shows LoginPage
@@ -103,7 +103,7 @@ function App() {
             path="/YourRoutePage"
           >
             <YourRoutePage />
-          </ProtectedRoute>  */}
+          </ProtectedRoute>  
 
           <ProtectedRoute  // user
             // logged in shows UserPage else shows LoginPage
