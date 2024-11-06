@@ -17,3 +17,4 @@ const todaysVisitsReducer = (state = [], action) => {
             return state;
     }
 };
+export default todaysVisitsReducer;
