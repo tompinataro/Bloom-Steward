@@ -15,7 +15,7 @@ import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 import AboutPage from '../AboutPage/AboutPage';
 import UserPage from '../1UserPage/UserPage';
-// import YourRoutePage from '../2YourRoutePage/YourRoutePage';
+import YourRoutePage from '../2YourRoutePage/YourRoutePage';
 // import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
 // import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
 // import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
