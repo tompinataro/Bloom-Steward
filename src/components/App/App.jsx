@@ -30,6 +30,9 @@ import RegisterPage from '../RegisterPage/RegisterPage';
 
 import './App.css';
 
+
+
+
 function App() {
   const dispatch = useDispatch();
 
