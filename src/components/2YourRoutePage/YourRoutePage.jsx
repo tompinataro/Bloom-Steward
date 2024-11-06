@@ -15,9 +15,9 @@ function YourRoutePage(props) {
 
   useEffect(() => {
     // Dispatch action to fetch data when component mounts
-    console.log("Dispatching FETCH_CLIENTS_REQUEST"); // Confirm dispatch
-    dispatch({ type: 'FETCH_CLIENTS_REQUEST' });
-  }, [dispatch]);
+      console.log("Dispatching TODAYS_VISITS"); // Confirm dispatch
+      dispatch({ type: 'TODAYS_VISITS' });
+    }, [dispatch]);
 
   // Update button label based on first client name (or other logic)
   useEffect(() => {

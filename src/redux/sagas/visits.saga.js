@@ -4,11 +4,11 @@ import axios from 'axios';
 
 //will send an axios GET request to the server using the /api/visits
 function* todaysVisits (action) {
-    // console.log('inside the visits saga')
     try {
         const todaysVisits = yield axios.get('/api/visits')
 
-        // console.log('response from /api/visits: ', todaysVisits)
+        console.log('Response from /api/visits:', todaysVisits.data); // Confirm data received
+
         yield put({
             type: 'SET_TODAYS_VISITS',
             payload: todaysVisits.data
