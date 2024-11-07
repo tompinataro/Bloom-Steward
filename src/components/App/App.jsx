@@ -41,8 +41,9 @@ function App() {
     dispatch({ type: 'FETCH_USER' });
   }, [dispatch]);
 
+  // Line 45 begins the "Front-End" Router
   return (
-    <Router>
+    <Router>     
       <div>
         <Nav />
         <Switch>

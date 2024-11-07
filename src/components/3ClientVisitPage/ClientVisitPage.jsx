@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import TimestampButton from '../Timestamp Button/TimestampButton';
+import ArrivalTimestampButton from '../ArrivalTimestamp Button/ArrivalTimestampButton';
+import DepartureTimestampButton from '../DepartureTimestamp Button copy/DepartureTimestampButton';
 function ClientVisitPage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -22,10 +23,10 @@ function ClientVisitPage() {
     <div>
       <center>
         <div className="container">
-          <h2>Today at</h2>
-          <h2>{client.client_name}</h2>
+          <h1>Today at</h1>
+          <h1>{client.client_name}</h1>
 
-          <TimestampButton className="btn" />
+          <ArrivalTimestampButton className="btn" />
 
 
           {/* // TimelyNoteField - (if any, can be null)
@@ -44,14 +45,8 @@ function ClientVisitPage() {
           </button>
 
 
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              ; //sends timestamp to db
-            }}
-          > DEPARTURE
-          </button>
+          <DepartureTimestampButton className="btn" />
+
 
         </div>
       </center>
