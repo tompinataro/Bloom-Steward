@@ -16,7 +16,7 @@ import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 import AboutPage from '../AboutPage/AboutPage';
 import UserPage from '../1UserPage/UserPage';
 import YourRoutePage from '../2YourRoutePage/YourRoutePage';
-// import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
+import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
 // import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
 // import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
 // import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
@@ -90,7 +90,7 @@ function App() {
             path="/AdminLandingPage"
           >
             <AdminLandingPage/>
-          </ProtectedRoute> 
+          </ProtectedRoute> */}
 
           <ProtectedRoute  // ClientVisit
             // logged in shows ClientVisitPage else shows LoginPage
@@ -98,7 +98,7 @@ function App() {
             path="/ClientVisitPage"
           >
             <ClientVisitPage />
-          </ProtectedRoute> */}
+          </ProtectedRoute> 
 
           <ProtectedRoute  // YourRoute
             // logged in shows YourRoutePage else shows LoginPage

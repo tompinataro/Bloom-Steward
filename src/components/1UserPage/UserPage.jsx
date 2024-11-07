@@ -18,7 +18,7 @@ function UserPage() {
         </div>
       </center>
     </div>
-  ); 
+  );
 }
 
 // this allows us to use <App /> in index.js

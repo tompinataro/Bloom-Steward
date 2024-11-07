@@ -1,10 +1,10 @@
-const todaysVisitsReducer = (state = [], action) => {
+const currentVisit = (state = [], action) => {
     switch (action.type) {
         case 'SET_TODAYS_VISITS':
-            console.log("TodaysVisits Reducer received visits data:", action.payload);
+            console.log("CurrentVisit Reducer received visits data:", action.payload);
             return action.payload;
         
-        case 'CLEAR_TODAYS_VISITS':
+        case 'CLEAR_CURRENT_VISIT':
             return []; // Clears the visits
         
         case 'ADD_VISIT':
@@ -17,4 +17,4 @@ const todaysVisitsReducer = (state = [], action) => {
             return state;
     }
 };
-export default todaysVisitsReducer;
+export default currentVisit;
