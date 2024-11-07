@@ -27,9 +27,9 @@ function YourRoutePage() {
 
   // Handle button click to navigate to ClientVisit details page
   const handleClientClick = (client) => {
-    console.log("Navigating to details for:", client.clientName); // Log client click
+    console.log("Navigating to details for:", client); // Log client click
     dispatch({ type: 'SET_CURRENT_VISIT', payload: client });
-    history.push(`/client-details/${client.clientName}`);
+    history.push(`/ClientVisitPage/`);
   };
 
   return (

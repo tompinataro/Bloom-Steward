@@ -17,12 +17,11 @@ import AboutPage from '../AboutPage/AboutPage';
 import UserPage from '../1UserPage/UserPage';
 import YourRoutePage from '../2YourRoutePage/YourRoutePage';
 import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
-// import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
-// import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
-// import AdminTimelyNotePage from '../6AdminTimelyNotePage/AdminTimelyNotePage';
-// import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
-// import AdminDataEntryPage from '../8AdminDataEntryPage/AdminDataEntryPage';
-
+import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
+import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
+import AdminTimelyNotePage from '../6AdminTimelyNotesPage/AdminTimelyNotesPage';
+import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
+import AdminDataEntryPage from '../8AdminDataEntryPage/AdminDataEntryPage';
 import InfoPage from '../InfoPage/InfoPage';
 import LandingPage from '../LandingPage/LandingPage';
 import LoginPage from '../LoginPage/LoginPage';
@@ -52,7 +51,7 @@ function App() {
           {/* For protected routes, the view could show one of several things on the same route. Visiting localhost:5173/user will show the UserPage if the user is logged in. If the user is not logged in, the ProtectedRoute will show the LoginPage (component). Even though it seems like they are different pages, the user is always on localhost:5173/user */}
 
 
-          {/* <ProtectedRoute  // AdminDataEntry
+          <ProtectedRoute  // AdminDataEntry
             // logged in shows AdminDataEntryPage else shows LoginPage
             exact
             path="/AdminDataEntryPage"
@@ -65,7 +64,7 @@ function App() {
             exact
             path="/AdminFieldTechList"
           >
-            <AdminFieldTechList />
+            <AdminFieldTechListPage />
           </ProtectedRoute>
 
           <ProtectedRoute  // AdminTimelyNote
@@ -90,7 +89,7 @@ function App() {
             path="/AdminLandingPage"
           >
             <AdminLandingPage/>
-          </ProtectedRoute> */}
+          </ProtectedRoute>
 
           <ProtectedRoute  // ClientVisit
             // logged in shows ClientVisitPage else shows LoginPage

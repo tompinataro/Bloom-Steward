@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import TimestampButton from '../TimestampButton/TimestampButton';
-
+import TimestampButton from '../Timestamp Button/TimestampButton';
 function ClientVisitPage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -15,8 +14,8 @@ function ClientVisitPage() {
   useEffect(() => {
     // Dispatch action to fetch data when component mounts
     //if (clients.length === 0) { // Only dispatch if clients is initially empty
-    console.log("Dispatching CURRENT_VISIT");
-    dispatch({ type: 'CURRENT_VISIT' });
+    // console.log("Dispatching CURRENT_VISIT");
+    // dispatch({ type: 'CURRENT_VISIT' });
   }, []);
 
   return (
@@ -24,7 +23,7 @@ function ClientVisitPage() {
       <center>
         <div className="container">
           <h2>Today at</h2>
-          <h2>{ClientName}</h2>
+          <h2>{client.client_name}</h2>
 
           <TimestampButton className="btn" />
 
