@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
+import TimestampButton from '../TimestampButton/TimestampButton';
 
 function ClientVisitPage() {
   const dispatch = useDispatch();
@@ -25,14 +26,8 @@ function ClientVisitPage() {
           <h2>Today at</h2>
           <h2>{ClientName}</h2>
 
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              ; //sends timestamp to db
-            }}
-          > ARRIVAL
-          </button>
+          <TimestampButton className="btn" />
+
 
           {/* // TimelyNoteField - (if any, can be null)
 
