@@ -36,7 +36,9 @@ function YourRoutePage() {
     <div>
       <center>
         <div className="container">
-          <h1>Your Route</h1>
+          <h1  style={{ marginBottom: '60px' }}  // Adds space below each button
+          >Your Route</h1>
+          
           {/* Display filtered clients as buttons */}
           <div>
             {clients && clients.length > 0 ? (
@@ -44,12 +46,14 @@ function YourRoutePage() {
                 <button
                   type="button"
                   className="btn"
-                  key={index} onClick={() => handleClientClick(client)}>
+                  key={index}
+                  style={{ marginBottom: '30px' }}  // Adds space below each button
+                  onClick={() => handleClientClick(client)}>
                   {client.client_name}
                 </button>
-                
+
               ))
-              
+
             ) : (     // <<< Ternary "if else" shortcut
               <p> Route error, please call the main office...</p>
             )}

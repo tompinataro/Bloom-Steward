@@ -1,10 +1,8 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
 
-// import { useDispatch } from 'react-redux';
 
 function GoToYourRouteButton(props) {
-    //   const dispatch = useDispatch();
     const history = useHistory();
 
     return (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import {useSelector} from 'react-redux';
+import { useSelector } from 'react-redux';
 
 function LoginForm() {
   const [username, setUsername] = useState('');
@@ -26,7 +26,12 @@ function LoginForm() {
 
   return (
     <form className="formPanel" onSubmit={login}>
-      {/* <h2>Existing User Log-in</h2> */}
+
+      <h1 class="centered">Existing User
+
+      Log-in</h1>
+
+
       <input className="btn" type="submit" name="submit" value="User Log-in" />
 
       {/* <button class="btn-heading" role="heading" aria-level="2">Button Heading</button> */}
@@ -38,7 +43,7 @@ function LoginForm() {
       )}
       <div>
         <label htmlFor="username">
-          {/* Username: */} 
+          {/* Username: */}
           <input
             className="btn" //added
             type="text"

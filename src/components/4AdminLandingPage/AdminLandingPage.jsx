@@ -17,7 +17,7 @@ function AdminLandingPage() {
             type="button"
             className="btn"
             onClick={() => {
-              history.push('/______');
+              history.push('/AdminClientListPage');
             }}
           >  Client List
           </button>
@@ -27,7 +27,7 @@ function AdminLandingPage() {
             type="button"
             className="btn"
             onClick={() => {
-              history.push('/______');
+              history.push('/AdminTimelyNotesPage');
             }}
           >  Timely Notes
           </button>
@@ -37,7 +37,7 @@ function AdminLandingPage() {
             type="button"
             className="btn"
             onClick={() => {
-              history.push('/______');
+              history.push('/AdminFieldTechListPage');
             }}
           >  Field Tech List
           </button>
@@ -47,11 +47,11 @@ function AdminLandingPage() {
             type="button"
             className="btn"
             onClick={() => {
-              history.push('/______');
+              history.push('/AdminDataEntryPage');
             }}
           >  Data Entry
           </button>
-          <h1> _________</h1>
+          <h4> ___________________</h4>
           <LogOutButton className="btn" />
         </div>
       </center>
