@@ -29,10 +29,10 @@ function LoginForm() {
 
       <h1 class="centered">Existing User
 
-      Log-in</h1>
+      Log in</h1>
 
 
-      <input className="btn" type="submit" name="submit" value="User Log-in" />
+      <input className="btn" type="submit" name="submit" value="User Log in" />
 
       {/* <button class="btn-heading" role="heading" aria-level="2">Button Heading</button> */}
 
@@ -70,7 +70,7 @@ function LoginForm() {
         </label>
       </div>
       <div>
-        <input className="btn" type="submit" name="submit" value="Log-in" />
+        <input className="btn" type="submit" name="submit" value="Log in" />
       </div>
     </form>
   );

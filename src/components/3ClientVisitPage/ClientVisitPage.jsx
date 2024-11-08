@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import ArrivalTimestampButton from '../ArrivalTimestamp Button/ArrivalTimestampButton';
 import DepartureTimestampButton from '../DepartureTimestamp Button copy/DepartureTimestampButton';
 import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
+import GoToYourRouteButton from '../GoToYourRouteButton/GoToYourRouteButton';
 function ClientVisitPage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -77,7 +78,8 @@ function ClientVisitPage() {
           <DepartureTimestampButton className="btn" />
           <h2> </h2>
           <h2> </h2>
-          <TempAdminAccessBtn className="btn" />
+          <GoToYourRouteButton className="btn"/>
+          <TempAdminAccessBtn />
 
 
         </div>

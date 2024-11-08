@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
+import LogOutButton from '../LogOutButton/LogOutButton';
+import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
 function YourRoutePage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -58,6 +60,8 @@ function YourRoutePage() {
               <p> Route error, please call the main office...</p>
             )}
           </div>
+          <LogOutButton className="btn"
+          />
         </div>
       </center>
     </div>

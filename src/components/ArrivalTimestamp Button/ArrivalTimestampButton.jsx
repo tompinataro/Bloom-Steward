@@ -8,7 +8,7 @@ function ArrivalTimestampButton(props) {
       className={props.className}
       onClick={() => dispatch({ type: 'TIMESTAMP' })}
     >
-      Check-in
+      Check in
     </button>
   );
 }
