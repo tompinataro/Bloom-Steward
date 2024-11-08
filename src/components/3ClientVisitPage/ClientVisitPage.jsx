@@ -19,15 +19,24 @@ function ClientVisitPage() {
     // dispatch({ type: 'CURRENT_VISIT' });
   }, []);
 
+  // const handleClientClick = (client) => {
+  //   console.log("Navigating to details for:", client); // Log client click
+  //   dispatch({ type: 'SET_CURRENT_VISIT', payload: client });
+  //   history.push(`/ClientVisitPage/`);
+
   return (
     <div>
       <center>
         <div className="container">
           <h1>Today at</h1>
           <h1>{client.client_name}</h1>
+          <h2> </h2>
+          <h2> </h2>
+
 
           <ArrivalTimestampButton className="btn" />
 
+          <h2></h2>
 
           {/* // TimelyNoteField - (if any, can be null)
 
@@ -41,9 +50,20 @@ function ClientVisitPage() {
             onClick={() => {
               ; //sends comment to db
             }}
-          > SUBMIT COMMENT
+          > Timely Note: Bugs in planter on 3rd floor
           </button>
-
+          <h2> </h2>
+          <h2> </h2>
+          <button
+            type="button"
+            className="btn" // use smaller button
+            onClick={() => {
+              ; //sends comment to db
+            }}
+          > Reply Comment
+          </button>
+          <h2> </h2>
+          <h2> </h2>
 
           <DepartureTimestampButton className="btn" />
 

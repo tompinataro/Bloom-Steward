@@ -47,8 +47,10 @@ function YourRoutePage() {
                   key={index} onClick={() => handleClientClick(client)}>
                   {client.client_name}
                 </button>
+                
               ))
-            ) : (     // Ternary "if else" shortcut
+              
+            ) : (     // <<< Ternary "if else" shortcut
               <p> Route error, please call the main office...</p>
             )}
           </div>
