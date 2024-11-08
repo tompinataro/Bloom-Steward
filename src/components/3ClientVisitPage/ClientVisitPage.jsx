@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import ArrivalTimestampButton from '../ArrivalTimestamp Button/ArrivalTimestampButton';
 import DepartureTimestampButton from '../DepartureTimestamp Button copy/DepartureTimestampButton';
+import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
 function ClientVisitPage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -66,6 +67,9 @@ function ClientVisitPage() {
           <h2> </h2>
 
           <DepartureTimestampButton className="btn" />
+          <h2> </h2>
+          <h2> </h2>
+          <TempAdminAccessBtn className="btn" />
 
 
         </div>

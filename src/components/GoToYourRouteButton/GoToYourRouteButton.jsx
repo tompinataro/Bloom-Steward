@@ -26,7 +26,7 @@ export default GoToYourRouteButton;
 
 //code above is from logout button
 //****************************************************************** */
-// code below is from register page and has button as link
+// code below is from register page and has button as link that wasn't used
 
 // import React from 'react'; //already on line 1
 
