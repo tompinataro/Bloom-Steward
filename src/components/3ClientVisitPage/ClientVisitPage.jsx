@@ -29,8 +29,10 @@ function ClientVisitPage() {
     <div>
       <center>
         <div className="container">
-          <h1>Today at</h1>
-          <h1>{client.client_name}</h1>
+          <h1 style={{ marginBottom: '0px' }}  // Adds space below each button
+          >Today at</h1>
+          <h1 style={{ marginTop: '0px' }}  // Adds space below each button
+          >{client.client_name}</h1>
           <h2> </h2>
           <h2> </h2>
 
@@ -51,7 +53,13 @@ function ClientVisitPage() {
             onClick={() => {
               ; //sends comment to db
             }}
-          > Timely Note: Bugs in planter on 3rd floor
+          >
+            <h3 style={{ marginBottom: '0px', marginTop: '5px' }}>
+              Timely Note:
+            </h3>
+            <h5 style={{ marginBottom: '0px', marginTop: '5px' }}>
+              3rd floor planter: bugs
+            </h5>
           </button>
           <h2> </h2>
           <h2> </h2>
@@ -61,7 +69,7 @@ function ClientVisitPage() {
             onClick={() => {
               ; //sends comment to db
             }}
-          > Reply Comment
+          > Click to Respond
           </button>
           <h2> </h2>
           <h2> </h2>
@@ -73,8 +81,8 @@ function ClientVisitPage() {
 
 
         </div>
-      </center>
-    </div>
+      </center >
+    </div >
   );
 }
 
