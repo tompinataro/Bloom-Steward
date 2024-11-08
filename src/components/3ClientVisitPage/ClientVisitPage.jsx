@@ -32,8 +32,8 @@ function ClientVisitPage() {
         <div className="container">
           <h1 style={{ marginBottom: '0px' }}  // Adds space below each button
           >Today at</h1>
-          <h1 style={{ marginTop: '0px' }}  // Adds space below each button
-          >{client.client_name}</h1>
+          <h2 style={{ marginTop: '0px' }}  // Adds space below each button
+          >{client.client_name}</h2>
           <h2> </h2>
           <h2> </h2>
 
@@ -66,7 +66,7 @@ function ClientVisitPage() {
           <h2> </h2>
           <button
             type="button"
-            className="btn" // use smaller button
+            className="btn" // use smaller button?
             onClick={() => {
               ; //sends comment to db
             }}
