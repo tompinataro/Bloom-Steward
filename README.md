@@ -1,10 +1,10 @@
 Bloom Steward, a RouteMaster app by TixPy
 
-Bloom Steward meets business needs by providing solutions via a web application designed to provide a mobile timeclock for accountability and real-time communications between clients and field technicians. 
+Bloom Steward meets business needs with a web application designed to provide a mobile timeclock for accountability and real-time communications between clients and field technicians. 
 
-Bloom Steward showcases technical skills to:
+Bloom Steward showcases technical skills: 
 
-Build Intuitive Frontend Interfaces: Using React, Material UI, and APIs to create smooth and engaging user experiences.
+Build Intuitive Frontend Interfaces: Using Java Script, React, & Redux-Saga to create smooth and engaging user experiences.
 Develop Scalable Backend Systems: Leveraging Node.js, Express, and PostgreSQL to ensure reliable and efficient application performance.
 Custom, User-Focused Designs: 
 With Figma, Miro & Excalidraw. 
