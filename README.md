@@ -5,6 +5,11 @@ Bloom Steward, a RouteMaster app by TixPy
 Deployed to Heroku >
 https://bloom-steward-2a872c497756.herokuapp.com/#/home
 
+SCOPE Doc => [TxP Bloom Steward Scope .pdf](https://github.com/user-attachments/files/18119150/TxP.Bloom.Steward.Scope.pdf)
+
+PRESO => [Bloom Steward Solo Preso.pdf](https://github.com/user-attachments/files/18119152/Bloom.Steward.Solo.Preso.pdf)
+
+
 Bloom Steward meets business needs with a web application designed to provide a mobile timeclock for accountability and real-time communications between clients and field technicians. 
 
 Bloom Steward showcases technical skills: 
