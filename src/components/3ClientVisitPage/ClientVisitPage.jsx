@@ -5,6 +5,7 @@ import ArrivalTimestampButton from '../ArrivalTimestamp Button/ArrivalTimestampB
 import DepartureTimestampButton from '../DepartureTimestamp Button copy/DepartureTimestampButton';
 import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
 import GoToYourRouteButton from '../GoToYourRouteButton/GoToYourRouteButton';
+import NextPageBtn from '../NextPageBtn/NextPageBtn';
 function ClientVisitPage() {
   const dispatch = useDispatch();
   const history = useHistory();

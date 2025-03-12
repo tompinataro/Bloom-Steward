@@ -38,9 +38,9 @@ function AdminClientListPage() {
     <div>
       <center>
         <div className="container">
-          <h1  style={{ marginBottom: '60px' }}  // Adds space below each button
+          <h1 style={{ marginBottom: '60px' }}  // Adds space below each button
           >Client List</h1>
-          
+
           {/* Display filtered clients as buttons */}
           <div>
             {clients && clients.length > 0 ? (
@@ -60,6 +60,14 @@ function AdminClientListPage() {
               <p>  error, please call the main office...</p>
             )}
           </div>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              history.push('/AdminTimelyNotesPage');
+            }}
+          >  Next Admin Page ▶︎
+          </button>
 
           <TempAdminAccessBtn
           />
