@@ -23,7 +23,7 @@ function RegisterForm() {
   
     <form className="formPanel" onSubmit={registerUser}>
       <h2>
-      <input className="btn" type="submit" name="submit" value="Register Panel" />
+      <input className="btn" type="submit" name="submit" value="Welcome Field Tech" /> 
 
       </h2>
       {errors.registrationMessage && (
