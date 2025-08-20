@@ -1,13 +1,13 @@
-import { Router, Request, Response } from 'express';
+// server/routes/metrics.ts
+import { Router } from 'express';
 import client from 'prom-client';
 
 const router = Router();
 
-// Use default interval; newer prom-client types no longer accept { timeout }
+// Initialize default metrics once at process start
 client.collectDefaultMetrics();
 
-// GET /metrics -> Prometheus output
-router.get('/metrics', async (_req: Request, res: Response) => {
+router.get('/metrics', async (_req, res) => {
   try {
     res.set('Content-Type', client.register.contentType);
     const metrics = await client.register.metrics();
