@@ -1,17 +1,21 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import HomeScreen from './src/screens/HomeScreen';
+import AboutScreen from './src/screens/AboutScreen';
+
+export type RootStackParamList = { Home: undefined; About: undefined; };
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  console.log('✅ App rendered');
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bloom Steward mobile is live 🎉</Text>
+    <NavigationContainer>
       <StatusBar style="auto" />
-    </View>
+      <Stack.Navigator>
+        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Bloom Steward' }} />
+        <Stack.Screen name="About" component={AboutScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#eef' },
-  title: { fontSize: 20 },
-});
