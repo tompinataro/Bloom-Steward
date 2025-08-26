@@ -1,10 +1,14 @@
-// server/routes/health.ts
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 
 const router = Router();
 const accessLogPath = path.join(process.cwd(), 'logs', 'server.log');
+
+// Ensure logs directory exists
+try {
+  fs.mkdirSync(path.dirname(accessLogPath), { recursive: true });
+} catch {}
 
 router.get('/health', (_req: Request, res: Response) => {
   const ts = new Date().toISOString();

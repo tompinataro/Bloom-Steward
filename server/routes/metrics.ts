@@ -4,8 +4,12 @@ import client from 'prom-client';
 
 const router = Router();
 
-// Initialize default metrics once at process start
-client.collectDefaultMetrics();
+// Guard against multiple registrations in dev/hot-reload
+const g: any = global as any;
+if (!g.__PROM_DEFAULT_METRICS__) {
+  client.collectDefaultMetrics();
+  g.__PROM_DEFAULT_METRICS__ = true;
+}
 
 router.get('/metrics', async (_req, res) => {
   try {
