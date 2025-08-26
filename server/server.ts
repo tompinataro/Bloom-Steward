@@ -24,6 +24,7 @@ const visitsRouter = require('./routes/visits.router');
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT: number = process.env.PORT ? Number(process.env.PORT) : 5001;
 
 // Ensure logs directory exists and set up a write stream for morgan
