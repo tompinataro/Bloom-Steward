@@ -1,37 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator } from 'react-native';
+import { View, Text, Button, StyleSheet, ActivityIndicator } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../App';
+import { health, API_BASE } from '../api/client';
 
-type RootStackParamList = { Home: undefined; About: undefined; };
 type Props = NativeStackScreenProps<RootStackParamList, 'About'>;
 
 export default function AboutScreen({ navigation }: Props) {
-  const [result, setResult] = useState<string>('loading...');
-  const api = process.env.EXPO_PUBLIC_API_URL || 'https://example.com';
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
-    const url = `${api.replace(/\/$/, '')}/health`;
-    fetch(url)
-      .then(r => r.json())
-      .then(j => setResult(`ok=${String(j.ok)}  ts=${j.ts || 'n/a'}`))
-      .catch(err => setResult(`error: ${err?.message || 'unknown'}`));
+    setLoading(true);
+    health()
+      .then((h) => setResult(`OK: ${h.message} (${API_BASE})`))
+      .catch((e) => setResult(`ERROR: ${e.message}`))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>About Bloom Steward</Text>
-      <Text style={styles.sub}>API: {api}</Text>
-      <Text style={styles.statusLabel}>/health status:</Text>
-      {result === 'loading...' ? <ActivityIndicator /> : <Text style={styles.status}>{result}</Text>}
+      {loading ? <ActivityIndicator /> : <Text style={styles.body}>{result ?? 'No result yet'}</Text>}
       <Button title="Back to Home" onPress={() => navigation.navigate('Home')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff', gap: 8 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  sub: { fontSize: 12, color: '#666' },
-  statusLabel: { marginTop: 8, fontWeight: '600' },
-  status: { fontFamily: 'Courier', marginTop: 4 }
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  body: { fontSize: 14, marginBottom: 12 }
 });
