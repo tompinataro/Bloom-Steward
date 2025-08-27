@@ -1,24 +1,9 @@
-import { Router, Request, Response } from 'express';
-import fs from 'fs';
-import path from 'path';
+import { Router } from 'express';
 
 const router = Router();
-const accessLogPath = path.join(process.cwd(), 'logs', 'server.log');
 
-// Ensure logs directory exists
-try {
-  fs.mkdirSync(path.dirname(accessLogPath), { recursive: true });
-} catch {}
-
-router.get('/health', (_req: Request, res: Response) => {
-  const ts = new Date().toISOString();
-  const payload = { ok: true, ts };
-  res.json(payload);
-
-  // Append to server.log
-  try {
-    fs.appendFileSync(accessLogPath, `[${ts}] HEALTH endpoint called\n`);
-  } catch {}
+router.get('/health', (_req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString() });
 });
 
 export default router;
