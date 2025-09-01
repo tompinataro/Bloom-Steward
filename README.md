@@ -17,10 +17,21 @@ Bloom Steward is a custom accountability and quality control application designe
 
 ## Getting Started
 1. Clone the repository
-2. Install dependencies with `npm install`
-3. Create a `.env` file with required environment variables
-4. Set up PostgreSQL and run migrations
-5. Run `npm run server` and `npm run client`
+2. Install dependencies with `npm install` (root) and `npm install` in `mobile/`
+3. Create environment files
+   - Server: values from your local setup (optional for MVP)
+   - Mobile: `mobile/.env` with `EXPO_PUBLIC_API_URL=http://localhost:5100` (or a tunnel when testing on device)
+4. Build the server with `npm run build` (Heroku will run this automatically)
+5. Run the API locally with `npm run dev` (TypeScript) or `npm run server` (compiled)
+6. Run the mobile app from `mobile/` with `npm start`
+
+### Endpoints
+- `GET /health` – liveness check
+- `GET /metrics` – Prometheus metrics
+- `POST /api/auth/login` – returns a demo token and user
+- `GET /api/routes/today` – requires `Authorization: Bearer <token>`
+- `GET /api/visits/:id` – requires auth
+- `POST /api/visits/:id/submit` – requires auth
 
 ## Deployment
 Bloom Steward is deployed on Heroku at: [https://pinataro.com](https://pinataro.com)

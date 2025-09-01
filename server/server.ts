@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import healthRouter from './routes/health';
 import metricsRouter from './routes/metrics';
+import { getTodayRoutes, getVisit, saveVisit } from './data';
 
 const app = express();
 app.use(cors());
@@ -22,7 +23,7 @@ function requireAuth(req: express.Request, res: express.Response, next: express.
   return next();
 }
 
-// API stubs
+// API routes (DB-backed when configured; demo otherwise)
 app.post('/api/auth/login', (req, res) => {
   const { email } = req.body ?? {};
   // Always succeeds for MVP
@@ -33,38 +34,34 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
-app.get('/api/routes/today', requireAuth, (_req, res) => {
-  res.json({
-    ok: true,
-    routes: [
-      { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '09:00' },
-      { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '10:30' },
-      { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '13:15' }
-    ]
-  });
+app.get('/api/routes/today', requireAuth, async (_req, res) => {
+  try {
+    const routes = await getTodayRoutes(1);
+    res.json({ ok: true, routes });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? 'routes error' });
+  }
 });
 
-app.get('/api/visits/:id', requireAuth, (req, res) => {
-  const id = Number(req.params.id);
-  res.json({
-    ok: true,
-    visit: {
-      id,
-      clientName: id === 101 ? 'Acme HQ' : id === 102 ? 'Blue Sky Co' : 'Sunset Mall',
-      checklist: [
-        { key: 'watered', label: 'Watered plants', done: false },
-        { key: 'pruned', label: 'Pruned and cleaned', done: false },
-        { key: 'replaced', label: 'Replaced unhealthy plants', done: false }
-      ]
-    }
-  });
+app.get('/api/visits/:id', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const visit = await getVisit(id);
+    res.json({ ok: true, visit });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? 'visit error' });
+  }
 });
 
-app.post('/api/visits/:id/submit', requireAuth, (req, res) => {
-  const id = Number(req.params.id);
-  const { notes, checklist } = req.body ?? {};
-  // Accept and echo
-  res.json({ ok: true, id, received: { notes, checklist } });
+app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { notes, checklist } = req.body ?? {};
+    const result = await saveVisit(id, notes, checklist);
+    res.json({ ok: true, id, result });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? 'submit error' });
+  }
 });
 
 const port = Number(process.env.PORT) || 5100;

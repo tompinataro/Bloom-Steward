@@ -9,6 +9,7 @@ import AboutScreen from './src/screens/AboutScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
+import SignOutButton from './src/components/SignOutButton';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -26,7 +27,7 @@ function RootNavigator() {
   if (loading) return null;
   return token ? (
     <Stack.Navigator>
-      <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route' }} />
+      <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route', headerRight: () => <SignOutButton /> }} />
       <Stack.Screen name="VisitDetail" component={VisitDetailScreen} options={{ title: 'Visit' }} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
