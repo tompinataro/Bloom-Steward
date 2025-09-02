@@ -25,13 +25,13 @@ function requireAuth(req: express.Request, res: express.Response, next: express.
 
 // API routes (DB-backed when configured; demo otherwise)
 app.post('/api/auth/login', (req, res) => {
-  const { email } = req.body ?? {};
-  // Always succeeds for MVP
-  res.json({
-    ok: true,
-    token: DEMO_TOKEN,
-    user: { id: 1, name: 'Demo User', email: email || 'demo@example.com' }
-  });
+  const { email, password } = req.body ?? {};
+  const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@example.com';
+  const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password';
+  if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+    return res.json({ ok: true, token: DEMO_TOKEN, user: { id: 1, name: 'Demo User', email } });
+  }
+  return res.status(401).json({ ok: false, error: 'invalid credentials' });
 });
 
 app.get('/api/routes/today', requireAuth, async (_req, res) => {

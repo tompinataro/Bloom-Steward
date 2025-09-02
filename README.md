@@ -33,6 +33,21 @@ Bloom Steward is a custom accountability and quality control application designe
 - `GET /api/visits/:id` – requires auth
 - `POST /api/visits/:id/submit` – requires auth
 
+### Database (optional for MVP)
+- The API will use Postgres when `DATABASE_URL` is set; otherwise it serves demo data in-memory.
+- To provision locally, create a DB and run:
+  - `psql "$DATABASE_URL" -f server/sql/schema.sql`
+  - `psql "$DATABASE_URL" -f server/sql/seed.sql`
+- Demo credentials (override via env):
+  - `DEMO_EMAIL=demo@example.com`
+  - `DEMO_PASSWORD=password`
+
+### Simulator Quick Start (recommended)
+1. Terminal A: `npm run dev`
+2. Terminal B:
+   - `printf "EXPO_PUBLIC_API_URL=http://localhost:5100\n" > mobile/.env`
+   - `cd mobile && npx expo start -c --ios`
+
 ## Deployment
 Bloom Steward is deployed on Heroku at: [https://pinataro.com](https://pinataro.com)
 

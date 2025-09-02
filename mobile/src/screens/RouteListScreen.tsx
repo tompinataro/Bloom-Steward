@@ -5,6 +5,7 @@ import type { RootStackParamList } from '../../App';
 import { useAuth } from '../auth';
 import { fetchTodayRoutes, TodayRoute } from '../api/client';
 import LoadingOverlay from '../components/LoadingOverlay';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 
@@ -28,6 +29,13 @@ export default function RouteListScreen({ navigation }: Props) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refresh when returning from details
+      load();
+    }, [token])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
