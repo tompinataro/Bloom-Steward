@@ -24,7 +24,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function RootNavigator() {
   const { token, loading } = useAuth();
   // Simple splash while restoring token
-  if (loading) return null;
+  if (loading) {
+    return (
+      <NavigationContainer>
+        <StatusBar style="auto" />
+      </NavigationContainer>
+    );
+  }
   return token ? (
     <Stack.Navigator>
       <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route', headerRight: () => <SignOutButton /> }} />

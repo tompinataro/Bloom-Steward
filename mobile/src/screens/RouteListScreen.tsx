@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { useAuth } from '../auth';
 import { fetchTodayRoutes, TodayRoute } from '../api/client';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 
@@ -33,10 +34,9 @@ export default function RouteListScreen({ navigation }: Props) {
     try { await load(); } finally { setRefreshing(false); }
   };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator /></View>;
-
   return (
-    <FlatList
+    <>
+      <FlatList
       style={styles.list}
       data={routes}
       keyExtractor={(item) => String(item.id)}
@@ -50,6 +50,8 @@ export default function RouteListScreen({ navigation }: Props) {
       )}
       ListEmptyComponent={<View style={styles.center}><Text>No visits today</Text></View>}
     />
+      <LoadingOverlay visible={loading || refreshing} />
+    </>
   );
 }
 
@@ -60,4 +62,3 @@ const styles = StyleSheet.create({
   sub: { color: '#555' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' }
 });
-

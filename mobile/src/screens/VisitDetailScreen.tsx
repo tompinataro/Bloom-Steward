@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { fetchVisit, submitVisit, Visit } from '../api/client';
 import { useAuth } from '../auth';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VisitDetail'>;
 
@@ -44,9 +45,11 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  if (loading || !visit) return <View style={styles.center}><ActivityIndicator /></View>;
+  if (loading && !visit) return <View style={styles.center}><ActivityIndicator /></View>;
+  if (!visit) return <View style={styles.center}><Text>Visit not found</Text></View>;
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.container}>
       {visit.checklist.map((item) => (
         <View key={item.key} style={styles.row}>
@@ -58,6 +61,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       <TextInput style={styles.notes} multiline value={notes} onChangeText={setNotes} placeholder="Optional notes" />
       <Button title={submitting ? 'Submitting...' : 'Submit'} onPress={onSubmit} disabled={submitting} />
     </ScrollView>
+    <LoadingOverlay visible={loading || submitting} />
+    </>
   );
 }
 
@@ -68,4 +73,3 @@ const styles = StyleSheet.create({
   label: { fontSize: 16 },
   notes: { borderColor: '#ccc', borderWidth: 1, borderRadius: 6, padding: 10, minHeight: 100 }
 });
-
