@@ -13,7 +13,7 @@ import SignOutButton from './src/components/SignOutButton';
 
 export type RootStackParamList = {
   Login: undefined;
-  RouteList: undefined;
+  RouteList: { saved?: boolean } | undefined;
   VisitDetail: { id: number };
   Home: undefined;
   About: undefined;

@@ -9,11 +9,12 @@ import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 
-export default function RouteListScreen({ navigation }: Props) {
+export default function RouteListScreen({ navigation, route }: Props) {
   const { token } = useAuth();
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [savedBanner, setSavedBanner] = useState(false);
 
   const load = async () => {
     if (!token) return;
@@ -34,7 +35,14 @@ export default function RouteListScreen({ navigation }: Props) {
     React.useCallback(() => {
       // Refresh when returning from details
       load();
-    }, [token])
+      if (route.params?.saved) {
+        setSavedBanner(true);
+        const t = setTimeout(() => setSavedBanner(false), 2000);
+        // Clear the param so it doesn't re-show
+        navigation.setParams({ saved: undefined } as any);
+        return () => clearTimeout(t);
+      }
+      }, [token])
   );
 
   const onRefresh = async () => {
@@ -44,6 +52,7 @@ export default function RouteListScreen({ navigation }: Props) {
 
   return (
     <>
+      {savedBanner ? <View style={styles.banner}><Text style={styles.bannerText}>Saved</Text></View> : null}
       <FlatList
       style={styles.list}
       data={routes}
@@ -69,4 +78,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700' },
   sub: { color: '#555' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' }
+  ,banner: { backgroundColor: '#e6ffed', padding: 8, alignItems: 'center' }
+  ,bannerText: { color: '#047857', fontWeight: '600' }
 });

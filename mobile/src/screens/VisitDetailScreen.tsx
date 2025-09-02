@@ -37,7 +37,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       const payload = { notes, checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })) };
       await submitVisit(visit.id, payload, token);
       Alert.alert('Submitted', 'Visit saved');
-      navigation.goBack();
+      navigation.navigate('RouteList', { saved: true });
     } catch (e: any) {
       Alert.alert('Submit failed', e?.message ?? String(e));
     } finally {
