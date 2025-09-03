@@ -24,6 +24,18 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     if (rows.length > 0) {
       return rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
     }
+    // Fallback: if routes_today is empty or userId doesn't match, read from visits table
+    const res2 = await dbQuery<{
+      id: number; client_name: string; address: string; scheduled_time: string;
+    }>(
+      `select v.id, c.name as client_name, c.address, v.scheduled_time
+       from visits v join clients c on c.id = v.client_id
+       order by v.scheduled_time asc`
+    );
+    const rows2 = res2?.rows ?? [];
+    if (rows2.length > 0) {
+      return rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+    }
   }
   return [
     { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '09:00' },
