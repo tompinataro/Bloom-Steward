@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Switch, Button, Alert, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Switch, Alert, TextInput, ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { fetchVisit, submitVisit, Visit } from '../api/client';
 import { useAuth } from '../auth';
 import LoadingOverlay from '../components/LoadingOverlay';
+import ThemedButton from '../components/Button';
+import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VisitDetail'>;
 
@@ -50,26 +52,30 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
 
   return (
     <>
-    <ScrollView contentContainerStyle={styles.container}>
-      {visit.checklist.map((item) => (
-        <View key={item.key} style={styles.row}>
-          <Text style={styles.label}>{item.label}</Text>
-          <Switch value={item.done} onValueChange={(v) => setVisit((prev) => prev ? { ...prev, checklist: prev.checklist.map(c => c.key === item.key ? { ...c, done: v } : c) } : prev)} />
+      <ScrollView contentContainerStyle={styles.container} style={{ backgroundColor: colors.background }}>
+        <View style={styles.content}>
+          {visit.checklist.map((item) => (
+            <View key={item.key} style={styles.row}>
+              <Text style={styles.label}>{item.label}</Text>
+              <Switch value={item.done} onValueChange={(v) => setVisit((prev) => prev ? { ...prev, checklist: prev.checklist.map(c => c.key === item.key ? { ...c, done: v } : c) } : prev)} />
+            </View>
+          ))}
+          <Text style={styles.label}>Notes</Text>
+          <TextInput style={styles.notes} multiline value={notes} onChangeText={setNotes} placeholder="Optional notes" placeholderTextColor={colors.muted} />
+          <ThemedButton title={submitting ? 'Submitting…' : 'Submit'} onPress={onSubmit} disabled={submitting} style={styles.fullWidthBtn} />
         </View>
-      ))}
-      <Text style={styles.label}>Notes</Text>
-      <TextInput style={styles.notes} multiline value={notes} onChangeText={setNotes} placeholder="Optional notes" />
-      <Button title={submitting ? 'Submitting...' : 'Submit'} onPress={onSubmit} disabled={submitting} />
-    </ScrollView>
-    <LoadingOverlay visible={loading || submitting} />
+      </ScrollView>
+      <LoadingOverlay visible={loading || submitting} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  container: { padding: 16, gap: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomColor: '#eee', borderBottomWidth: 1 },
-  label: { fontSize: 16 },
-  notes: { borderColor: '#ccc', borderWidth: 1, borderRadius: 6, padding: 10, minHeight: 100 }
+  container: { padding: spacing(4) },
+  content: { width: '100%', maxWidth: 360, alignSelf: 'center', gap: spacing(3) },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
+  label: { fontSize: 16, color: colors.text },
+  notes: { borderColor: colors.border, color: colors.text, backgroundColor: colors.card, borderWidth: 1, borderRadius: 8, padding: spacing(3), minHeight: 100 },
+  fullWidthBtn: { alignSelf: 'stretch' }
 });

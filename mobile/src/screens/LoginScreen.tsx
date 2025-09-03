@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { useAuth } from '../auth';
-import { API_BASE, health } from '../api/client';
+// API helpers not shown on login screen
 import LoadingOverlay from '../components/LoadingOverlay';
+import ThemedButton from '../components/Button';
+import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -29,34 +31,65 @@ export default function LoginScreen(_props: Props) {
     }
   };
 
-  const onPing = async () => {
-    try {
-      const h = await health();
-      Alert.alert('API Health', `OK ${JSON.stringify(h)}\n${API_BASE}`);
-    } catch (e: any) {
-      Alert.alert('API Health', `${e?.message ?? String(e)}\n${API_BASE}`);
-    }
-  };
+  // onPing removed
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign In</Text>
-      <Text style={styles.url} numberOfLines={1}>API: {API_BASE}</Text>
-      <TextInput style={styles.input} autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="Email" />
-      <TextInput style={styles.input} secureTextEntry value={password} onChangeText={setPassword} placeholder="Password" />
-      {loading ? <ActivityIndicator /> : <Button title="Login" onPress={onSubmit} />}
-      {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
-      <View style={{ height: 12 }} />
-      <Button title="Ping API" onPress={onPing} />
-      <LoadingOverlay visible={loading} />
+      <View style={styles.content}>
+        <View style={styles.logoFrame}>
+          <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+        </View>
+        {/* API URL removed */}
+        <TextInput
+          style={styles.input}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor={colors.muted}
+          returnKeyType="next"
+        />
+        <TextInput
+          style={styles.input}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          placeholderTextColor={colors.muted}
+          returnKeyType="go"
+          onSubmitEditing={onSubmit}
+        />
+        {loading ? (
+          <ActivityIndicator />
+        ) : (
+          <ThemedButton title="Login" onPress={onSubmit} style={styles.fullWidthBtn} />
+        )}
+        {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+        <LoadingOverlay visible={loading} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 16 },
-  url: { fontSize: 12, color: '#555', marginBottom: 8 },
-  input: { width: '100%', maxWidth: 360, borderColor: '#ccc', borderWidth: 1, padding: 10, borderRadius: 6, marginBottom: 12 }
-  ,error: { color: '#c00', marginTop: 8 }
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing(6), backgroundColor: colors.background },
+  content: { width: '100%', maxWidth: 360, alignItems: 'center' },
+  logoFrame: {
+    width: '100%',
+    aspectRatio: 1,
+    // matches the content width (max 360)
+    borderWidth: 3,
+    borderColor: '#000',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    marginBottom: spacing(4),
+  },
+  logo: { width: '92%', height: '92%' },
+  input: { width: '100%', maxWidth: 360, borderColor: colors.border, color: colors.text, borderWidth: 1, padding: spacing(3), borderRadius: 8, marginBottom: spacing(3), backgroundColor: colors.card },
+  fullWidthBtn: { alignSelf: 'stretch' }
+  ,error: { color: colors.danger, marginTop: spacing(2) }
 });

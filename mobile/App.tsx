@@ -1,8 +1,9 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/auth';
+import { colors } from './src/theme';
 
 import HomeScreen from './src/screens/HomeScreen';
 import AboutScreen from './src/screens/AboutScreen';
@@ -25,11 +26,9 @@ function RootNavigator() {
   const { token, loading } = useAuth();
   // Simple splash while restoring token
   if (loading) {
-    return (
-      <NavigationContainer>
-        <StatusBar style="auto" />
-      </NavigationContainer>
-    );
+    // Avoid nesting a NavigationContainer inside the root container.
+    // Show nothing (or a very simple splash) until auth state is restored.
+    return <StatusBar style="auto" />;
   }
   return token ? (
     <Stack.Navigator>
@@ -48,7 +47,17 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer theme={{
+        ...DefaultTheme,
+        colors: {
+          ...DefaultTheme.colors,
+          primary: colors.primary,
+          background: colors.background,
+          card: colors.card,
+          text: colors.text,
+          border: colors.border,
+        },
+      }}>
         <StatusBar style="auto" />
         <RootNavigator />
       </NavigationContainer>
