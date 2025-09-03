@@ -11,6 +11,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import SignOutButton from './src/components/SignOutButton';
+import AppSplash from './src/components/AppSplash';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -26,9 +27,7 @@ function RootNavigator() {
   const { token, loading } = useAuth();
   // Simple splash while restoring token
   if (loading) {
-    // Avoid nesting a NavigationContainer inside the root container.
-    // Show nothing (or a very simple splash) until auth state is restored.
-    return <StatusBar style="auto" />;
+    return <AppSplash />;
   }
   return token ? (
     <Stack.Navigator>

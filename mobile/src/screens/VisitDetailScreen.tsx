@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Switch, Alert, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { fetchVisit, submitVisit, Visit } from '../api/client';
 import { useAuth } from '../auth';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
+import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VisitDetail'>;
@@ -17,6 +18,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -37,11 +39,12 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     setSubmitting(true);
     try {
       const payload = { notes, checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })) };
+      setSubmitError(null);
       await submitVisit(visit.id, payload, token);
       // Haptics disabled unless dependency is installed; keep submit fast and silent
       navigation.navigate('RouteList', { saved: true });
     } catch (e: any) {
-      Alert.alert('Submit failed', e?.message ?? String(e));
+      setSubmitError(e?.message ?? 'Submit failed');
     } finally {
       setSubmitting(false);
     }
@@ -54,6 +57,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.content}>
+          {submitError ? <Banner type="error" message={submitError} /> : null}
           {visit.checklist.map((item) => (
             <TouchableOpacity
               key={item.key}

@@ -5,6 +5,7 @@ import type { RootStackParamList } from '../../App';
 import { useAuth } from '../auth';
 import { fetchTodayRoutes, TodayRoute } from '../api/client';
 import LoadingOverlay from '../components/LoadingOverlay';
+import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
 import { useFocusEffect } from '@react-navigation/native';
@@ -85,7 +86,12 @@ export default function RouteListScreen({ navigation, route }: Props) {
           <Text style={styles.bannerText}>✓ Saved</Text>
         </View>
       ) : null}
-      {error ? <View style={{ paddingHorizontal: spacing(4) }}><Banner type="error" message={error} /></View> : null}
+      {error ? (
+        <View style={styles.errorWrap}>
+          <Banner type="error" message={error} />
+          <ThemedButton title="Retry" variant="outline" onPress={load} style={styles.retryBtn} />
+        </View>
+      ) : null}
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
@@ -105,7 +111,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
                 <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{item.address || '123 Main St'}</Text>
               </View>
               <TouchableOpacity style={styles.mapBtn} onPress={() => openMaps(item.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${item.clientName}`}>
-                <Text style={styles.mapBtnText}>Map &gt;</Text>
+                <Text style={styles.mapBtnText}>Map ›</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -146,11 +152,13 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '700', color: colors.text },
   dot: { color: colors.muted },
   sub: { color: colors.muted, marginTop: spacing(1) },
-  mapBtn: { paddingVertical: spacing(2), paddingHorizontal: spacing(3), borderRadius: 8, borderWidth: 1, borderColor: colors.primary, flexShrink: 0 },
+  mapBtn: { paddingVertical: spacing(2), paddingHorizontal: spacing(3), borderRadius: 8, borderWidth: 1, borderColor: colors.muted, flexShrink: 0, backgroundColor: 'transparent' },
   mapBtnText: { color: colors.primary, fontWeight: '600' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing(20) },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: spacing(1) },
   emptySub: { color: colors.muted },
   banner: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: colors.successBg, padding: spacing(2), alignItems: 'center', zIndex: 2, borderBottomWidth: 1, borderColor: colors.border },
   bannerText: { color: colors.successText, fontWeight: '600' },
+  errorWrap: { paddingHorizontal: spacing(4), marginTop: spacing(2) },
+  retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
 });
