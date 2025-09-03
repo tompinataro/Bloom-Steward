@@ -20,7 +20,10 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
        order by rt.scheduled_time asc`,
       [userId]
     );
-    if (res) return res.rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+    const rows = res?.rows ?? [];
+    if (rows.length > 0) {
+      return rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+    }
   }
   return [
     { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '09:00' },
