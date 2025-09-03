@@ -74,7 +74,7 @@ export default function LoginScreen(_props: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing(6), backgroundColor: colors.background },
-  content: { width: '100%', maxWidth: 360, alignItems: 'center' },
+  content: { width: '100%', maxWidth: 360, alignItems: 'center', gap: spacing(2) },
   logoFrame: {
     width: '100%',
     aspectRatio: 1,

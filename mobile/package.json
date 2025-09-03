@@ -6,7 +6,9 @@
     "start": "expo start --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "env:dev": "printf \"EXPO_PUBLIC_API_URL=http://localhost:5100\\n\" > .env && cat .env",
+    "env:prod": "printf \"EXPO_PUBLIC_API_URL=https://bloom-steward-2a872c497756.herokuapp.com\\n\" > .env && cat .env"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.2",
