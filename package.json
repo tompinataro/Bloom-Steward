@@ -32,7 +32,7 @@
     "start": "node dist/server/server.js",
     "client": "vite",
     "server": "nodemon --watch server server/server.js",
-    "build": "tsc",
+    "build": "tsc && cp -R server/sql dist/server/",
     "test": "vitest",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts"
   },

@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
 
@@ -13,8 +13,15 @@ async function run() {
     ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : undefined,
   });
   try {
-    const schema = readFileSync(join(__dirname, 'sql', 'schema.sql'), 'utf8');
-    const seed = readFileSync(join(__dirname, 'sql', 'seed.sql'), 'utf8');
+    const sqlDir = join(__dirname, 'sql');
+    const schemaPath = join(sqlDir, 'schema.sql');
+    const seedPath = join(sqlDir, 'seed.sql');
+    if (!existsSync(schemaPath) || !existsSync(seedPath)) {
+      console.log('SQL files not found in dist; skipping DB setup.');
+      return;
+    }
+    const schema = readFileSync(schemaPath, 'utf8');
+    const seed = readFileSync(seedPath, 'utf8');
     await pool.query(schema);
     await pool.query(seed);
     console.log('DB schema + seed applied');
@@ -27,4 +34,3 @@ run().catch((e) => {
   console.error('Release script failed:', e);
   process.exit(1);
 });
-
