@@ -27,7 +27,6 @@ on conflict do nothing;
 insert into routes_today (user_id, client_id, scheduled_time)
 select u.id, c.id, t.scheduled_time
 from users u
-join (values ('Acme HQ','09:00'),('Blue Sky Co','10:30'),('Sunset Mall','13:15')) as t(name, scheduled_time)
+cross join (values ('Acme HQ','09:00'),('Blue Sky Co','10:30'),('Sunset Mall','13:15')) as t(name, scheduled_time)
 join clients c on c.name = t.name
 where u.email = 'demo@example.com';
-
