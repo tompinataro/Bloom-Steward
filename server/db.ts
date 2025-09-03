@@ -4,7 +4,15 @@ let pool: Pool | null = null;
 
 const connStr = process.env.DATABASE_URL;
 if (connStr) {
-  pool = new Pool({ connectionString: connStr, ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : undefined });
+  const useSSL = (() => {
+    try {
+      const u = new URL(connStr);
+      return process.env.PGSSLMODE === 'require' || process.env.NODE_ENV === 'production' || /amazonaws\.com$/.test(u.hostname);
+    } catch {
+      return true;
+    }
+  })();
+  pool = new Pool({ connectionString: connStr, ssl: useSSL ? { rejectUnauthorized: false } : undefined });
 }
 
 export async function dbQuery<T = any>(text: string, params?: any[]): Promise<{ rows: T[] } | null> {
@@ -16,4 +24,3 @@ export async function dbQuery<T = any>(text: string, params?: any[]): Promise<{ 
 export function hasDb() {
   return !!pool;
 }
-
