@@ -91,8 +91,8 @@ app.get('/api/visits/:id', requireAuth, async (req, res) => {
 app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { notes, checklist } = req.body ?? {};
-    const result = await saveVisit(id, notes, checklist);
+    const data = req.body ?? {};
+    const result = await saveVisit(id, data);
     res.json({ ok: true, id, result });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'submit error' });

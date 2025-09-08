@@ -22,6 +22,9 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [ack, setAck] = useState(false);
   const [checkInTs, setCheckInTs] = useState<string | null>(null);
   const [checkOutTs, setCheckOutTs] = useState<string | null>(null);
+  const [noteToOffice, setNoteToOffice] = useState('');
+  const [showTechNotes, setShowTechNotes] = useState(false);
+  const [techNotes, setTechNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -52,6 +55,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         timelyAck: ack,
         checkInTs: checkInTs || undefined,
         checkOutTs: outTs,
+        noteToOffice: noteToOffice || undefined,
+        techNotes: techNotes || undefined,
       };
       if (!checkOutTs) setCheckOutTs(outTs);
       setSubmitError(null);
@@ -147,6 +152,40 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               <Switch value={item.done} onValueChange={(v) => setVisit((prev) => prev ? { ...prev, checklist: prev.checklist.map(c => c.key === item.key ? { ...c, done: v } : c) } : prev)} />
             </TouchableOpacity>
           ))}
+          <View style={styles.headerRow}>
+            <Text style={styles.sectionTitle}>Note to Office</Text>
+          </View>
+          <TextInput
+            style={styles.notes}
+            multiline
+            numberOfLines={1}
+            value={noteToOffice}
+            onChangeText={setNoteToOffice}
+            placeholder=" Add a quick note to office (optional)"
+            placeholderTextColor={colors.muted}
+          />
+
+          {/* Providing an option for field techs to provide written feedback by clicking a button labeled "Tech Visit Notes" provides for a complete 360-degree communications loop. */}
+          <View style={styles.headerRow}>
+            <Text style={styles.sectionTitle}>Tech Visit Notes</Text>
+          </View>
+          <ThemedButton
+            title={showTechNotes ? 'Hide Tech Visit Notes' : 'Tech Visit Notes'}
+            variant={showTechNotes ? 'outline' : 'primary'}
+            onPress={() => setShowTechNotes(prev => !prev)}
+            style={styles.techNotesBtn}
+          />
+          {showTechNotes ? (
+            <TextInput
+              style={styles.notes}
+              multiline
+              numberOfLines={1}
+              value={techNotes}
+              onChangeText={setTechNotes}
+              placeholder=" Enter any visit feedback for the office"
+              placeholderTextColor={colors.muted}
+            />
+          ) : null}
           <View style={{ height: spacing(14) }} />
         </View>
       </ScrollView>
@@ -171,6 +210,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ackInline: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   ackLabel: { color: colors.text },
+  techNotesBtn: { alignSelf: 'center', minWidth: 200, marginTop: spacing(2) },
   ackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
   stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },

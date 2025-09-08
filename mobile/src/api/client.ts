@@ -57,6 +57,8 @@ export async function submitVisit(
     checkOutTs?: string;
     checkInLoc?: { lat: number; lng: number };
     checkOutLoc?: { lat: number; lng: number };
+    noteToOffice?: string;
+    techNotes?: string;
   },
   token: string
 ): Promise<{ ok: boolean; id: number } & any> {

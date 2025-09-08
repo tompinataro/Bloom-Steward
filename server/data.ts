@@ -70,15 +70,13 @@ export async function getVisit(id: number): Promise<Visit> {
   };
 }
 
-export async function saveVisit(id: number, notes: string | undefined, checklist: { key: string; done: boolean }[]) {
+export async function saveVisit(id: number, data: any) {
   if (hasDb()) {
-    // Enforce real persistence when a DB is available; let errors propagate
     await dbQuery(
       `insert into visit_submissions (visit_id, notes, payload, created_at) values ($1, $2, $3, now())`,
-      [id, notes ?? null, JSON.stringify(checklist)]
+      [id, data?.notes ?? null, JSON.stringify(data)]
     );
     return { ok: true } as any;
   }
-  // No DB configured (local dev without DATABASE_URL) — accept in-memory
   return { ok: true } as any;
 }
