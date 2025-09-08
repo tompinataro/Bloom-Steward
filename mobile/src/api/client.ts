@@ -47,7 +47,19 @@ export async function fetchVisit(id: number, token: string): Promise<{ ok: boole
   });
 }
 
-export async function submitVisit(id: number, data: { notes?: string; checklist: { key: string; done: boolean }[] }, token: string): Promise<{ ok: boolean; id: number } & any> {
+export async function submitVisit(
+  id: number,
+  data: {
+    notes?: string;
+    checklist: { key: string; done: boolean }[];
+    timelyAck?: boolean;
+    checkInTs?: string;
+    checkOutTs?: string;
+    checkInLoc?: { lat: number; lng: number };
+    checkOutLoc?: { lat: number; lng: number };
+  },
+  token: string
+): Promise<{ ok: boolean; id: number } & any> {
   return fetchJson(withBase(`/api/visits/${id}/submit`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

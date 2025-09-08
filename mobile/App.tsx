@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -15,7 +16,7 @@ import AppSplash from './src/components/AppSplash';
 
 export type RootStackParamList = {
   Login: undefined;
-  RouteList: { saved?: boolean } | undefined;
+  RouteList: { saved?: boolean; savedOffline?: boolean } | undefined;
   VisitDetail: { id: number };
   Home: undefined;
   About: undefined;
@@ -30,9 +31,20 @@ function RootNavigator() {
     return <AppSplash />;
   }
   return token ? (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
       <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route', headerRight: () => <SignOutButton /> }} />
-      <Stack.Screen name="VisitDetail" component={VisitDetailScreen} options={{ title: 'Visit' }} />
+      <Stack.Screen
+        name="VisitDetail"
+        component={VisitDetailScreen}
+        options={({ navigation }) => ({
+          title: 'Visit',
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} style={{ paddingHorizontal: 12, paddingVertical: 8 }} accessibilityRole="button" accessibilityLabel="Go back">
+              <Text style={{ fontSize: 18 }}>{'< < <'}</Text>
+            </Pressable>
+          ),
+        })}
+      />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>

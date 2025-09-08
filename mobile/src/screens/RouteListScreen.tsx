@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { useAuth } from '../auth';
 import { fetchTodayRoutes, TodayRoute } from '../api/client';
+import { flushQueue } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
@@ -17,7 +18,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [savedBanner, setSavedBanner] = useState(false);
+  const [savedBanner, setSavedBanner] = useState<false | 'online' | 'offline'>(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
@@ -25,6 +26,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     setLoading(true);
     try {
       setError(null);
+      try { await flushQueue(token); } catch {}
       const res = await fetchTodayRoutes(token);
       setRoutes(res.routes);
     } catch (e: any) {
@@ -43,10 +45,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
       // Refresh when returning from details
       load();
       if (route.params?.saved) {
-        setSavedBanner(true);
+        setSavedBanner('online');
         const t = setTimeout(() => setSavedBanner(false), 2500);
         // Clear the param so it doesn't re-show
         navigation.setParams({ saved: undefined } as any);
+        return () => clearTimeout(t);
+      }
+      if ((route.params as any)?.savedOffline) {
+        setSavedBanner('offline');
+        const t = setTimeout(() => setSavedBanner(false), 3000);
+        navigation.setParams({ savedOffline: undefined } as any);
         return () => clearTimeout(t);
       }
       }, [token])
@@ -83,7 +91,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     <>
       {savedBanner ? (
         <View style={styles.banner} accessibilityRole="status" accessibilityLabel="Saved">
-          <Text style={styles.bannerText}>✓ Saved</Text>
+          <Text style={styles.bannerText}>{savedBanner === 'offline' ? '✓ Saved offline — will sync when online' : '✓ Saved'}</Text>
         </View>
       ) : null}
       {error ? (

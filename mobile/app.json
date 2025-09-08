@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pinataro.bloomsteward"
+      "bundleIdentifier": "com.pinataro.bloomsteward",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Your location is used to verify check-in/out at visit locations."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +25,8 @@
         "backgroundColor": "#e7bfbf"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.pinataro.bloomsteward"
+      "package": "com.pinataro.bloomsteward",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
