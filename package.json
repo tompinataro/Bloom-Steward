@@ -15,6 +15,7 @@
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.0",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
@@ -31,7 +32,7 @@
   "scripts": {
     "start": "node dist/server/server.js",
     "client": "vite",
-    "server": "nodemon --watch server server/server.js",
+    "server": "node dist/server/server.js",
     "build": "tsc && cp -R server/sql dist/server/",
     "test": "vitest",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts"
@@ -39,6 +40,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.3.0",
     "@types/pg": "^8.15.5",

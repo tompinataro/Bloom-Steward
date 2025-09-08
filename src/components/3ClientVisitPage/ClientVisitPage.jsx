@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import ArrivalTimestampButton from '../ArrivalTimestamp Button/ArrivalTimestampButton';
-import DepartureTimestampButton from '../DepartureTimestamp Button copy/DepartureTimestampButton';
+import ArrivalTimestampButton from '../ArrivalTimestampButton/ArrivalTimestampButton';
+import DepartureTimestampButton from '../DepartureTimestampButton/DepartureTimestampButton';
 import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
 import GoToYourRouteButton from '../GoToYourRouteButton/GoToYourRouteButton';
 import NextPageBtn from '../NextPageBtn/NextPageBtn';

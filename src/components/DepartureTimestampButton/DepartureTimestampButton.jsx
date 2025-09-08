@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-function ArrivalTimestampButton(props) {
+function DepartureTimestampButton(props) {
   const dispatch = useDispatch();
   return (
     <button
       className={props.className}
       onClick={() => dispatch({ type: 'TIMESTAMP' })}
     >
-      Check in
+      Check out
     </button>
   );
 }
 
-export default ArrivalTimestampButton;
+export default DepartureTimestampButton;
 
 // 1.	React Button Component: The button, when clicked, 
 // sends a PUT request to update the start_time field of 
