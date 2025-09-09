@@ -8,7 +8,6 @@ import { fetchTodayRoutes, TodayRoute } from '../api/client';
 import { flushQueue } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
-import { useAuth } from '../auth';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
 import { ensureToday, getCompleted, getInProgress, pruneToIds } from '../completed';

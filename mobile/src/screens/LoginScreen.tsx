@@ -63,7 +63,7 @@ export default function LoginScreen(_props: Props) {
         {loading ? (
           <ActivityIndicator />
         ) : (
-          <ThemedButton title="Login" onPress={onSubmit} style={styles.fullWidthBtn} />
+          <ThemedButton title="Log In" onPress={onSubmit} style={styles.fullWidthBtn} />
         )}
         {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
         <LoadingOverlay visible={loading} />
