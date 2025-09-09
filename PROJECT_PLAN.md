@@ -13,7 +13,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [ ] Sprint 4: Type Safety & Lint (tsc clean; basic ESLint)
 
 ## Phase 2 — Data & API
-- [ ] Sprint 5: Server Visit State (completed/in‑progress persisted; surface in `/api/routes/today`)
+- [ ] Sprint 5: Server Visit State (Phase A: in‑memory server truth now; Phase B: DB later; flags in `/api/routes/today`)
 - [ ] Sprint 6: Auth “Me” + Token Refresh (optional)
 - [ ] Sprint 7: Health/Metrics Polish (include version; counters)
 - [ ] Sprint 8: DB Migrations (final schema + seed)
@@ -37,12 +37,21 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [ ] Sprint 20: Client Tests (key logic: time format, ack gates)
 - [ ] Sprint 21: CI/CD (lint/test/build; EAS preview)
 - [ ] Sprint 22: Staging & TestFlight (staging env; tester flow)
+- [ ] Sprint 23: App Store Release (App Store Connect metadata, EAS submit, review)
 
 ## Estimates
 - 22 sprints × 2 hours ≈ 44 hours.
 - +20% integration/QA buffer ≈ 52–56 hours.
 
+## Hybrid DB Plan (Summary)
+- Sprint 5 (Phase A): Implement server truth in memory with final API contract
+  - GET `/api/routes/today` returns `completedToday`, `inProgress`.
+  - POST `/api/visits/:id/in-progress` marks opened; `submit` marks completed.
+- Sprint 8 (Phase B): Add DB table `visit_state (visit_id, date, user_id, status, created_at)`
+  - Idempotent upserts; unique constraint `(visit_id, date, user_id)`.
+  - Dual‑write and shadow‑read for one cycle; then flip reads to DB.
+  - No client changes required.
+
 ## Notes
 - Phases 3–4 items can run in parallel with Phase 2 as needed.
 - High‑value fast track: Sprints 5, 9, 10, then 21.
-

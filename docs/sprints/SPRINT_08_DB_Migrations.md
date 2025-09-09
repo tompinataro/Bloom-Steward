@@ -1,12 +1,15 @@
 #!/usr/bin/env markdown
+#!/usr/bin/env markdown
 # Sprint 8 — DB Migrations (2h)
 
-- Goal: Finalize schema for visits, checklist, submissions, and visit state.
+- Goal: Persist visit state in DB and keep the API identical to Phase A.
 - Tasks:
-  - Write SQL migrations + seed for demo/staging data.
-  - Document ERD and relationships for quick onboarding.
+  - Create table `visit_state (visit_id int, date date, user_id int, status text check(status in ('in_progress','completed')), created_at timestamptz default now(), primary key (visit_id, date, user_id))`.
+  - Add upsert helpers in server to mark in‑progress/completed idempotently.
+  - Dual‑write: keep the in‑memory map for one cycle while writing to DB.
+  - Shadow‑read: compare DB vs map once; then flip reads to DB.
 - Acceptance:
-  - Fresh DB setup runs; server boots; sample data loads.
-- Dependencies: none
+  - With `DATABASE_URL` set, server uses DB; client unchanged.
+  - Reinstall client → fetch → ✓/in‑progress restored from DB.
+- Dependencies: Sprint 5
 - Status: TODO
-
