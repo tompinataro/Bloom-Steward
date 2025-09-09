@@ -35,11 +35,11 @@ function RootNavigator() {
           headerLeft: () => (
             <Pressable
               onPress={() => navigation.goBack()}
-              style={{ paddingHorizontal: 8, paddingVertical: 0, transform: [{ translateY: -6 }] }}
+              style={{ paddingLeft: 28, paddingRight: 8, paddingVertical: 0, transform: [{ translateY: 2 }] }}
               accessibilityRole="button"
               accessibilityLabel="Back"
             >
-              <Text style={{ fontSize: 44, fontWeight: '700', letterSpacing: 0.5, lineHeight: 40 }}>{'‹ ‹ ‹'}</Text>
+              <Text style={{ fontSize: 44, fontWeight: '700', lineHeight: 44 }}>{'‹'}</Text>
             </Pressable>
           ),
           headerTitleStyle: { fontWeight: '700', fontSize: 20 },

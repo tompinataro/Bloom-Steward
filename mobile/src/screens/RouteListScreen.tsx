@@ -9,7 +9,7 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
-import { getCompleted, getInProgress } from '../completed';
+import { ensureToday, getCompleted, getInProgress, pruneToIds } from '../completed';
 import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
@@ -32,6 +32,12 @@ export default function RouteListScreen({ navigation, route }: Props) {
       try { await flushQueue(token); } catch {}
       const res = await fetchTodayRoutes(token);
       setRoutes(res.routes);
+      try {
+        await ensureToday();
+        await pruneToIds(res.routes.map(r => r.id));
+        const [c, p] = await Promise.all([getCompleted(), getInProgress()]);
+        setCompleted(c); setInProgress(p);
+      } catch {}
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load routes');
     } finally {
@@ -41,17 +47,13 @@ export default function RouteListScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     load();
-    getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
-    getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
   }, [token]);
 
   useFocusEffect(
     React.useCallback(() => {
       // Refresh when returning from details
       load();
-      getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
-      getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
-      if (route.params?.saved) {
+    if (route.params?.saved) {
         setSavedBanner('online');
         const t = setTimeout(() => setSavedBanner(false), 2500);
         // Clear the param so it doesn't re-show

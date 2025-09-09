@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { fetchVisit, submitVisit, Visit } from '../api/client';
@@ -29,6 +29,11 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [checkInQueued, setCheckInQueued] = useState(false);
 
+  // Timely Notes fade-out when empty, keep input height reserved to avoid layout shift
+  const [timelyHidden, setTimelyHidden] = useState(false);
+  const timelyOpacity = useRef(new Animated.Value(1)).current;
+  const timelyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     (async () => {
       if (!token) return;
@@ -45,15 +50,34 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     })();
   }, [id, token]);
 
+  // Hide Timely Notes section after 5s if there are no notes (without layout shift)
+  useEffect(() => {
+    // Clear any prior timer
+    if (timelyTimer.current) { clearTimeout(timelyTimer.current); timelyTimer.current = null; }
+    const empty = !timelyNotes || timelyNotes.trim().length === 0;
+    if (empty) {
+      timelyTimer.current = setTimeout(() => {
+        Animated.timing(timelyOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+          if (finished) setTimelyHidden(true);
+        });
+      }, 5000);
+    } else {
+      setTimelyHidden(false);
+      timelyOpacity.setValue(1);
+    }
+    return () => { if (timelyTimer.current) { clearTimeout(timelyTimer.current); timelyTimer.current = null; } };
+  }, [timelyNotes]);
+
   const onSubmit = async () => {
     if (!token || !visit) return;
     setSubmitting(true);
     try {
       const outTs = checkOutTs || new Date().toISOString();
+      const hasTimely = !!timelyNotes && timelyNotes.trim().length > 0;
       const payload = {
         notes: timelyNotes,
         checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })),
-        timelyAck: ack,
+        timelyAck: hasTimely ? ack : undefined,
         checkInTs: checkInTs || undefined,
         checkOutTs: outTs,
         noteToOffice: noteToOffice || undefined,
@@ -97,23 +121,29 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.content}>
           {submitError ? <Banner type="error" message={submitError} /> : null}
+          {/* Header row remains visible so Acknowledge is always accessible */}
           <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Timely Notes</Text>
+            <Text style={styles.sectionTitle} numberOfLines={1}>Timely Notes</Text>
             <View style={styles.ackInline}>
               <Text style={styles.ackLabel}>Acknowledge</Text>
               <Switch style={styles.ackSwitch} value={ack} onValueChange={setAck} />
             </View>
           </View>
-          {/* For reference only: In practice Timely Notes may not appear unless needed. */}
-          <TextInput
-            style={styles.notes}
-            multiline
-            numberOfLines={1}
-            value={timelyNotes}
-            onChangeText={setTimelyNotes}
-            placeholder=" Urgent issues, if necessary, will appear here."
-            placeholderTextColor={colors.muted}
-          />
+          {timelyHidden ? (
+            <View style={{ height: 44 }} />
+          ) : (
+            <Animated.View style={{ opacity: timelyOpacity }} pointerEvents={timelyNotes.trim().length === 0 ? 'none' : 'auto'}>
+              <TextInput
+                style={styles.notes}
+                multiline
+                numberOfLines={1}
+                value={timelyNotes}
+                onChangeText={setTimelyNotes}
+                placeholder=" Urgent issues, if necessary, will appear here."
+                placeholderTextColor={colors.muted}
+              />
+            </Animated.View>
+          )}
           <View style={styles.checkInWrap}>
             <ThemedButton
               title={checkInTs ? 'Checked In' : 'Check In'}
@@ -165,14 +195,19 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
             numberOfLines={1}
             value={noteToOffice}
             onChangeText={setNoteToOffice}
-            placeholder=" Notes from the Field to the Office (optional)."
+            placeholder="Optional notes from the field to the office"
             placeholderTextColor={colors.muted}
           />
           <View style={{ height: spacing(14) }} />
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
-        <ThemedButton title={submitting ? 'Submitting…' : 'Check Out & Complete Visit'} onPress={() => { if (!checkOutTs) setCheckOutTs(new Date().toISOString()); onSubmit(); }} disabled={submitting || !ack || !checkInTs} style={styles.submitBtn} />
+        <ThemedButton
+          title={submitting ? 'Submitting…' : 'Check Out & Complete Visit'}
+          onPress={() => { if (!checkOutTs) setCheckOutTs(new Date().toISOString()); onSubmit(); }}
+          disabled={submitting || !checkInTs || ((timelyNotes?.trim()?.length || 0) > 0 && !ack)}
+          style={styles.submitBtn}
+        />
       </SafeAreaView>
       <LoadingOverlay visible={loading || submitting} />
     </View>
@@ -190,8 +225,8 @@ const styles = StyleSheet.create({
   nameRow: { alignItems: 'center', marginBottom: spacing(1) },
   clientName: { fontSize: 20, fontWeight: '700', color: colors.text, textAlign: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  ackInline: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
-  ackLabel: { color: colors.text },
+  ackInline: { flexDirection: 'row', alignItems: 'center', gap: spacing(1.5), flexShrink: 0, marginTop: spacing(2) },
+  ackLabel: { color: colors.text, fontSize: 17 },
   // Smaller switch to better fit inline with the label
   ackSwitch: { transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }] },
   ackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
