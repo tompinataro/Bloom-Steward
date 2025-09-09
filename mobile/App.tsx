@@ -5,27 +5,19 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/auth';
 import { colors } from './src/theme';
+import type { RootStackParamList } from './src/navigationTypes';
 
 import HomeScreen from './src/screens/HomeScreen';
 import AboutScreen from './src/screens/AboutScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
-// Temporarily stub VisitDetail to isolate native error
-// import VisitDetailScreen from './src/screens/VisitDetailScreen';
+import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import SignOutButton from './src/components/SignOutButton';
 import AppSplash from './src/components/AppSplash';
 // Extra components used inside screens, included here for dev-time checks
 import LoadingOverlay from './src/components/LoadingOverlay';
 import ThemedButton from './src/components/Button';
 import Banner from './src/components/Banner';
-
-export type RootStackParamList = {
-  Login: undefined;
-  RouteList: { saved?: boolean; savedOffline?: boolean } | undefined;
-  VisitDetail: { id: number };
-  Home: undefined;
-  About: undefined;
-};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -96,7 +88,7 @@ function RootNavigator() {
   return token ? (
     <Stack.Navigator screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
       <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route', headerRight: () => <SignOutButton /> }} />
-      <Stack.Screen name="VisitDetail" component={VisitDetailStub} options={{ title: 'Visit' }} />
+      <Stack.Screen name="VisitDetail" component={VisitDetailScreen} options={{ title: 'Visit' }} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>

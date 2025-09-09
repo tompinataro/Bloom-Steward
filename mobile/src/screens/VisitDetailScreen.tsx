@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
+import type { RootStackParamList } from '../navigationTypes';
 import { fetchVisit, submitVisit, Visit } from '../api/client';
 import { useAuth } from '../auth';
 import LoadingOverlay from '../components/LoadingOverlay';

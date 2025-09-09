@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
+import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 // API helpers not shown on login screen
 import LoadingOverlay from '../components/LoadingOverlay';
