@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, Pressable, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/auth';
 import { colors } from './src/theme';
 import type { RootStackParamList } from './src/navigationTypes';
@@ -20,7 +20,20 @@ import ThemedButton from './src/components/Button';
 import Banner from './src/components/Banner';
 import ErrorBoundary from './src/components/ErrorBoundary';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
+
+// Temporary flags to isolate iOS error sources
+const FORCE_HELLO = false; // show only Hello within NavigationContainer
+const FORCE_NAVLESS = false; // render without any navigation at all
+
+function HelloScreen() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 22, fontWeight: '700' }}>Hello from Bloom Steward</Text>
+      <Text style={{ marginTop: 8 }}>If you see this, navigation works.</Text>
+    </View>
+  );
+}
 
 // Dev-only sanity check to surface undefined component imports clearly
 if (__DEV__) {
@@ -91,7 +104,25 @@ function RootNavigator() {
   return token ? (
     <Stack.Navigator initialRouteName="RouteList" screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
       <Stack.Screen name="RouteList" component={wrap('RouteList', RouteListScreen)} options={{ title: 'Today\'s Route' }} />
-      <Stack.Screen name="VisitDetail" component={wrap('VisitDetail', VisitDetailScreen)} options={{ title: 'Visit' }} />
+      <Stack.Screen
+        name="VisitDetail"
+        component={wrap('VisitDetail', VisitDetailScreen)}
+        options={({ navigation }) => ({
+          title: 'Visit',
+          headerBackTitleVisible: false,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={{ paddingHorizontal: 8, paddingVertical: 0, transform: [{ translateY: -6 }] }}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Text style={{ fontSize: 44, fontWeight: '700', letterSpacing: 0.5, lineHeight: 40 }}>{'‹ ‹ ‹'}</Text>
+            </Pressable>
+          ),
+          headerTitleStyle: { fontWeight: '700', fontSize: 20 },
+        })}
+      />
       <Stack.Screen name="About" component={wrap('About', AboutScreen)} />
       <Stack.Screen name="Home" component={wrap('Home', HomeScreen)} />
     </Stack.Navigator>
@@ -103,6 +134,16 @@ function RootNavigator() {
 }
 
 export default function App() {
+  if (FORCE_NAVLESS) {
+    return (
+      <AuthProvider>
+        <ErrorBoundary>
+          <StatusBar style="auto" />
+          <HelloScreen />
+        </ErrorBoundary>
+      </AuthProvider>
+    );
+  }
   return (
     <AuthProvider>
       <ErrorBoundary>
@@ -118,7 +159,13 @@ export default function App() {
         },
       }}>
         <StatusBar style="auto" />
-        <RootNavigator />
+        {FORCE_HELLO ? (
+          <Stack.Navigator>
+            <Stack.Screen name="Hello" component={HelloScreen} />
+          </Stack.Navigator>
+        ) : (
+          <RootNavigator />
+        )}
       </NavigationContainer>
       </ErrorBoundary>
     </AuthProvider>

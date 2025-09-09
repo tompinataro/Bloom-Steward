@@ -9,6 +9,7 @@ import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
 import { enqueueSubmission } from '../offlineQueue';
+import { addCompleted, addInProgress, removeInProgress } from '../completed';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 
@@ -23,8 +24,6 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [checkInTs, setCheckInTs] = useState<string | null>(null);
   const [checkOutTs, setCheckOutTs] = useState<string | null>(null);
   const [noteToOffice, setNoteToOffice] = useState('');
-  const [showTechNotes, setShowTechNotes] = useState(false);
-  const [techNotes, setTechNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -38,6 +37,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         const res = await fetchVisit(id, token);
         setVisit(res.visit);
         navigation.setOptions({ title: res.visit.clientName });
+        // mark visit as in progress as soon as it's opened
+        try { await addInProgress(id); } catch {}
       } finally {
         setLoading(false);
       }
@@ -56,15 +57,18 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         checkInTs: checkInTs || undefined,
         checkOutTs: outTs,
         noteToOffice: noteToOffice || undefined,
-        techNotes: techNotes || undefined,
       };
       if (!checkOutTs) setCheckOutTs(outTs);
       setSubmitError(null);
       try {
         await submitVisit(visit.id, payload, token);
+        await addCompleted(visit.id);
+        await removeInProgress(visit.id);
         navigation.navigate('RouteList', { saved: true });
       } catch (e) {
         await enqueueSubmission(visit.id, payload);
+        await addCompleted(visit.id);
+        await removeInProgress(visit.id);
         navigation.navigate('RouteList', { savedOffline: true });
       }
     } catch (e: any) {
@@ -97,7 +101,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
             <Text style={styles.sectionTitle}>Timely Notes</Text>
             <View style={styles.ackInline}>
               <Text style={styles.ackLabel}>Acknowledge</Text>
-              <Switch value={ack} onValueChange={setAck} />
+              <Switch style={styles.ackSwitch} value={ack} onValueChange={setAck} />
             </View>
           </View>
           {/* For reference only: In practice Timely Notes may not appear unless needed. */}
@@ -153,7 +157,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           ))}
           <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Note to Office</Text>
+            <Text style={styles.sectionTitle}>Tech Visit Notes</Text>
           </View>
           <TextInput
             style={styles.notes}
@@ -161,31 +165,9 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
             numberOfLines={1}
             value={noteToOffice}
             onChangeText={setNoteToOffice}
-            placeholder=" Add a quick note to office (optional)"
+            placeholder=" Notes from the Field to the Office (optional)."
             placeholderTextColor={colors.muted}
           />
-
-          {/* Providing an option for field techs to provide written feedback by clicking a button labeled "Tech Visit Notes" provides for a complete 360-degree communications loop. */}
-          <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Tech Visit Notes</Text>
-          </View>
-          <ThemedButton
-            title={showTechNotes ? 'Hide Tech Visit Notes' : 'Tech Visit Notes'}
-            variant={showTechNotes ? 'outline' : 'primary'}
-            onPress={() => setShowTechNotes(prev => !prev)}
-            style={styles.techNotesBtn}
-          />
-          {showTechNotes ? (
-            <TextInput
-              style={styles.notes}
-              multiline
-              numberOfLines={1}
-              value={techNotes}
-              onChangeText={setTechNotes}
-              placeholder=" Enter any visit feedback for the office"
-              placeholderTextColor={colors.muted}
-            />
-          ) : null}
           <View style={{ height: spacing(14) }} />
         </View>
       </ScrollView>
@@ -210,12 +192,14 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   ackInline: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
   ackLabel: { color: colors.text },
-  techNotesBtn: { alignSelf: 'center', minWidth: 200, marginTop: spacing(2) },
+  // Smaller switch to better fit inline with the label
+  ackSwitch: { transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }] },
   ackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
   stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3) },
   checkInWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(3), paddingVertical: spacing(2) },
   checkInBtn: { minWidth: 220 },
-  timeText: { color: colors.muted }
+  // Larger, bolder time next to the Check In button
+  timeText: { color: colors.muted, fontSize: 18, fontWeight: '700' }
 });

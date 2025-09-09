@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 // Suppress noisy dev warnings to keep flow unblocked

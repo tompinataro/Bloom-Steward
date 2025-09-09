@@ -9,6 +9,7 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
+import { getCompleted, getInProgress } from '../completed';
 import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
@@ -20,6 +21,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [savedBanner, setSavedBanner] = useState<false | 'online' | 'offline'>(false);
   const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState<Set<number>>(new Set());
+  const [inProgress, setInProgress] = useState<Set<number>>(new Set());
 
   const load = async () => {
     if (!token) return;
@@ -38,12 +41,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     load();
+    getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
+    getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
   }, [token]);
 
   useFocusEffect(
     React.useCallback(() => {
       // Refresh when returning from details
       load();
+      getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
+      getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
       if (route.params?.saved) {
         setSavedBanner('online');
         const t = setTimeout(() => setSavedBanner(false), 2500);
@@ -118,9 +125,25 @@ export default function RouteListScreen({ navigation, route }: Props) {
                 <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{item.clientName || 'Client Name'}</Text>
                 <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{item.address || '123 Main St'}</Text>
               </View>
-              <TouchableOpacity style={styles.mapBtn} onPress={() => openMaps(item.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${item.clientName}`}>
-                <Text style={styles.mapBtnText}>Map ›</Text>
-              </TouchableOpacity>
+              <View style={styles.centerWrap}>
+                <TouchableOpacity style={styles.mapBtn} onPress={() => openMaps(item.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${item.clientName}`}>
+                  <View style={styles.mapBtnInner}>
+                    <Text style={styles.mapBtnText}>Map</Text>
+                    <Text style={styles.mapBtnArrow}>›</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <View style={[
+                styles.checkBadge,
+                completed.has(item.id) ? styles.checkBadgeDone : inProgress.has(item.id) ? styles.checkBadgeInProgress : null
+              ]}
+                accessibilityLabel={completed.has(item.id) ? 'Completed' : inProgress.has(item.id) ? 'In progress' : 'Not started'}
+                accessibilityRole="image"
+              >
+                {completed.has(item.id) ? (
+                  <Text style={[styles.checkMark, styles.checkMarkDone]}>✓</Text>
+                ) : null}
+              </View>
             </View>
           </TouchableOpacity>
         )}
@@ -155,13 +178,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
-  rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  leftWrap: { flexGrow: 1, flexShrink: 1, minWidth: 0, paddingRight: spacing(2) },
+  rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', position: 'relative' },
+  // Further bias to the right to tighten space to the circle
+  centerWrap: { position: 'absolute', left: '50%', width: 88, alignItems: 'center', justifyContent: 'center', transform: [{ translateX: -28 }] },
+  leftWrap: { flexGrow: 1, flexShrink: 1, minWidth: 0, paddingRight: spacing(2) + 96 },
   title: { fontSize: 16, fontWeight: '700', color: colors.text },
   dot: { color: colors.muted },
   sub: { color: colors.muted, marginTop: spacing(1) },
-  mapBtn: { paddingVertical: spacing(2), paddingHorizontal: spacing(3), borderRadius: 8, borderWidth: 1, borderColor: colors.muted, flexShrink: 0, backgroundColor: 'transparent' },
-  mapBtnText: { color: colors.primary, fontWeight: '600' },
+  mapBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.muted, flexShrink: 0, backgroundColor: 'transparent' },
+  mapBtnInner: { flexDirection: 'row', alignItems: 'center', gap: spacing(0.5) },
+  mapBtnText: { color: colors.primary, fontWeight: '600', fontSize: 16 },
+  mapBtnArrow: { color: colors.primary, fontWeight: '900', fontSize: 36, marginTop: -2 },
+  checkBadge: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.muted, alignItems: 'center', justifyContent: 'center', marginRight: 0 },
+  checkBadgeDone: { borderColor: colors.muted, backgroundColor: '#fff' },
+  checkBadgeInProgress: { backgroundColor: colors.danger, borderColor: colors.danger },
+  checkMark: { color: colors.muted, fontSize: 22, fontWeight: '900' },
+  checkMarkDone: { color: colors.primary },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing(20) },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: spacing(1) },
   emptySub: { color: colors.muted },
