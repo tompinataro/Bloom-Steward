@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, LoginResponse } from './api/client';
+import { login as apiLogin, LoginResponse, setUnauthorizedHandler } from './api/client';
 
 type AuthState = {
   token: string | null;
@@ -32,6 +32,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // Auto sign-out on 401s from API client
+  useEffect(() => {
+    setUnauthorizedHandler(async () => {
+      setToken(null);
+      setUser(null);
+      try {
+        await AsyncStorage.removeItem('auth_token');
+        await AsyncStorage.removeItem('auth_user');
+      } catch {}
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const signIn = async (email: string, password: string) => {
     const res = await apiLogin(email, password);
     setToken(res.token);
@@ -56,4 +69,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-

@@ -1,5 +1,11 @@
 export const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5100';
 
+// Allows AuthProvider to register a handler for 401s
+let unauthorizedHandler: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
+}
+
 function withBase(path: string) {
   return `${API_BASE.replace(/\/$/, '')}${path}`;
 }
@@ -12,6 +18,9 @@ async function fetchJson(input: RequestInfo | URL, init?: RequestInit & { timeou
     const res = await fetch(input, { ...rest, signal: ac.signal });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
+      if (res.status === 401) {
+        try { unauthorizedHandler?.(); } catch {}
+      }
       throw new Error(`${res.status} ${res.statusText}${text ? `: ${text}` : ''}`);
     }
     return res.json();

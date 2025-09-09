@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -94,6 +94,27 @@ export default function RouteListScreen({ navigation, route }: Props) {
     Linking.openURL(web).catch(() => {});
   };
 
+  function Check({ done, progress }: { done: boolean; progress: boolean }) {
+    const scale = React.useRef(new Animated.Value(done ? 1 : 0.9)).current;
+    const opacity = React.useRef(new Animated.Value(done ? 1 : 0)).current;
+    useEffect(() => {
+      if (done) {
+        Animated.parallel([
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        ]).start();
+      } else {
+        opacity.setValue(0);
+        scale.setValue(0.9);
+      }
+    }, [done]);
+    return (
+      <View style={[styles.checkBadge, done ? styles.checkBadgeDone : progress ? styles.checkBadgeInProgress : null]} accessibilityRole="image">
+        <Animated.Text style={[styles.checkMark, styles.checkMarkDone, { opacity, transform: [{ scale }] }]}>✓</Animated.Text>
+      </View>
+    );
+  }
+
   return (
     <>
       {savedBanner ? (
@@ -133,17 +154,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
                   </View>
                 </TouchableOpacity>
               </View>
-              <View style={[
-                styles.checkBadge,
-                completed.has(item.id) ? styles.checkBadgeDone : inProgress.has(item.id) ? styles.checkBadgeInProgress : null
-              ]}
-                accessibilityLabel={completed.has(item.id) ? 'Completed' : inProgress.has(item.id) ? 'In progress' : 'Not started'}
-                accessibilityRole="image"
-              >
-                {completed.has(item.id) ? (
-                  <Text style={[styles.checkMark, styles.checkMarkDone]}>✓</Text>
-                ) : null}
-              </View>
+              <Check done={completed.has(item.id)} progress={inProgress.has(item.id) && !completed.has(item.id)} />
             </View>
           </TouchableOpacity>
         )}
@@ -191,7 +202,8 @@ const styles = StyleSheet.create({
   mapBtnArrow: { color: colors.primary, fontWeight: '900', fontSize: 36, marginTop: -2 },
   checkBadge: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.muted, alignItems: 'center', justifyContent: 'center', marginRight: 0 },
   checkBadgeDone: { borderColor: colors.muted, backgroundColor: '#fff' },
-  checkBadgeInProgress: { backgroundColor: colors.danger, borderColor: colors.danger },
+  // Softer warning tone for in-progress state
+  checkBadgeInProgress: { backgroundColor: '#fee2e2', borderColor: '#fecaca' },
   checkMark: { color: colors.muted, fontSize: 22, fontWeight: '900' },
   checkMarkDone: { color: colors.primary },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing(20) },
