@@ -18,6 +18,7 @@ import AppSplash from './src/components/AppSplash';
 import LoadingOverlay from './src/components/LoadingOverlay';
 import ThemedButton from './src/components/Button';
 import Banner from './src/components/Banner';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -28,6 +29,7 @@ if (__DEV__) {
     AboutScreen,
     LoginScreen,
     RouteListScreen,
+    VisitDetailScreen,
     SignOutButton,
     AppSplash,
   };
@@ -41,16 +43,17 @@ if (__DEV__) {
   });
 }
 
-function VisitDetailStub() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Visit Detail</Text>
-    </View>
-  );
-}
-
 function RootNavigator() {
   const { token, loading } = useAuth();
+  const wrap = (name: string, C: any) => (props: any) => {
+    // eslint-disable-next-line no-console
+    if (__DEV__) console.log('[Render screen]', name);
+    return (
+      <ErrorBoundary>
+        <C {...props} />
+      </ErrorBoundary>
+    );
+  };
   // Dev-only guard: if any imported components are undefined, surface it visually
   if (__DEV__) {
     const comps: Record<string, any> = {
@@ -58,7 +61,7 @@ function RootNavigator() {
       AboutScreen,
       LoginScreen,
       RouteListScreen,
-      VisitDetailStub,
+      VisitDetailScreen,
       SignOutButton,
       AppSplash,
       LoadingOverlay,
@@ -86,15 +89,15 @@ function RootNavigator() {
     return <AppSplash />;
   }
   return token ? (
-    <Stack.Navigator screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
-      <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route', headerRight: () => <SignOutButton /> }} />
-      <Stack.Screen name="VisitDetail" component={VisitDetailScreen} options={{ title: 'Visit' }} />
-      <Stack.Screen name="About" component={AboutScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Navigator initialRouteName="RouteList" screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
+      <Stack.Screen name="RouteList" component={wrap('RouteList', RouteListScreen)} options={{ title: 'Today\'s Route' }} />
+      <Stack.Screen name="VisitDetail" component={wrap('VisitDetail', VisitDetailScreen)} options={{ title: 'Visit' }} />
+      <Stack.Screen name="About" component={wrap('About', AboutScreen)} />
+      <Stack.Screen name="Home" component={wrap('Home', HomeScreen)} />
     </Stack.Navigator>
   ) : (
-    <Stack.Navigator>
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+    <Stack.Navigator initialRouteName="Login">
+      <Stack.Screen name="Login" component={wrap('Login', LoginScreen)} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -102,6 +105,7 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
+      <ErrorBoundary>
       <NavigationContainer theme={{
         ...DefaultTheme,
         colors: {
@@ -116,6 +120,7 @@ export default function App() {
         <StatusBar style="auto" />
         <RootNavigator />
       </NavigationContainer>
+      </ErrorBoundary>
     </AuthProvider>
   );
 }
