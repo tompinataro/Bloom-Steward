@@ -77,3 +77,8 @@ export async function pruneToIds(ids: number[]): Promise<void> {
   await AsyncStorage.setItem(KEY, JSON.stringify(cNew));
   await AsyncStorage.setItem(KEY_PROGRESS, JSON.stringify(pNew));
 }
+
+// Dev-only helper: clear all local progress state (completed + in-progress)
+export async function clearAllProgress(): Promise<void> {
+  await AsyncStorage.multiRemove([KEY, KEY_PROGRESS]);
+}

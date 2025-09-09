@@ -25,7 +25,27 @@ function RootNavigator() {
   }
   return token ? (
     <Stack.Navigator initialRouteName="RouteList" screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
-      <Stack.Screen name="RouteList" component={RouteListScreen} options={{ title: 'Today\'s Route' }} />
+      <Stack.Screen
+        name="RouteList"
+        component={RouteListScreen}
+        options={({ navigation }) => ({
+          // Dev-only: secret clickable title to reset local completion state during demos
+          // (No visual change — behaves like regular title text)
+          headerTitle: () => (
+            <Pressable onPress={async () => {
+              const { clearAllProgress } = await import('./src/completed');
+              try { await clearAllProgress(); } catch {}
+              try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
+            }} onLongPress={async () => {
+              const { clearAllProgress } = await import('./src/completed');
+              try { await clearAllProgress(); } catch {}
+              try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
+            }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Today's Route (Dev Reset)">
+              <Text style={{ fontWeight: '700', fontSize: 17 }}>Today{"'"}s Route</Text>
+            </Pressable>
+          ),
+        })}
+      />
       <Stack.Screen
         name="VisitDetail"
         component={VisitDetailScreen}

@@ -113,6 +113,26 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     }
   }
 
+  function formatTime(ts: string): string {
+    try {
+      const d = new Date(ts);
+      // Prefer locale hour:minute without seconds; fallback to manual
+      try {
+        // Some RN environments support these options
+        return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' } as any);
+      } catch {
+        const h = d.getHours();
+        const m = d.getMinutes();
+        const hh = ((h % 12) || 12).toString();
+        const mm = m < 10 ? `0${m}` : `${m}`;
+        const ampm = h < 12 ? 'AM' : 'PM';
+        return `${hh}:${mm} ${ampm}`;
+      }
+    } catch {
+      return '';
+    }
+  }
+
   if (loading && !visit) return <View style={styles.center}><ActivityIndicator /></View>;
   if (!visit) return <View style={styles.center}><Text>Visit not found</Text></View>;
 
@@ -121,18 +141,18 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.content}>
           {submitError ? <Banner type="error" message={submitError} /> : null}
-          {/* Header row remains visible so Acknowledge is always accessible */}
-          <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle} numberOfLines={1}>Timely Notes</Text>
-            <View style={styles.ackInline}>
-              <Text style={styles.ackLabel}>Acknowledge</Text>
-              <Switch style={styles.ackSwitch} value={ack} onValueChange={setAck} />
-            </View>
-          </View>
           {timelyHidden ? (
-            <View style={{ height: 44 }} />
+            // Reserve space so layout doesn't shift when section hides
+            <View style={{ height: 88 }} />
           ) : (
             <Animated.View style={{ opacity: timelyOpacity }} pointerEvents={timelyNotes.trim().length === 0 ? 'none' : 'auto'}>
+              <View style={styles.headerRow}>
+                <Text style={styles.sectionTitle} numberOfLines={1}>Timely Notes</Text>
+                <View style={styles.ackInline}>
+                  <Text style={styles.ackLabel}>Acknowledge</Text>
+                  <Switch style={styles.ackSwitch} value={ack} onValueChange={setAck} />
+                </View>
+              </View>
               <TextInput
                 style={styles.notes}
                 multiline
@@ -170,7 +190,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               }}
               style={styles.checkInBtn}
             />
-            <Text style={styles.timeText}>{checkInTs ? new Date(checkInTs).toLocaleTimeString() : '—'}</Text>
+            <Text style={styles.timeText}>{checkInTs ? formatTime(checkInTs) : '—'}</Text>
           </View>
           {checkInQueued ? <Banner type="info" message="Checked in offline — will sync when online" /> : null}
           {visit.checklist.map((item) => (

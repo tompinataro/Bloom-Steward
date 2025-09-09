@@ -53,6 +53,12 @@ export default function RouteListScreen({ navigation, route }: Props) {
     React.useCallback(() => {
       // Refresh when returning from details
       load();
+      // If header title triggered a dev reset via params, reload local state
+      if ((route.params as any)?.devResetTS) {
+        getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
+        getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
+        navigation.setParams({ devResetTS: undefined } as any);
+      }
     if (route.params?.saved) {
         setSavedBanner('online');
         const t = setTimeout(() => setSavedBanner(false), 2500);
@@ -68,6 +74,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
       }
       }, [token])
   );
+
+  // Also react immediately to the hidden dev reset param change (no need to change focus)
+  useEffect(() => {
+    const ts = (route.params as any)?.devResetTS;
+    if (ts) {
+      getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
+      getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
+      navigation.setParams({ devResetTS: undefined } as any);
+    }
+  }, [route.params?.devResetTS]);
 
   const onRefresh = async () => {
     setRefreshing(true);
