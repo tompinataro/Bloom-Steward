@@ -4,7 +4,59 @@ import jwt from 'jsonwebtoken';
 import healthRouter from './routes/health';
 import metricsRouter from './routes/metrics';
 import { getTodayRoutes, getVisit, saveVisit } from './data';
-import { dbQuery } from './db';
+import { dbQuery, hasDb } from './db';
+
+// In-memory visit state (Sprint 5 Phase A)
+// Keyed by day + visit id + user id. Example: 2025-09-09:101:1
+type VisitState = { completed?: boolean; inProgress?: boolean; updatedAt: string };
+const stateMap = new Map<string, VisitState>();
+function dayKey(d = new Date()) {
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+function keyFor(visitId: number, userId?: number, d = new Date()) {
+  return `${dayKey(d)}:${visitId}:${userId ?? 'anon'}`;
+}
+function markInProgress(visitId: number, userId?: number) {
+  const k = keyFor(visitId, userId);
+  const cur = stateMap.get(k) || { updatedAt: new Date().toISOString() } as VisitState;
+  cur.inProgress = true;
+  cur.updatedAt = new Date().toISOString();
+  stateMap.set(k, cur);
+  // DB Phase B: upsert state when DB is configured
+  if (hasDb()) {
+    dbQuery(
+      `insert into visit_state (visit_id, date, user_id, status)
+       values ($1, $2, $3, 'in_progress')
+       on conflict (visit_id, date, user_id) do update set status = excluded.status, created_at = now()`,
+      [visitId, dayKey(), userId || 0]
+    ).catch(() => {});
+  }
+}
+function markCompleted(visitId: number, userId?: number) {
+  const k = keyFor(visitId, userId);
+  const cur = stateMap.get(k) || { updatedAt: new Date().toISOString() } as VisitState;
+  cur.completed = true;
+  cur.inProgress = false;
+  cur.updatedAt = new Date().toISOString();
+  stateMap.set(k, cur);
+  if (hasDb()) {
+    dbQuery(
+      `insert into visit_state (visit_id, date, user_id, status)
+       values ($1, $2, $3, 'completed')
+       on conflict (visit_id, date, user_id) do update set status = excluded.status, created_at = now()`,
+      [visitId, dayKey(), userId || 0]
+    ).catch(() => {});
+  }
+}
+function isCompleted(visitId: number, userId?: number) {
+  const k = keyFor(visitId, userId);
+  return !!stateMap.get(k)?.completed;
+}
+function getFlags(visitId: number, userId?: number) {
+  const k = keyFor(visitId, userId);
+  const cur = stateMap.get(k);
+  return { completedToday: !!cur?.completed, inProgress: !!cur?.inProgress };
+}
 
 const app = express();
 app.use(cors());
@@ -69,10 +121,32 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
   return res.json({ ok: true, user: req.user });
 });
 
-app.get('/api/routes/today', requireAuth, async (_req, res) => {
+app.get('/api/routes/today', requireAuth, async (req, res) => {
   try {
     const routes = await getTodayRoutes(1);
-    res.json({ ok: true, routes });
+    const userId = req.user?.id;
+    let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
+    if (hasDb() && userId) {
+      try {
+        const rows = await dbQuery<{ visit_id: number; status: string }>(
+          `select visit_id, status from visit_state where date = $1 and user_id = $2`,
+          [dayKey(), userId]
+        );
+        const map = new Map<number, string>();
+        (rows?.rows || []).forEach(r => map.set(r.visit_id, r.status));
+        withFlags = routes.map(r => {
+          const st = map.get(r.id);
+          return { ...r, completedToday: st === 'completed', inProgress: st === 'in_progress' };
+        });
+      } catch {
+        // Fallback to in-memory if DB read fails
+        withFlags = routes.map(r => ({ ...r, ...getFlags(r.id, userId) }));
+      }
+    } else {
+      // Attach server-truth flags (Phase A: in-memory)
+      withFlags = routes.map(r => ({ ...r, ...getFlags(r.id, userId) }));
+    }
+    res.json({ ok: true, routes: withFlags });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'routes error' });
   }
@@ -88,12 +162,30 @@ app.get('/api/visits/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Mark a visit as in-progress (opened by tech). Idempotent.
+app.post('/api/visits/:id/in-progress', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    markInProgress(id, req.user?.id);
+    res.json({ ok: true, id });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? 'in-progress error' });
+  }
+});
+
 app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const data = req.body ?? {};
+    const userId = req.user?.id;
+    // Idempotency: if already completed for today, return success (idempotent)
+    if (isCompleted(id, userId)) {
+      return res.json({ ok: true, id, idempotent: true });
+    }
     const result = await saveVisit(id, data);
-    res.json({ ok: true, id, result });
+    // Phase A: mark completed in memory for today
+    markCompleted(id, userId);
+    res.json({ ok: true, id, idempotent: false, result });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'submit error' });
   }

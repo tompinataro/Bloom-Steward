@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -7,6 +8,7 @@ import { fetchTodayRoutes, TodayRoute } from '../api/client';
 import { flushQueue } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
+import { useAuth } from '../auth';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
 import { ensureToday, getCompleted, getInProgress, pruneToIds } from '../completed';
@@ -15,7 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 
 export default function RouteListScreen({ navigation, route }: Props) {
-  const { token } = useAuth();
+  const { token, signOut } = useAuth();
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,8 +37,20 @@ export default function RouteListScreen({ navigation, route }: Props) {
       try {
         await ensureToday();
         await pruneToIds(res.routes.map(r => r.id));
-        const [c, p] = await Promise.all([getCompleted(), getInProgress()]);
-        setCompleted(c); setInProgress(p);
+        // Prefer server truth when present, fall back to local state
+        const serverCompleted = new Set<number>();
+        const serverInProg = new Set<number>();
+        for (const r of res.routes as any[]) {
+          if (r.completedToday) serverCompleted.add(r.id);
+          if (r.inProgress) serverInProg.add(r.id);
+        }
+        if (serverCompleted.size || serverInProg.size) {
+          setCompleted(serverCompleted);
+          setInProgress(serverInProg);
+        } else {
+          const [c, p] = await Promise.all([getCompleted(), getInProgress()]);
+          setCompleted(c); setInProgress(p);
+        }
       } catch {}
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load routes');
@@ -47,6 +61,34 @@ export default function RouteListScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     load();
+  }, [token]);
+
+  // Sprint 10 — Foreground sync: when app becomes active, flush queue and refresh
+  useEffect(() => {
+    const onChange = (state: AppStateStatus) => {
+      if (state === 'active') {
+        // Best-effort: flush any pending submissions and refresh routes
+        if (token) {
+          flushQueue(token).catch(() => {});
+        }
+        load();
+      }
+    };
+    const sub = AppState.addEventListener('change', onChange);
+    return () => sub.remove();
+  }, [token]);
+
+  // Web-only: also listen for browser coming back online
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const handler = () => {
+      if (token) {
+        flushQueue(token).catch(() => {});
+      }
+      load();
+    };
+    window.addEventListener('online', handler);
+    return () => window.removeEventListener('online', handler);
   }, [token]);
 
   useFocusEffect(
@@ -148,7 +190,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
       ) : null}
       <FlatList
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: spacing(16) }]}
         data={routes}
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -183,6 +225,10 @@ export default function RouteListScreen({ navigation, route }: Props) {
           </View>
         }
       />
+      <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
+        {/* Dev note: This Sign Off button exits the session (same action as header Sign Out) */}
+        <ThemedButton title="Sign Off" onPress={signOut} style={styles.submitBtn} />
+      </SafeAreaView>
       <LoadingOverlay visible={loading || refreshing} />
     </>
   );
@@ -231,4 +277,6 @@ const styles = StyleSheet.create({
   bannerText: { color: colors.successText, fontWeight: '600' },
   errorWrap: { paddingHorizontal: spacing(4), marginTop: spacing(2) },
   retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(4), padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
 });

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
-import { fetchVisit, submitVisit, Visit } from '../api/client';
+import { fetchVisit, submitVisit, Visit, markVisitInProgress } from '../api/client';
 import { useAuth } from '../auth';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
@@ -44,6 +44,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         navigation.setOptions({ title: res.visit.clientName });
         // mark visit as in progress as soon as it's opened
         try { await addInProgress(id); } catch {}
+        try { await markVisitInProgress(id, token); } catch {}
       } finally {
         setLoading(false);
       }
@@ -251,7 +252,8 @@ const styles = StyleSheet.create({
   ackSwitch: { transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }] },
   ackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  // Slightly raised so it sits ~half its height above the bottom edge
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(6), padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3) },
   checkInWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(3), paddingVertical: spacing(2) },
   checkInBtn: { minWidth: 220 },

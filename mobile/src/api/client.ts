@@ -42,7 +42,15 @@ export async function login(email: string, password: string): Promise<LoginRespo
   });
 }
 
-export type TodayRoute = { id: number; clientName: string; address: string; scheduledTime: string };
+export type TodayRoute = {
+  id: number;
+  clientName: string;
+  address: string;
+  scheduledTime: string;
+  // Server truth flags (optional; present when server supports Sprint 5)
+  completedToday?: boolean;
+  inProgress?: boolean;
+};
 export async function fetchTodayRoutes(token: string): Promise<{ ok: boolean; routes: TodayRoute[] }> {
   return fetchJson(withBase('/api/routes/today'), {
     headers: { Authorization: `Bearer ${token}` }
@@ -53,6 +61,13 @@ export type Visit = { id: number; clientName: string; checklist: { key: string; 
 export async function fetchVisit(id: number, token: string): Promise<{ ok: boolean; visit: Visit }> {
   return fetchJson(withBase(`/api/visits/${id}`), {
     headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function markVisitInProgress(id: number, token: string): Promise<{ ok: boolean; id: number }> {
+  return fetchJson(withBase(`/api/visits/${id}/in-progress`), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
 
