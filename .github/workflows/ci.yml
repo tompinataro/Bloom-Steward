@@ -28,6 +28,11 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
+      - name: Install mobile deps
+        working-directory: mobile
+        run: npm install
+      - name: Typecheck (mobile)
+        run: npx tsc -p mobile/tsconfig.json --noEmit
 
   eas-preview:
     name: EAS Preview (iOS)

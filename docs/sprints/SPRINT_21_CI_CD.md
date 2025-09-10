@@ -4,6 +4,7 @@
 - Goal: GitHub Actions for lint/test/build; EAS preview build.
 - Tasks:
   - Add workflow: typecheck, lint, server build. (DONE)
+  - Include mobile TypeScript typecheck in CI. (DONE)
   - Configure EAS project; generate preview build. (DONE)
     - CI triggers EAS iOS preview build on pushes to main when `EXPO_TOKEN` secret is set.
 - Acceptance:

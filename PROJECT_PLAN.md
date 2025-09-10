@@ -35,7 +35,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 ## Phase 5 — Tests, CI, Release
 - [ ] Sprint 19: Server Tests (auth/routes/visits/submissions)
 - [ ] Sprint 20: Client Tests (key logic: time format, ack gates)
-- [ ] Sprint 21: CI/CD (lint/test/build; EAS preview)
+ - [x] Sprint 21: CI/CD (lint/test/build; EAS preview)
 - [ ] Sprint 22: Staging & TestFlight (staging env; tester flow)
 - [ ] Sprint 23: App Store Release (App Store Connect metadata, EAS submit, review)
 
