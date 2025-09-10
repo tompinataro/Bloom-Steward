@@ -9,12 +9,16 @@
     "web": "expo start --web",
     "env:dev": "printf \"EXPO_PUBLIC_API_URL=http://localhost:5100\\n\" > .env && cat .env",
     "env:prod": "printf \"EXPO_PUBLIC_API_URL=https://bloom-steward-2a872c497756.herokuapp.com\\n\" > .env && cat .env",
+    "env:prod:custom": "sh -c 'printf "EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}\\n" > .env && cat .env'",
     "env:stage": "printf \"EXPO_PUBLIC_API_URL=https://bloom-steward-2a872c497756.herokuapp.com\\n\" > .env && cat .env",
     "build:ios:preview": "eas build -p ios --profile preview",
     "build:ios:prod": "eas build -p ios --profile production",
     "build:ios:staging": "eas build -p ios --profile staging",
     "submit:ios:latest": "eas submit -p ios --latest",
-    "submit:ios:prod": "eas submit -p ios"
+    "submit:ios:prod": "eas submit -p ios",
+    "build:android:internal": "eas build -p android --profile preview",
+    "build:android:prod": "eas build -p android --profile production",
+    "submit:android:latest": "eas submit -p android --latest"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",

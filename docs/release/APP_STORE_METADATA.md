@@ -8,8 +8,8 @@ Basics
 - Primary Category: Productivity (alt: Business)
 - Secondary Category: Utilities (optional)
 - Age Rating: 4+
-- Privacy Policy URL: https://example.com/privacy  ← replace in Sprint 28
-- Support URL: https://example.com/support  ← replace in Sprint 28
+- Privacy Policy URL: https://tompinataro.github.io/Bloom-Steward/privacy
+- Support URL: https://tompinataro.github.io/Bloom-Steward/support
 - Marketing URL: https://example.com  (optional)
 
 Description (Short Form)
