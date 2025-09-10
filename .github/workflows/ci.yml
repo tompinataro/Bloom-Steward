@@ -5,6 +5,7 @@ on:
     branches: [ main, phase1-integration ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-check:
@@ -18,7 +19,9 @@ jobs:
           node-version: 18
           cache: 'npm'
       - name: Install deps
-        run: npm ci
+        run: npm install
+      - name: Install lint deps (CI)
+        run: npm install --no-audit --no-fund --save-dev eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-react
       - name: Typecheck
         run: npm run typecheck
       - name: Lint
@@ -26,3 +29,27 @@ jobs:
       - name: Build
         run: npm run build
 
+  eas-preview:
+    name: EAS Preview (iOS)
+    runs-on: ubuntu-latest
+    needs: build-and-check
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && secrets.EXPO_TOKEN != '' }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Expo login and setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Start iOS preview build (no-wait)
+        run: |
+          npx eas build --platform ios --profile preview --non-interactive --no-wait

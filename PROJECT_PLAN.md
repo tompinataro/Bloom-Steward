@@ -21,8 +21,8 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 ## Phase 3 — Offline & Sync
 - [x] Sprint 9: Queue Robustness (dedupe/backoff; no lost submissions)
 - [x] Sprint 10: Foreground Sync (focus/network regain)
-- [ ] Sprint 11: Background Sync (optional background fetch)
-- [ ] Sprint 12: Conflict Handling (double submit safety)
+ - [x] Sprint 11: Background Sync (optional background fetch)
+ - [x] Sprint 12: Conflict Handling (double submit safety)
 - [ ] Sprint 13: Geo Attachments (check‑in/out loc with fallbacks)
 - [x] Sprint 14: Status Consistency (server as source of truth)
 

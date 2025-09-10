@@ -15,6 +15,8 @@ import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import SignOutButton from './src/components/SignOutButton';
 import AppSplash from './src/components/AppSplash';
 import { adminResetVisitState } from './src/api/client';
+import { Platform, useEffect } from 'react';
+import { registerBackgroundSync } from './src/background';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -97,6 +99,11 @@ function RootNavigator() {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      registerBackgroundSync().catch(() => {});
+    }
+  }, []);
   return (
     <AuthProvider>
       <NavigationContainer theme={{

@@ -48,7 +48,17 @@ function markCompleted(visitId: number, userId?: number) {
     ).catch(() => {});
   }
 }
-function isCompleted(visitId: number, userId?: number) {
+async function isCompletedToday(visitId: number, userId?: number): Promise<boolean> {
+  try {
+    if (hasDb() && userId) {
+      const rows = await dbQuery<{ status: string }>(
+        `select status from visit_state where visit_id = $1 and date = $2 and user_id = $3 limit 1`,
+        [visitId, dayKey(), userId]
+      );
+      const st = rows?.rows?.[0]?.status;
+      if (st) return st === 'completed';
+    }
+  } catch {}
   const k = keyFor(visitId, userId);
   return !!stateMap.get(k)?.completed;
 }
@@ -215,9 +225,7 @@ app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
     const data = req.body ?? {};
     const userId = req.user?.id;
     // Idempotency: if already completed for today, return success (idempotent)
-    if (isCompleted(id, userId)) {
-      return res.json({ ok: true, id, idempotent: true });
-    }
+    if (await isCompletedToday(id, userId)) return res.json({ ok: true, id, idempotent: true });
     const result = await saveVisit(id, data);
     // Phase A: mark completed in memory for today
     markCompleted(id, userId);

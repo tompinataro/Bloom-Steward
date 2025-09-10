@@ -16,7 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.pinataro.bloomsteward",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Your location is used to verify check-in/out at visit locations."
+        "NSLocationWhenInUseUsageDescription": "Your location is used to verify check-in/out at visit locations.",
+        "UIBackgroundModes": ["fetch"]
       }
     },
     "android": {
