@@ -92,3 +92,12 @@ export async function submitVisit(
     body: JSON.stringify(data)
   });
 }
+
+// Admin utilities (dev/Staging only)
+export async function adminResetVisitState(date: string | undefined, token: string): Promise<{ ok: boolean } & any> {
+  const q = date ? `?date=${encodeURIComponent(date)}` : '';
+  return fetchJson(withBase(`/api/admin/visit-state/reset${q}`), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

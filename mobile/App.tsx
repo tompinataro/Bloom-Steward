@@ -14,6 +14,7 @@ import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import SignOutButton from './src/components/SignOutButton';
 import AppSplash from './src/components/AppSplash';
+import { adminResetVisitState } from './src/api/client';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -43,6 +44,26 @@ function RootNavigator() {
             }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Today's Route (Dev Reset)">
               <Text style={{ fontWeight: '700', fontSize: 17 }}>Today{"'"}s Route</Text>
             </Pressable>
+          ),
+          // Dev/Admin: server-state reset button (staging/demo convenience)
+          headerRight: () => (
+            (__DEV__) ? (
+              <Pressable
+                onPress={async () => {
+                  try {
+                    if (!token) return;
+                    await adminResetVisitState(undefined, token);
+                    navigation.setParams({ devResetTS: Date.now() } as any);
+                  } catch {}
+                }}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Reset server visit state"
+                style={{ paddingHorizontal: 12, paddingVertical: 4 }}
+              >
+                <Text style={{ color: colors.primary, fontWeight: '600' }}>Reset</Text>
+              </Pressable>
+            ) : null
           ),
         })}
       />

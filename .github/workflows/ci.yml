@@ -26,6 +26,9 @@ jobs:
         run: |
           npm run build
 
+      - name: Root typecheck (no emit)
+        run: npx tsc --noEmit
+
       - name: Run server tests
         run: |
           npm test --silent || true
@@ -37,4 +40,3 @@ jobs:
       - name: Typecheck mobile
         working-directory: mobile
         run: npx tsc --noEmit
-

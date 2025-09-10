@@ -228,6 +228,27 @@ app.put('/api/visits/field-tech', requireAuth, requireAdmin, async (req, res) =>
   }
 });
 
+// Admin utility — reset today's visit state for demos/QA
+// POST /api/admin/visit-state/reset?date=YYYY-MM-DD
+// If DB is configured, delete rows from visit_state for that date; always clear in-memory cache for that date.
+app.post('/api/admin/visit-state/reset', requireAuth, requireAdmin, async (req, res) => {
+  const d = (req.query.date as string) || dayKey();
+  try {
+    // Clear in-memory state for the day
+    const toDel: string[] = [];
+    stateMap.forEach((_v, k) => { if (k.startsWith(`${d}:`)) toDel.push(k); });
+    toDel.forEach(k => stateMap.delete(k));
+
+    // If DB available, clear visit_state rows for that date
+    if (hasDb()) {
+      await dbQuery('delete from visit_state where date = $1', [d]);
+    }
+    res.json({ ok: true, date: d, clearedKeys: toDel.length });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? 'reset error' });
+  }
+});
+
 const port = Number(process.env.PORT) || 5100;
 app.listen(port, () => {
   console.log(`Listening on port: ${port}`);
