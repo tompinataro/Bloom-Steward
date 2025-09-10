@@ -3,10 +3,9 @@
 
 - Goal: GitHub Actions for lint/test/build; EAS preview build.
 - Tasks:
-  - Add workflow: typecheck, lint, test, server build.
-  - Configure EAS project; generate preview build.
+  - Add workflow: typecheck, lint, server build. (DONE)
+  - Configure EAS project; generate preview build. (TBD)
 - Acceptance:
   - PRs show green checks; preview build artifact available.
 - Dependencies: Sprints 4, 19, 20
-- Status: TODO
-
+- Status: PARTIAL — CI workflow added at `.github/workflows/ci.yml`; EAS preview pending

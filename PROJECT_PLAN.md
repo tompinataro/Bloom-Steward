@@ -16,7 +16,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [x] Sprint 5: Server Visit State (Phase A: in‑memory server truth now; Phase B: DB later; flags in `/api/routes/today`)
 - [x] Sprint 6: Auth “Me” + Token Refresh (optional)
 - [x] Sprint 7: Health/Metrics Polish (include version; counters)
-- [ ] Sprint 8: DB Migrations (final schema + seed)
+ - [x] Sprint 8: DB Migrations (final schema + seed)
 
 ## Phase 3 — Offline & Sync
 - [x] Sprint 9: Queue Robustness (dedupe/backoff; no lost submissions)

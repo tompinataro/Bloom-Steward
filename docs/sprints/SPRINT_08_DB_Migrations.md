@@ -12,4 +12,8 @@
   - With `DATABASE_URL` set, server uses DB; client unchanged.
   - Reinstall client → fetch → ✓/in‑progress restored from DB.
 - Dependencies: Sprint 5
-- Status: IN PROGRESS — schema present; dual-write implemented; DB reads enabled with shadow compare option
+- Status: DONE
+- Notes:
+  - Schema and seed in `server/sql` applied by release script when `DATABASE_URL` is set.
+  - Dual-write on in-progress/completed; reads default to DB when available.
+  - Shadow read mode compares DB vs memory once/day and now auto-flips to DB reads on parity.

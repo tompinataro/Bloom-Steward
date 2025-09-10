@@ -109,9 +109,9 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 // Sprint 8 controls: visit state read strategy
 type ReadMode = 'db' | 'memory' | 'shadow';
 const defaultReadMode: ReadMode = hasDb()
-  ? ((process.env.STAGING === '1' || /(staging)/i.test(process.env.NODE_ENV || '')) ? 'shadow' : 'db')
+  ? ((process.env.VISIT_STATE_READ_MODE as ReadMode) || ((process.env.STAGING === '1' || /(staging)/i.test(process.env.NODE_ENV || '')) ? 'shadow' : 'db'))
   : 'memory';
-const READ_MODE: ReadMode = ((process.env.VISIT_STATE_READ_MODE || defaultReadMode) as ReadMode);
+let readMode: ReadMode = defaultReadMode;
 const shadowLogOncePerDay = new Set<string>();
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body ?? {};
@@ -143,7 +143,7 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
     const userId = req.user?.id;
     let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
     const day = dayKey();
-    const wantDb = READ_MODE === 'db' || READ_MODE === 'shadow';
+    const wantDb = readMode === 'db' || readMode === 'shadow';
     if (wantDb && hasDb() && userId) {
       try {
         const rows = await dbQuery<{ visit_id: number; status: string }>(
@@ -156,7 +156,7 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
           const st = map.get(r.id);
           return { ...r, completedToday: st === 'completed', inProgress: st === 'in_progress' };
         });
-        if (READ_MODE === 'shadow' && !shadowLogOncePerDay.has(day)) {
+        if (readMode === 'shadow' && !shadowLogOncePerDay.has(day)) {
           // Compare with in-memory once per day and log mismatches
           const memFlags = routes.map(r => ({ id: r.id, ...getFlags(r.id, userId) }));
           const mismatches = dbFlags.filter(df => {
@@ -167,6 +167,9 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
             console.warn(`[visit-state shadow] ${mismatches.length} mismatch(es) for ${day}`, mismatches.map(m => ({ id: m.id, db: { c: m.completedToday, p: m.inProgress } })));
           } else {
             console.log(`[visit-state shadow] parity OK for ${day}`);
+            // Flip reads to DB for this process after successful parity
+            readMode = 'db';
+            console.log('[visit-state] flipping read mode to db for this process');
           }
           shadowLogOncePerDay.add(day);
         }
