@@ -23,7 +23,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [x] Sprint 10: Foreground Sync (focus/network regain)
  - [x] Sprint 11: Background Sync (optional background fetch)
  - [x] Sprint 12: Conflict Handling (double submit safety)
-- [ ] Sprint 13: Geo Attachments (check‑in/out loc with fallbacks)
+ - [x] Sprint 13: Geo Attachments (check‑in/out loc with fallbacks)
 - [x] Sprint 14: Status Consistency (server as source of truth)
 
 ## Phase 4 — UX, A11y, Perf

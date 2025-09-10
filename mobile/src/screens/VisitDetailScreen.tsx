@@ -81,6 +81,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         timelyAck: hasTimely ? ack : undefined,
         checkInTs: checkInTs || undefined,
         checkOutTs: outTs,
+        checkOutLoc: await getLocation(),
         noteToOffice: noteToOffice || undefined,
       };
       if (!checkOutTs) setCheckOutTs(outTs);
@@ -105,10 +106,20 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
 
   async function getLocation(): Promise<{ lat: number; lng: number } | undefined> {
     try {
-      const status = await Location.getForegroundPermissionsAsync();
-      if (!status.granted) return undefined;
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      let perm = await Location.getForegroundPermissionsAsync();
+      if (!perm.granted) {
+        const req = await Location.requestForegroundPermissionsAsync();
+        perm = req;
+      }
+      if (!perm.granted) return undefined;
+      try {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      } catch {
+        const last = await Location.getLastKnownPositionAsync({ requiredAccuracy: 1000 });
+        if (last) return { lat: last.coords.latitude, lng: last.coords.longitude };
+      }
+      return undefined;
     } catch {
       return undefined;
     }

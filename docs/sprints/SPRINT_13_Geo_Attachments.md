@@ -8,5 +8,7 @@
 - Acceptance:
   - Submissions include location or omit cleanly if unavailable.
 - Dependencies: none
-- Status: TODO
-
+- Status: DONE
+- Notes:
+  - Requests foreground permission if needed; uses current position (balanced accuracy) with fallback to last known.
+  - Check‑in payload includes `checkInLoc`; check‑out payload includes `checkOutLoc`.
