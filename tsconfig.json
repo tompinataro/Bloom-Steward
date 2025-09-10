@@ -8,5 +8,11 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["server/**/*.ts"]
+  "include": ["server/**/*.ts"],
+  "exclude": [
+    "server/__tests__/**",
+    "**/*.spec.ts",
+    "node_modules",
+    "dist"
+  ]
 }
