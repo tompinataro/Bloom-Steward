@@ -10,7 +10,7 @@
         "resourceClass": "m-medium"
       },
       "android": {
-        "gradleCommand": ":app:bundleRelease"
+        "gradleCommand": ":app:assembleRelease"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://bloom-steward-2a872c497756.herokuapp.com"

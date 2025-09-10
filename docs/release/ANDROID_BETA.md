@@ -7,6 +7,7 @@ Prereqs
 - Google Play Console access for your app package: `com.pinataro.bloomsteward` (see `mobile/app.json`)
 - Service account with permission to upload to Play (JSON key file) or use interactive login
 - EAS CLI authenticated (`expo login` or `EXPO_TOKEN` in CI)
+ - Android Keystore: On first build, run interactively to generate or upload
 
 Build
 ```
@@ -16,6 +17,10 @@ npm run build:android:internal
 # or store-ready build
 npm run build:android:prod
 ```
+
+First-time credentials
+- If prompted to generate Android Keystore, accept and EAS will manage it.
+- After keystore is created once, CI/non-interactive builds will work.
 
 Submit
 ```
@@ -44,4 +49,3 @@ Notes
 - Align versionCode increments with `mobile/app.json` (currently 2)
 - Keep EAS credentials managed; rotate service account key if needed
 - For staging pointing, use `.env` or EAS `preview` env like on iOS
-
