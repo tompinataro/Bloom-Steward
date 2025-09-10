@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import healthRouter from './routes/health';
-import metricsRouter from './routes/metrics';
+import metricsRouter, { requestMetrics } from './routes/metrics';
 import { getTodayRoutes, getVisit, saveVisit } from './data';
 import { dbQuery, hasDb } from './db';
 
@@ -61,6 +61,8 @@ function getFlags(visitId: number, userId?: number) {
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Request metrics (counts + duration)
+app.use(requestMetrics);
 
 // Health and metrics
 app.use(healthRouter);
@@ -106,7 +108,10 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 // API routes (DB-backed when configured; demo otherwise)
 // Sprint 8 controls: visit state read strategy
 type ReadMode = 'db' | 'memory' | 'shadow';
-const READ_MODE: ReadMode = ((process.env.VISIT_STATE_READ_MODE || (hasDb() ? 'db' : 'memory')) as ReadMode);
+const defaultReadMode: ReadMode = hasDb()
+  ? ((process.env.STAGING === '1' || /(staging)/i.test(process.env.NODE_ENV || '')) ? 'shadow' : 'db')
+  : 'memory';
+const READ_MODE: ReadMode = ((process.env.VISIT_STATE_READ_MODE || defaultReadMode) as ReadMode);
 const shadowLogOncePerDay = new Set<string>();
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body ?? {};

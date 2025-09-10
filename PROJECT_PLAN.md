@@ -15,7 +15,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 ## Phase 2 — Data & API
 - [x] Sprint 5: Server Visit State (Phase A: in‑memory server truth now; Phase B: DB later; flags in `/api/routes/today`)
 - [ ] Sprint 6: Auth “Me” + Token Refresh (optional)
-- [ ] Sprint 7: Health/Metrics Polish (include version; counters)
+- [x] Sprint 7: Health/Metrics Polish (include version; counters)
 - [ ] Sprint 8: DB Migrations (final schema + seed)
 
 ## Phase 3 — Offline & Sync

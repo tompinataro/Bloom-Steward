@@ -9,4 +9,4 @@
   - `/health` returns `{ ok: true, version, ts }`.
   - `/metrics` scrapes without error.
 - Dependencies: none
-- Status: PARTIAL — `/health` and `/metrics` implemented; version/counters TBD
+- Status: DONE — `/health` returns version+uptime; `/metrics` exposes counters and request duration histogram.

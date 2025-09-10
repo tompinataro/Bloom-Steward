@@ -47,6 +47,7 @@ Bloom Steward is a custom accountability and quality control application designe
   - `db`: read visit flags from `visit_state` table.
   - `memory`: read visit flags from in-memory map (Phase A).
   - `shadow`: read from DB but log a one-time comparison against in-memory for the day.
+ - Staging default: when `STAGING=1` (or `NODE_ENV` includes `staging`), the server defaults to `shadow` if DB is present.
 
 ### Simulator Quick Start (recommended)
 1. Terminal A: `npm run dev`
