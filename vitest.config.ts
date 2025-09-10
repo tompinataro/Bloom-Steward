@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['server/__tests__/**/*.ts'],
+    include: ['server/__tests__/**/*.ts', 'mobile/__tests__/**/*.ts'],
+    threads: false,
   },
 });
-
