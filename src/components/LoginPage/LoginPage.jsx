@@ -4,13 +4,10 @@ import { useHistory } from 'react-router-dom';
 
 function LoginPage() {
   const history = useHistory();
-  
-<h1>Please Log-in</h1>
-
   return (
     <div>
+      <h1 className="centered">Please Log in</h1>
       <LoginForm />
-
       <center>
         <button
           type="button"

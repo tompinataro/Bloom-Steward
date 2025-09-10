@@ -1,0 +1,281 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigationTypes';
+import { useAuth } from '../auth';
+import { fetchTodayRoutes, TodayRoute } from '../api/client';
+import { flushQueue } from '../offlineQueue';
+import LoadingOverlay from '../components/LoadingOverlay';
+import ThemedButton from '../components/Button';
+import Banner from '../components/Banner';
+import { colors, spacing } from '../theme';
+import { ensureToday, getCompleted, getInProgress, pruneToIds } from '../completed';
+import { useFocusEffect } from '@react-navigation/native';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
+
+export default function RouteListScreen({ navigation, route }: Props) {
+  const { token, signOut } = useAuth();
+  const [routes, setRoutes] = useState<TodayRoute[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [savedBanner, setSavedBanner] = useState<false | 'online' | 'offline'>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState<Set<number>>(new Set());
+  const [inProgress, setInProgress] = useState<Set<number>>(new Set());
+
+  const load = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      setError(null);
+      try { await flushQueue(token); } catch {}
+      const res = await fetchTodayRoutes(token);
+      setRoutes(res.routes);
+      try {
+        await ensureToday();
+        await pruneToIds(res.routes.map(r => r.id));
+        // Prefer server truth when present, fall back to local state
+        const serverCompleted = new Set<number>();
+        const serverInProg = new Set<number>();
+        for (const r of res.routes as any[]) {
+          if (r.completedToday) serverCompleted.add(r.id);
+          if (r.inProgress) serverInProg.add(r.id);
+        }
+        if (serverCompleted.size || serverInProg.size) {
+          setCompleted(serverCompleted);
+          setInProgress(serverInProg);
+        } else {
+          const [c, p] = await Promise.all([getCompleted(), getInProgress()]);
+          setCompleted(c); setInProgress(p);
+        }
+      } catch {}
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load routes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [token]);
+
+  // Sprint 10 — Foreground sync: when app becomes active, flush queue and refresh
+  useEffect(() => {
+    const onChange = (state: AppStateStatus) => {
+      if (state === 'active') {
+        // Best-effort: flush any pending submissions and refresh routes
+        if (token) {
+          flushQueue(token).catch(() => {});
+        }
+        load();
+      }
+    };
+    const sub = AppState.addEventListener('change', onChange);
+    return () => sub.remove();
+  }, [token]);
+
+  // Web-only: also listen for browser coming back online
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const handler = () => {
+      if (token) {
+        flushQueue(token).catch(() => {});
+      }
+      load();
+    };
+    window.addEventListener('online', handler);
+    return () => window.removeEventListener('online', handler);
+  }, [token]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refresh when returning from details
+      load();
+      // If header title triggered a dev reset via params, reload local state
+      if ((route.params as any)?.devResetTS) {
+        getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
+        getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
+        navigation.setParams({ devResetTS: undefined } as any);
+      }
+    if (route.params?.saved) {
+        setSavedBanner('online');
+        const t = setTimeout(() => setSavedBanner(false), 2500);
+        // Clear the param so it doesn't re-show
+        navigation.setParams({ saved: undefined } as any);
+        return () => clearTimeout(t);
+      }
+      if ((route.params as any)?.savedOffline) {
+        setSavedBanner('offline');
+        const t = setTimeout(() => setSavedBanner(false), 3000);
+        navigation.setParams({ savedOffline: undefined } as any);
+        return () => clearTimeout(t);
+      }
+      }, [token])
+  );
+
+  // Also react immediately to the hidden dev reset param change (no need to change focus)
+  useEffect(() => {
+    const ts = (route.params as any)?.devResetTS;
+    if (ts) {
+      getCompleted().then(setCompleted).catch(() => setCompleted(new Set()));
+      getInProgress().then(setInProgress).catch(() => setInProgress(new Set()));
+      navigation.setParams({ devResetTS: undefined } as any);
+    }
+  }, [route.params?.devResetTS]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try { await load(); } finally { setRefreshing(false); }
+  };
+
+  const openMaps = async (address: string) => {
+    const q = encodeURIComponent(address);
+    // Prefer Google Maps directions. Fallback to web if app isn't available.
+    if (Platform.OS === 'ios') {
+      const googleScheme = `comgooglemaps://?daddr=${q}&directionsmode=driving`;
+      const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
+      const can = await Linking.canOpenURL('comgooglemaps://');
+      await Linking.openURL(can ? googleScheme : web).catch(() => {});
+      return;
+    }
+    if (Platform.OS === 'android') {
+      const intent = `google.navigation:q=${q}&mode=d`;
+      const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
+      await Linking.openURL(intent).catch(async () => {
+        await Linking.openURL(web).catch(() => {});
+      });
+      return;
+    }
+    const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
+    Linking.openURL(web).catch(() => {});
+  };
+
+  function Check({ done, progress }: { done: boolean; progress: boolean }) {
+    const scale = React.useRef(new Animated.Value(done ? 1 : 0.9)).current;
+    const opacity = React.useRef(new Animated.Value(done ? 1 : 0)).current;
+    useEffect(() => {
+      if (done) {
+        Animated.parallel([
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        ]).start();
+      } else {
+        opacity.setValue(0);
+        scale.setValue(0.9);
+      }
+    }, [done]);
+    return (
+      <View style={[styles.checkBadge, done ? styles.checkBadgeDone : progress ? styles.checkBadgeInProgress : null]} accessibilityRole="image">
+        <Animated.Text style={[styles.checkMark, styles.checkMarkDone, { opacity, transform: [{ scale }] }]}>✓</Animated.Text>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      {savedBanner ? (
+        <View style={styles.banner} accessibilityRole="status" accessibilityLabel="Saved">
+          <Text style={styles.bannerText}>{savedBanner === 'offline' ? '✓ Saved offline — will sync when online' : '✓ Saved'}</Text>
+        </View>
+      ) : null}
+      {error ? (
+        <View style={styles.errorWrap}>
+          <Banner type="error" message={error} />
+          <ThemedButton title="Retry" variant="outline" onPress={load} style={styles.retryBtn} />
+        </View>
+      ) : null}
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={[styles.listContent, { paddingBottom: spacing(16) }]}
+        data={routes}
+        keyExtractor={(item) => String(item.id)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('VisitDetail', { id: item.id })}
+            accessibilityRole="button"
+            accessibilityLabel={`Open visit for ${item.clientName}`}
+          >
+            <View style={styles.rowTop}>
+              <View style={styles.leftWrap}>
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{item.clientName || 'Client Name'}</Text>
+                <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{item.address || '123 Main St'}</Text>
+              </View>
+              <View style={styles.centerWrap}>
+                <TouchableOpacity style={styles.mapBtn} onPress={() => openMaps(item.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${item.clientName}`}>
+                  <View style={styles.mapBtnInner}>
+                    <Text style={styles.mapBtnText}>Map</Text>
+                    <Text style={styles.mapBtnArrow}>›</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <Check done={completed.has(item.id)} progress={inProgress.has(item.id) && !completed.has(item.id)} />
+            </View>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyTitle}>No visits today</Text>
+            <Text style={styles.emptySub}>Pull down to refresh</Text>
+          </View>
+        }
+      />
+      <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
+        {/* Dev note: This Sign Off button exits the session (same action as header Sign Out) */}
+        <ThemedButton title="Sign Off" onPress={signOut} style={styles.submitBtn} />
+      </SafeAreaView>
+      <LoadingOverlay visible={loading || refreshing} />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  list: { flex: 1, backgroundColor: colors.background },
+  listContent: { padding: spacing(4) },
+  card: {
+    width: '100%',
+    maxWidth: 360,
+    alignSelf: 'center',
+    padding: spacing(3),
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    marginBottom: spacing(3),
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', position: 'relative' },
+  // Further bias to the right to tighten space to the circle
+  centerWrap: { position: 'absolute', left: '50%', width: 88, alignItems: 'center', justifyContent: 'center', transform: [{ translateX: -28 }] },
+  leftWrap: { flexGrow: 1, flexShrink: 1, minWidth: 0, paddingRight: spacing(2) + 96 },
+  title: { fontSize: 16, fontWeight: '700', color: colors.text },
+  dot: { color: colors.muted },
+  sub: { color: colors.muted, marginTop: spacing(1) },
+  mapBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.muted, flexShrink: 0, backgroundColor: 'transparent' },
+  mapBtnInner: { flexDirection: 'row', alignItems: 'center', gap: spacing(0.5) },
+  mapBtnText: { color: colors.primary, fontWeight: '600', fontSize: 16 },
+  mapBtnArrow: { color: colors.primary, fontWeight: '900', fontSize: 36, marginTop: -2 },
+  checkBadge: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.muted, alignItems: 'center', justifyContent: 'center', marginRight: 0 },
+  checkBadgeDone: { borderColor: colors.muted, backgroundColor: '#fff' },
+  // Softer warning tone for in-progress state
+  checkBadgeInProgress: { backgroundColor: '#fee2e2', borderColor: '#fecaca' },
+  checkMark: { color: colors.muted, fontSize: 22, fontWeight: '900' },
+  checkMarkDone: { color: colors.primary },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing(20) },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: spacing(1) },
+  emptySub: { color: colors.muted },
+  banner: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: colors.successBg, padding: spacing(2), alignItems: 'center', zIndex: 2, borderBottomWidth: 1, borderColor: colors.border },
+  bannerText: { color: colors.successText, fontWeight: '600' },
+  errorWrap: { paddingHorizontal: spacing(4), marginTop: spacing(2) },
+  retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(4), padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
+});

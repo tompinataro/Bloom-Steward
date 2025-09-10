@@ -14,7 +14,7 @@ function GoToYourRouteButton(props) {
                     onClick={() => {
                         history.push('/YourRoutePage');  //????????????????
                     }}
-                >   GoToYourRoute </button>
+                >   Go To Your Route </button>
             </center>
         </div>
     );

@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import ArrivalTimestampButton from '../ArrivalTimestamp Button/ArrivalTimestampButton';
-import DepartureTimestampButton from '../DepartureTimestamp Button copy/DepartureTimestampButton';
+import ArrivalTimestampButton from '../ArrivalTimestampButton/ArrivalTimestampButton';
+import DepartureTimestampButton from '../DepartureTimestampButton/DepartureTimestampButton';
 import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
+import GoToYourRouteButton from '../GoToYourRouteButton/GoToYourRouteButton';
+import NextPageBtn from '../NextPageBtn/NextPageBtn';
 function ClientVisitPage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -31,8 +33,8 @@ function ClientVisitPage() {
         <div className="container">
           <h1 style={{ marginBottom: '0px' }}  // Adds space below each button
           >Today at</h1>
-          <h1 style={{ marginTop: '0px' }}  // Adds space below each button
-          >{client.client_name}</h1>
+          <h2 style={{ marginTop: '0px' }}  // Adds space below each button
+          >{client.client_name}</h2>
           <h2> </h2>
           <h2> </h2>
 
@@ -65,7 +67,7 @@ function ClientVisitPage() {
           <h2> </h2>
           <button
             type="button"
-            className="btn" // use smaller button
+            className="btn" // use smaller button?
             onClick={() => {
               ; //sends comment to db
             }}
@@ -77,7 +79,8 @@ function ClientVisitPage() {
           <DepartureTimestampButton className="btn" />
           <h2> </h2>
           <h2> </h2>
-          <TempAdminAccessBtn className="btn" />
+          <GoToYourRouteButton className="btn"/>
+          <TempAdminAccessBtn />
 
 
         </div>

@@ -15,7 +15,7 @@ function TempAdminAccessBtn(props) {
                     onClick={() => {
                         history.push('/AdminLandingPage');
                     }}
-                >Temp Admin Access</button>
+                ></button>
             </center>
         </div>
     );

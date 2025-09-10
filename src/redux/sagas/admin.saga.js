@@ -3,8 +3,10 @@ import axios from 'axios';
 
 function* updateFieldTech(action) {
   try {
-    // Make a PUT request to update 
-    //field_tech_id based on client_name
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
     yield call(axios.put, '/api/visits/field-tech', action.payload);
 
     // Dispatch a success action to update state if needed

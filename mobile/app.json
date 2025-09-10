@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Bloom Steward",
+    "slug": "bloom-steward",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/palms.jpg",
+      "resizeMode": "cover",
+      "backgroundColor": "#e7bfbf"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pinataro.bloomsteward",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Your location is used to verify check-in/out at visit locations."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#e7bfbf"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.pinataro.bloomsteward",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    
+    "extra": {
+      "eas": {
+        "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"
+      }
+    }
+  }
+}
