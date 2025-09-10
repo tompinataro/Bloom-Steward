@@ -10,5 +10,4 @@
   - Back/from Visit → RouteList works cleanly with correct layout.
   - No visual regressions on web (8081) and iOS simulator.
 - Dependencies: Sprint 1
-- Status: TODO
-
+- Status: DONE — header/back polish with accessible labels and parity

@@ -12,4 +12,4 @@
   - With `DATABASE_URL` set, server uses DB; client unchanged.
   - Reinstall client → fetch → ✓/in‑progress restored from DB.
 - Dependencies: Sprint 5
-- Status: TODO
+- Status: IN PROGRESS — schema present; dual-write implemented; DB reads enabled with shadow compare option

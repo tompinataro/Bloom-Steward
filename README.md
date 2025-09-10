@@ -42,6 +42,12 @@ Bloom Steward is a custom accountability and quality control application designe
   - `DEMO_EMAIL=demo@example.com`
   - `DEMO_PASSWORD=password`
 
+#### Visit State (Sprint 5/8) configuration
+- `VISIT_STATE_READ_MODE` — `db` | `memory` | `shadow` (default: `db` when DB present else `memory`).
+  - `db`: read visit flags from `visit_state` table.
+  - `memory`: read visit flags from in-memory map (Phase A).
+  - `shadow`: read from DB but log a one-time comparison against in-memory for the day.
+
 ### Simulator Quick Start (recommended)
 1. Terminal A: `npm run dev`
 2. Terminal B:

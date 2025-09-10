@@ -9,5 +9,4 @@
 - Acceptance:
   - `npm run typecheck` passes; ESLint minimal rules pass.
 - Dependencies: Sprint 1
-- Status: TODO
-
+- Status: PARTIAL — strict TS enabled; add typecheck script; ESLint TBD

@@ -8,19 +8,19 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 
 ## Phase 1 — Stabilize & Hardening
 - [ ] Sprint 1: Remove Dev Artifacts (clean prod build, guard dev code)
-- [ ] Sprint 2: Navigation Polish (headers/back, iOS/Web parity)
+- [x] Sprint 2: Navigation Polish (headers/back, iOS/Web parity)
 - [ ] Sprint 3: Error Handling (centralize banners; keep auto 401 sign‑out)
 - [ ] Sprint 4: Type Safety & Lint (tsc clean; basic ESLint)
 
 ## Phase 2 — Data & API
-- [ ] Sprint 5: Server Visit State (Phase A: in‑memory server truth now; Phase B: DB later; flags in `/api/routes/today`)
+- [x] Sprint 5: Server Visit State (Phase A: in‑memory server truth now; Phase B: DB later; flags in `/api/routes/today`)
 - [ ] Sprint 6: Auth “Me” + Token Refresh (optional)
 - [ ] Sprint 7: Health/Metrics Polish (include version; counters)
 - [ ] Sprint 8: DB Migrations (final schema + seed)
 
 ## Phase 3 — Offline & Sync
 - [ ] Sprint 9: Queue Robustness (dedupe/backoff; no lost submissions)
-- [ ] Sprint 10: Foreground Sync (focus/network regain)
+- [x] Sprint 10: Foreground Sync (focus/network regain)
 - [ ] Sprint 11: Background Sync (optional background fetch)
 - [ ] Sprint 12: Conflict Handling (double submit safety)
 - [ ] Sprint 13: Geo Attachments (check‑in/out loc with fallbacks)

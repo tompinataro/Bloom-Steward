@@ -104,6 +104,10 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 }
 
 // API routes (DB-backed when configured; demo otherwise)
+// Sprint 8 controls: visit state read strategy
+type ReadMode = 'db' | 'memory' | 'shadow';
+const READ_MODE: ReadMode = ((process.env.VISIT_STATE_READ_MODE || (hasDb() ? 'db' : 'memory')) as ReadMode);
+const shadowLogOncePerDay = new Set<string>();
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body ?? {};
   const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@example.com';
@@ -126,18 +130,35 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
     const routes = await getTodayRoutes(1);
     const userId = req.user?.id;
     let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
-    if (hasDb() && userId) {
+    const day = dayKey();
+    const wantDb = READ_MODE === 'db' || READ_MODE === 'shadow';
+    if (wantDb && hasDb() && userId) {
       try {
         const rows = await dbQuery<{ visit_id: number; status: string }>(
           `select visit_id, status from visit_state where date = $1 and user_id = $2`,
-          [dayKey(), userId]
+          [day, userId]
         );
         const map = new Map<number, string>();
         (rows?.rows || []).forEach(r => map.set(r.visit_id, r.status));
-        withFlags = routes.map(r => {
+        const dbFlags = routes.map(r => {
           const st = map.get(r.id);
           return { ...r, completedToday: st === 'completed', inProgress: st === 'in_progress' };
         });
+        if (READ_MODE === 'shadow' && !shadowLogOncePerDay.has(day)) {
+          // Compare with in-memory once per day and log mismatches
+          const memFlags = routes.map(r => ({ id: r.id, ...getFlags(r.id, userId) }));
+          const mismatches = dbFlags.filter(df => {
+            const m = memFlags.find(mf => mf.id === df.id)!;
+            return (df.completedToday !== m.completedToday) || (df.inProgress !== m.inProgress);
+          });
+          if (mismatches.length > 0) {
+            console.warn(`[visit-state shadow] ${mismatches.length} mismatch(es) for ${day}`, mismatches.map(m => ({ id: m.id, db: { c: m.completedToday, p: m.inProgress } })));
+          } else {
+            console.log(`[visit-state shadow] parity OK for ${day}`);
+          }
+          shadowLogOncePerDay.add(day);
+        }
+        withFlags = dbFlags;
       } catch {
         // Fallback to in-memory if DB read fails
         withFlags = routes.map(r => ({ ...r, ...getFlags(r.id, userId) }));

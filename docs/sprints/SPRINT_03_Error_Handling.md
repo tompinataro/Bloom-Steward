@@ -10,5 +10,4 @@
   - Simulated 4xx/5xx show readable banners; no dead ends.
   - No raw JSON or stack traces leak to the UI.
 - Dependencies: Sprint 1
-- Status: TODO
-
+- Status: PARTIAL — centralized Banner component and 401 auto sign-out; remaining standardization TBD

@@ -7,5 +7,8 @@
 - Acceptance:
   - Returning to app with connectivity processes outstanding items < 1s.
 - Dependencies: Sprint 9
-- Status: TODO
-
+- Status: DONE
+- Notes:
+  - On app foreground (`AppState === 'active'`), flush offline queue and refresh routes.
+  - On Web, also refresh on `online` event.
+  - See `mobile/src/screens/RouteListScreen.tsx` for hooks and `mobile/src/offlineQueue.ts` for queue flush.

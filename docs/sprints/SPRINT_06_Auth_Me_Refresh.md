@@ -8,5 +8,4 @@
 - Acceptance:
   - App restores session without immediate 401; `me` endpoint passes.
 - Dependencies: none
-- Status: TODO
-
+- Status: PARTIAL — `/api/auth/me` implemented; token refresh TBD

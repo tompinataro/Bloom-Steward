@@ -10,5 +10,4 @@
   - `expo start --no-dev` runs without dev‑only UI or logs.
   - No red/yellow warnings in console for prod build.
 - Dependencies: none
-- Status: TODO
-
+- Status: IN PROGRESS — dev helpers guarded by __DEV__ in headers; further cleanup pending

@@ -34,6 +34,7 @@
     "client": "vite",
     "server": "node dist/server/server.js",
     "build": "tsc && cp -R server/sql dist/server/",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts"
   },
