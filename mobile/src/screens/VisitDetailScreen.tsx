@@ -6,7 +6,7 @@ import { fetchVisit, submitVisit, Visit, markVisitInProgress } from '../api/clie
 import { useAuth } from '../auth';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
-import Banner from '../components/Banner';
+import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { enqueueSubmission } from '../offlineQueue';
 import { addCompleted, addInProgress, removeInProgress } from '../completed';
@@ -27,7 +27,6 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [checkInQueued, setCheckInQueued] = useState(false);
 
   // Timely Notes fade-out when empty, keep input height reserved to avoid layout shift
   const [timelyHidden, setTimelyHidden] = useState(false);
@@ -98,7 +97,9 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         navigation.navigate('RouteList', { savedOffline: true });
       }
     } catch (e: any) {
-      setSubmitError(e?.message ?? 'Submit failed');
+      const msg = e?.message ?? 'Submit failed';
+      setSubmitError(msg);
+      showBanner({ type: 'error', message: msg });
     } finally {
       setSubmitting(false);
     }
@@ -196,15 +197,13 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
                   await submitVisit(visit.id, payload, token);
                 } catch {
                   await enqueueSubmission(visit.id, payload);
-                  setCheckInQueued(true);
-                  setTimeout(() => setCheckInQueued(false), 3000);
+                  showBanner({ type: 'info', message: 'Checked in offline — will sync when online' });
                 }
               }}
               style={styles.checkInBtn}
             />
             <Text style={styles.timeText}>{checkInTs ? formatTime(checkInTs) : '—'}</Text>
           </View>
-          {checkInQueued ? <Banner type="info" message="Checked in offline — will sync when online" /> : null}
           {visit.checklist.map((item) => (
             <TouchableOpacity
               key={item.key}

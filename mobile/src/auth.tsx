@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler, setTokenRefreshedHandler } from './api/client';
+import { showBanner } from './components/globalBannerBus';
 
 type AuthState = {
   token: string | null;
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Auto sign-out on 401s from API client
   useEffect(() => {
     setUnauthorizedHandler(async () => {
+      try { showBanner({ type: 'error', message: 'Session expired — please sign in.' }); } catch {}
       setToken(null);
       setUser(null);
       try {

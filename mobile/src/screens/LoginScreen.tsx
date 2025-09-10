@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -25,7 +25,7 @@ export default function LoginScreen(_props: Props) {
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       setError(msg);
-      Alert.alert('Login failed', msg);
+      showBanner({ type: 'error', message: `Login failed — ${msg}` });
     } finally {
       setLoading(false);
     }
@@ -93,3 +93,4 @@ const styles = StyleSheet.create({
   fullWidthBtn: { alignSelf: 'stretch' }
   ,error: { color: colors.danger, marginTop: spacing(2) }
 });
+import { showBanner } from '../components/globalBannerBus';

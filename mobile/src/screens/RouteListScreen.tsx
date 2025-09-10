@@ -8,7 +8,7 @@ import { fetchTodayRoutes, TodayRoute } from '../api/client';
 import { flushQueue, getQueueStats } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
-import Banner from '../components/Banner';
+import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { ensureToday, getCompleted, getInProgress, pruneToIds, syncServerTruth } from '../completed';
 import { useFocusEffect } from '@react-navigation/native';
@@ -20,8 +20,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [savedBanner, setSavedBanner] = useState<false | 'online' | 'offline'>(false);
-  const [retryBanner, setRetryBanner] = useState<string | null>(null);
+  // Banners are now global; local state removed
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
@@ -35,9 +34,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
       try {
         const stats = await getQueueStats();
         if (stats.pending > 0 && stats.maxAttempts >= 3) {
-          setRetryBanner(`Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend`);
-        } else {
-          setRetryBanner(null);
+          showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend` });
         }
       } catch {}
       const res = await fetchTodayRoutes(token);
@@ -63,7 +60,9 @@ export default function RouteListScreen({ navigation, route }: Props) {
         }
       } catch {}
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load routes');
+      const msg = e?.message ?? 'Failed to load routes';
+      setError(msg);
+      showBanner({ type: 'error', message: msg });
     } finally {
       setLoading(false);
     }
@@ -83,9 +82,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
             try {
               const stats = await getQueueStats();
               if (stats.pending > 0 && stats.maxAttempts >= 3) {
-                setRetryBanner(`Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend`);
-              } else {
-                setRetryBanner(null);
+                showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend` });
               }
             } catch {}
           }).catch(() => {});
@@ -106,9 +103,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
           try {
             const stats = await getQueueStats();
             if (stats.pending > 0 && stats.maxAttempts >= 3) {
-              setRetryBanner(`Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend`);
-            } else {
-              setRetryBanner(null);
+              showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend` });
             }
           } catch {}
         }).catch(() => {});
@@ -154,6 +149,19 @@ export default function RouteListScreen({ navigation, route }: Props) {
       navigation.setParams({ devResetTS: undefined } as any);
     }
   }, [route.params?.devResetTS]);
+
+  // Handle saved banners routed back from VisitDetail
+  useEffect(() => {
+    const saved = (route.params as any)?.saved;
+    const savedOffline = (route.params as any)?.savedOffline;
+    if (saved) {
+      showBanner({ type: 'success', message: '✓ Saved' });
+      navigation.setParams({ saved: undefined } as any);
+    } else if (savedOffline) {
+      showBanner({ type: 'info', message: '✓ Saved offline — will sync when online' });
+      navigation.setParams({ savedOffline: undefined } as any);
+    }
+  }, [route.params?.saved, route.params?.savedOffline]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -205,19 +213,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
 
   return (
     <>
-      {savedBanner ? (
-        <View style={styles.banner} accessibilityRole="status" accessibilityLabel="Saved">
-          <Text style={styles.bannerText}>{savedBanner === 'offline' ? '✓ Saved offline — will sync when online' : '✓ Saved'}</Text>
-        </View>
-      ) : null}
-      {retryBanner ? (
-        <View style={styles.banner} accessibilityRole="status" accessibilityLabel="Retrying submissions">
-          <Text style={styles.bannerText}>{retryBanner}</Text>
-        </View>
-      ) : null}
       {error ? (
         <View style={styles.errorWrap}>
-          <Banner type="error" message={error} />
           <ThemedButton title="Retry" variant="outline" onPress={load} style={styles.retryBtn} />
         </View>
       ) : null}
@@ -270,8 +267,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: spacing(4) },
-  banner: { backgroundColor: '#0b5', paddingVertical: spacing(2), paddingHorizontal: spacing(4) },
-  bannerText: { color: 'white', textAlign: 'center', fontWeight: '600' },
+  // global banner handles app-wide messages now
   card: {
     width: '100%',
     maxWidth: 360,

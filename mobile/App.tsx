@@ -14,6 +14,7 @@ import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import SignOutButton from './src/components/SignOutButton';
 import AppSplash from './src/components/AppSplash';
+import { GlobalBannerProvider } from './src/components/GlobalBannerProvider';
 import { adminResetVisitState } from './src/api/client';
 import Constants from 'expo-constants';
 
@@ -106,6 +107,7 @@ export default function App() {
   }, []);
   return (
     <AuthProvider>
+      <GlobalBannerProvider>
       <NavigationContainer theme={{
         ...DefaultTheme,
         colors: {
@@ -120,6 +122,7 @@ export default function App() {
         <StatusBar style="auto" />
         <RootNavigator />
       </NavigationContainer>
+      </GlobalBannerProvider>
     </AuthProvider>
   );
 }
