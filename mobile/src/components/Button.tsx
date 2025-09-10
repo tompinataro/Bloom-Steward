@@ -8,13 +8,16 @@ type Props = {
   variant?: 'primary' | 'outline';
   style?: ViewStyle;
   disabled?: boolean;
+  accessibilityLabel?: string;
 };
 
-export default function Button({ title, onPress, variant = 'primary', style, disabled }: Props) {
+export default function Button({ title, onPress, variant = 'primary', style, disabled, accessibilityLabel }: Props) {
   const isOutline = variant === 'outline';
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      hitSlop={12}
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
@@ -55,4 +58,3 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 });
-

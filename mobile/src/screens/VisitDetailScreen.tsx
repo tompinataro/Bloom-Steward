@@ -212,6 +212,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               onPress={() => setVisit((prev) => prev ? { ...prev, checklist: prev.checklist.map(c => c.key === item.key ? { ...c, done: !item.done } : c) } : prev)}
               accessibilityRole="button"
               accessibilityLabel={`Toggle ${item.label}`}
+              accessibilityState={{ checked: item.done }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.label}>{item.label}</Text>
               <Switch value={item.done} onValueChange={(v) => setVisit((prev) => prev ? { ...prev, checklist: prev.checklist.map(c => c.key === item.key ? { ...c, done: v } : c) } : prev)} />

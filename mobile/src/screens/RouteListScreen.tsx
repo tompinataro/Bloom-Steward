@@ -209,8 +209,10 @@ export default function RouteListScreen({ navigation, route }: Props) {
       <TouchableOpacity
         style={styles.card}
         onPress={() => onOpen(route.id)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel={`Open visit for ${route.clientName}`}
+        accessibilityHint="Opens the visit details"
       >
         <View style={styles.rowTop}>
           <View style={styles.leftWrap}>
@@ -218,14 +220,21 @@ export default function RouteListScreen({ navigation, route }: Props) {
             <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{route.address || '123 Main St'}</Text>
           </View>
           <View style={styles.centerWrap}>
-            <TouchableOpacity style={styles.mapBtn} onPress={() => onOpenMaps(route.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${route.clientName}`}>
+            <TouchableOpacity
+              style={styles.mapBtn}
+              onPress={() => onOpenMaps(route.address)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Open directions for ${route.clientName}`}
+              accessibilityHint="Opens maps with driving directions"
+            >
               <View style={styles.mapBtnInner}>
                 <Text style={styles.mapBtnText}>Map</Text>
                 <Text style={styles.mapBtnArrow}>›</Text>
               </View>
             </TouchableOpacity>
           </View>
-          <MemoCheck done={isDone} progress={inProg && !isDone} />
+          <MemoCheck done={isDone} progress={inProg && !isDone} label={isDone ? 'Completed' : inProg ? 'In progress' : 'Not started'} />
         </View>
       </TouchableOpacity>
     );
@@ -237,7 +246,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     prev.inProg === next.inProg
   );
 
-  const MemoCheck = memo(function Check({ done, progress }: { done: boolean; progress: boolean }) {
+  const MemoCheck = memo(function Check({ done, progress, label }: { done: boolean; progress: boolean; label: string }) {
     const scale = useRef(new Animated.Value(done ? 1 : 0.9)).current;
     const opacity = useRef(new Animated.Value(done ? 1 : 0)).current;
     useEffect(() => {
@@ -252,11 +261,15 @@ export default function RouteListScreen({ navigation, route }: Props) {
       }
     }, [done]);
     return (
-      <View style={[styles.checkBadge, done ? styles.checkBadgeDone : progress ? styles.checkBadgeInProgress : null]} accessibilityRole="image">
+      <View
+        style={[styles.checkBadge, done ? styles.checkBadgeDone : progress ? styles.checkBadgeInProgress : null]}
+        accessibilityRole="image"
+        accessibilityLabel={label}
+      >
         <Animated.Text style={[styles.checkMark, styles.checkMarkDone, { opacity, transform: [{ scale }] }]}>✓</Animated.Text>
       </View>
     );
-  }, (prev, next) => prev.done === next.done && prev.progress === next.progress);
+  }, (prev, next) => prev.done === next.done && prev.progress === next.progress && prev.label === next.label);
 
   function Check({ done, progress }: { done: boolean; progress: boolean }) {
     const scale = React.useRef(new Animated.Value(done ? 1 : 0.9)).current;

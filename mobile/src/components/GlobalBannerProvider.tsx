@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { colors, spacing } from '../theme';
 import { BannerMsg, setBannerHandler } from './globalBannerBus';
 
@@ -9,6 +9,8 @@ const C = createContext<Ctx | undefined>(undefined);
 export function GlobalBannerProvider({ children }: { children: React.ReactNode }) {
   const [msg, setMsg] = useState<BannerMsg | null>(null);
   const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const translateY = useRef(new Animated.Value(-60)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   const hide = useCallback(() => {
     if (timer) { clearTimeout(timer); setTimer(null); }
@@ -29,14 +31,35 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
 
   const value = useMemo(() => ({ show, hide }), [show, hide]);
 
+  // Animate in/out when msg changes
+  useEffect(() => {
+    if (msg) {
+      Animated.parallel([
+        Animated.timing(translateY, { toValue: 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(translateY, { toValue: -60, duration: 180, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0, duration: 160, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+      ]).start();
+    }
+  }, [msg]);
+
   return (
     <C.Provider value={value}>
       {children}
-      {msg ? (
-        <View style={[styles.banner, msg.type === 'error' ? styles.error : msg.type === 'success' ? styles.success : styles.info]} accessibilityRole="status" accessibilityLabel={msg.type === 'error' ? 'Error' : msg.type === 'success' ? 'Saved' : 'Notice'}>
-          <Text style={styles.text}>{msg.message}</Text>
-        </View>
-      ) : null}
+      <Animated.View
+        pointerEvents={msg ? 'auto' : 'none'}
+        style={[styles.banner,
+          { transform: [{ translateY }], opacity },
+          msg?.type === 'error' ? styles.error : msg?.type === 'success' ? styles.success : styles.info
+        ]}
+        accessibilityRole="status"
+        accessibilityLabel={msg?.type === 'error' ? 'Error' : msg?.type === 'success' ? 'Saved' : 'Notice'}
+      >
+        {msg ? <Text style={styles.text}>{msg.message}</Text> : null}
+      </Animated.View>
     </C.Provider>
   );
 }
@@ -54,4 +77,3 @@ const styles = StyleSheet.create({
   success: { backgroundColor: colors.successBg, borderColor: '#86efac' },
   error: { backgroundColor: '#fee2e2', borderColor: '#fecaca' },
 });
-
