@@ -82,3 +82,16 @@ export async function flushQueue(token: string): Promise<{ sent: number; remaini
   await writeQueue(keep);
   return { sent, remaining: keep.length };
 }
+
+export async function getQueueStats(): Promise<{ pending: number; maxAttempts: number; oldestNextTryAt?: string; lastError?: string }> {
+  const items = await readQueue();
+  let maxAttempts = 0;
+  let oldestNext: string | undefined;
+  let lastError: string | undefined;
+  for (const i of items) {
+    if ((i.attempts ?? 0) > maxAttempts) maxAttempts = i.attempts ?? 0;
+    if (i.nextTryAt && (!oldestNext || i.nextTryAt < oldestNext)) oldestNext = i.nextTryAt;
+    if (i.lastError) lastError = i.lastError;
+  }
+  return { pending: items.length, maxAttempts, oldestNextTryAt: oldestNext, lastError };
+}

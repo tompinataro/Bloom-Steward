@@ -8,5 +8,8 @@
 - Acceptance:
   - Flaky network test => eventual success with no duplicates.
 - Dependencies: Sprint 5
-- Status: TODO
-
+- Status: DONE
+- Notes:
+  - Client queue dedupes by idempotency key `visitId:YYYY-MM-DD`.
+  - Exponential backoff with cap; stores `attempts`, `nextTryAt`, `lastError`.
+  - Subtle banner on RouteList when pending items exceed 3 attempts.

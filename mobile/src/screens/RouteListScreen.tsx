@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { fetchTodayRoutes, TodayRoute } from '../api/client';
-import { flushQueue } from '../offlineQueue';
+import { flushQueue, getQueueStats } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
@@ -21,6 +21,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [savedBanner, setSavedBanner] = useState<false | 'online' | 'offline'>(false);
+  const [retryBanner, setRetryBanner] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
@@ -31,6 +32,14 @@ export default function RouteListScreen({ navigation, route }: Props) {
     try {
       setError(null);
       try { await flushQueue(token); } catch {}
+      try {
+        const stats = await getQueueStats();
+        if (stats.pending > 0 && stats.maxAttempts >= 3) {
+          setRetryBanner(`Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend`);
+        } else {
+          setRetryBanner(null);
+        }
+      } catch {}
       const res = await fetchTodayRoutes(token);
       setRoutes(res.routes);
       try {
@@ -68,7 +77,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
       if (state === 'active') {
         // Best-effort: flush any pending submissions and refresh routes
         if (token) {
-          flushQueue(token).catch(() => {});
+          flushQueue(token).then(async () => {
+            try {
+              const stats = await getQueueStats();
+              if (stats.pending > 0 && stats.maxAttempts >= 3) {
+                setRetryBanner(`Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend`);
+              } else {
+                setRetryBanner(null);
+              }
+            } catch {}
+          }).catch(() => {});
         }
         load();
       }
@@ -82,7 +100,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
     if (Platform.OS !== 'web') return;
     const handler = () => {
       if (token) {
-        flushQueue(token).catch(() => {});
+        flushQueue(token).then(async () => {
+          try {
+            const stats = await getQueueStats();
+            if (stats.pending > 0 && stats.maxAttempts >= 3) {
+              setRetryBanner(`Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend`);
+            } else {
+              setRetryBanner(null);
+            }
+          } catch {}
+        }).catch(() => {});
       }
       load();
     };
@@ -181,6 +208,11 @@ export default function RouteListScreen({ navigation, route }: Props) {
           <Text style={styles.bannerText}>{savedBanner === 'offline' ? '✓ Saved offline — will sync when online' : '✓ Saved'}</Text>
         </View>
       ) : null}
+      {retryBanner ? (
+        <View style={styles.banner} accessibilityRole="status" accessibilityLabel="Retrying submissions">
+          <Text style={styles.bannerText}>{retryBanner}</Text>
+        </View>
+      ) : null}
       {error ? (
         <View style={styles.errorWrap}>
           <Banner type="error" message={error} />
@@ -236,6 +268,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   list: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: spacing(4) },
+  banner: { backgroundColor: '#0b5', paddingVertical: spacing(2), paddingHorizontal: spacing(4) },
+  bannerText: { color: 'white', textAlign: 'center', fontWeight: '600' },
   card: {
     width: '100%',
     maxWidth: 360,
