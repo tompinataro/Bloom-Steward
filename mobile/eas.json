@@ -1,0 +1,31 @@
+{
+  "cli": {
+    "version": ">= 13.0.0"
+  },
+  "build": {
+    "preview": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://bloom-steward-2a872c497756.herokuapp.com"
+      }
+    },
+    "production": {
+      "developmentClient": false,
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://bloom-steward-2a872c497756.herokuapp.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
+
