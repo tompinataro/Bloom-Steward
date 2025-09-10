@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, memo, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -220,19 +220,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
             <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{route.address || '123 Main St'}</Text>
           </View>
           <View style={styles.centerWrap}>
-            <TouchableOpacity
-              style={styles.mapBtn}
-              onPress={() => onOpenMaps(route.address)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Open directions for ${route.clientName}`}
-              accessibilityHint="Opens maps with driving directions"
-            >
-              <View style={styles.mapBtnInner}>
-                <Text style={styles.mapBtnText}>Map</Text>
-                <Text style={styles.mapBtnArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
+            <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />
           </View>
           <MemoCheck done={isDone} progress={inProg && !isDone} label={isDone ? 'Completed' : inProg ? 'In progress' : 'Not started'} />
         </View>
@@ -252,8 +240,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
     useEffect(() => {
       if (done) {
         Animated.parallel([
-          Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 10 }),
+          Animated.timing(opacity, { toValue: 1, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
         ]).start();
       } else {
         opacity.setValue(0);
@@ -271,26 +259,28 @@ export default function RouteListScreen({ navigation, route }: Props) {
     );
   }, (prev, next) => prev.done === next.done && prev.progress === next.progress && prev.label === next.label);
 
-  function Check({ done, progress }: { done: boolean; progress: boolean }) {
-    const scale = React.useRef(new Animated.Value(done ? 1 : 0.9)).current;
-    const opacity = React.useRef(new Animated.Value(done ? 1 : 0)).current;
-    useEffect(() => {
-      if (done) {
-        Animated.parallel([
-          Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
-        ]).start();
-      } else {
-        opacity.setValue(0);
-        scale.setValue(0.9);
-      }
-    }, [done]);
+  const MapButton = ({ onPress, label }: { onPress: () => void; label: string }) => {
+    const scale = useRef(new Animated.Value(1)).current;
+    const onPressIn = () => Animated.timing(scale, { toValue: 0.96, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    const onPressOut = () => Animated.timing(scale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
     return (
-      <View style={[styles.checkBadge, done ? styles.checkBadgeDone : progress ? styles.checkBadgeInProgress : null]} accessibilityRole="image">
-        <Animated.Text style={[styles.checkMark, styles.checkMarkDone, { opacity, transform: [{ scale }] }]}>✓</Animated.Text>
-      </View>
+      <Pressable
+        style={styles.mapBtn}
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint="Opens maps with driving directions"
+      >
+        <Animated.View style={[styles.mapBtnInner, { transform: [{ scale }] }]}>
+          <Text style={styles.mapBtnText}>Map</Text>
+          <Text style={styles.mapBtnArrow}>›</Text>
+        </Animated.View>
+      </Pressable>
     );
-  }
+  };
 
   return (
     <>

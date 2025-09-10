@@ -172,7 +172,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
                 numberOfLines={1}
                 value={timelyNotes}
                 onChangeText={setTimelyNotes}
-                placeholder=" Urgent issues, if necessary, will appear here."
+                placeholder="Urgent issues, if necessary, will appear here."
                 placeholderTextColor={colors.muted}
               />
             </Animated.View>
