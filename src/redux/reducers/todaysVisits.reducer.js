@@ -1,8 +1,6 @@
 const todaysVisitsReducer = (state = [], action) => {
     switch (action.type) {
         case 'SET_TODAYS_VISITS':
-            console.log("TodaysVisits Reducer received visits data:", action.payload);
-            
             return action.payload;
         
         case 'CLEAR_TODAYS_VISITS':

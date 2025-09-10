@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import ArrivalTimestampButton from '../ArrivalTimestampButton/ArrivalTimestampButton';
 import DepartureTimestampButton from '../DepartureTimestampButton/DepartureTimestampButton';
-import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
 import GoToYourRouteButton from '../GoToYourRouteButton/GoToYourRouteButton';
 import NextPageBtn from '../NextPageBtn/NextPageBtn';
 function ClientVisitPage() {
@@ -80,7 +79,6 @@ function ClientVisitPage() {
           <h2> </h2>
           <h2> </h2>
           <GoToYourRouteButton className="btn"/>
-          <TempAdminAccessBtn />
 
 
         </div>

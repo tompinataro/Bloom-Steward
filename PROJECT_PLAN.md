@@ -7,7 +7,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - Mark checkboxes here as you complete sprints; update the matching stub with notes and status.
 
 ## Phase 1 — Stabilize & Hardening
-- [ ] Sprint 1: Remove Dev Artifacts (clean prod build, guard dev code)
+- [x] Sprint 1: Remove Dev Artifacts (clean prod build, guard dev code)
 - [x] Sprint 2: Navigation Polish (headers/back, iOS/Web parity)
 - [ ] Sprint 3: Error Handling (centralize banners; keep auto 401 sign‑out)
 - [x] Sprint 4: Type Safety & Lint (tsc clean; basic ESLint)

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import LogOutButton from '../LogOutButton/LogOutButton';
-import TempAdminAccessBtn from '../TempAdminAccessBtn/TempAdminAccessBtn';
 function YourRoutePage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -13,8 +12,7 @@ function YourRoutePage() {
 
   useEffect(() => {
     // Dispatch action to fetch data when component mounts
-    if (clients.length === 0) { // Only dispatch if clients is initially empty
-      console.log("Dispatching TODAYS_VISITS");
+    if (clients.length === 0) {
       dispatch({ type: 'TODAYS_VISITS' });
     }
   }, []); // Depend only on dispatch and clients length to avoid re-dispatching
@@ -29,7 +27,6 @@ function YourRoutePage() {
 
   // Handle button click to navigate to ClientVisit details page
   const handleClientClick = (client) => {
-    console.log("Navigating to details for:", client); // Log client click
     dispatch({ type: 'SET_CURRENT_VISIT', payload: client });
     history.push(`/ClientVisitPage/`);
   };

@@ -176,10 +176,14 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
           if (mismatches.length > 0) {
             console.warn(`[visit-state shadow] ${mismatches.length} mismatch(es) for ${day}`, mismatches.map(m => ({ id: m.id, db: { c: m.completedToday, p: m.inProgress } })));
           } else {
-            console.log(`[visit-state shadow] parity OK for ${day}`);
+            if (process.env.NODE_ENV !== 'production') {
+              console.log(`[visit-state shadow] parity OK for ${day}`);
+            }
             // Flip reads to DB for this process after successful parity
             readMode = 'db';
-            console.log('[visit-state] flipping read mode to db for this process');
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('[visit-state] flipping read mode to db for this process');
+            }
           }
           shadowLogOncePerDay.add(day);
         }
