@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useCallback, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import LogOutButton from '../LogOutButton/LogOutButton';
+const ClientButton = memo(function ClientButton({ client, onPress }) {
+  return (
+    <button
+      type="button"
+      className="btn"
+      style={{ marginBottom: '30px' }}
+      onClick={() => onPress(client)}
+    >
+      {client.client_name}
+    </button>
+  );
+});
+
 function YourRoutePage() {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -26,10 +39,10 @@ function YourRoutePage() {
   // }, [clients]); // Only run when clients data changes
 
   // Handle button click to navigate to ClientVisit details page
-  const handleClientClick = (client) => {
+  const handleClientClick = useCallback((client) => {
     dispatch({ type: 'SET_CURRENT_VISIT', payload: client });
     history.push(`/ClientVisitPage/`);
-  };
+  }, [dispatch, history]);
 
   return (
     <div>
@@ -42,15 +55,11 @@ function YourRoutePage() {
           <div>
             {clients && clients.length > 0 ? (
               clients.map((client, index) => (
-                <button
-                  type="button"
-                  className="btn"
-                  key={index}
-                  style={{ marginBottom: '30px' }}  // Adds space below each button
-                  onClick={() => handleClientClick(client)}>
-                  {client.client_name}
-                </button>
-
+                <ClientButton
+                  key={client.id ?? index}
+                  client={client}
+                  onPress={handleClientClick}
+                />
               ))
 
             ) : (     // <<< Ternary "if else" shortcut

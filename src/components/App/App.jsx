@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import {
   HashRouter as Router,
   Redirect,
@@ -13,19 +13,20 @@ import Footer from '../Footer/Footer';
 
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
-import AboutPage from '../AboutPage/AboutPage';
-import UserPage from '../1UserPage/UserPage';
-import YourRoutePage from '../2YourRoutePage/YourRoutePage';
-import ClientVisitPage from '../3ClientVisitPage/ClientVisitPage';
-import AdminLandingPage from '../4AdminLandingPage/AdminLandingPage';
-import AdminClientListPage from '../5AdminClientListPage/AdminClientListPage';
-import AdminTimelyNotePage from '../6AdminTimelyNotesPage/AdminTimelyNotesPage';
-import AdminFieldTechListPage from '../7AdminFieldTechListPage/AdminFieldTechListPage';
-import AdminDataEntryPage from '../8AdminDataEntryPage/AdminDataEntryPage';
-import InfoPage from '../InfoPage/InfoPage';
-import LandingPage from '../LandingPage/LandingPage';
-import LoginPage from '../LoginPage/LoginPage';
-import RegisterPage from '../RegisterPage/RegisterPage';
+// Route-level code splitting via React.lazy
+const AboutPage = lazy(() => import('../AboutPage/AboutPage'));
+const UserPage = lazy(() => import('../1UserPage/UserPage'));
+const YourRoutePage = lazy(() => import('../2YourRoutePage/YourRoutePage'));
+const ClientVisitPage = lazy(() => import('../3ClientVisitPage/ClientVisitPage'));
+const AdminLandingPage = lazy(() => import('../4AdminLandingPage/AdminLandingPage'));
+const AdminClientListPage = lazy(() => import('../5AdminClientListPage/AdminClientListPage'));
+const AdminTimelyNotePage = lazy(() => import('../6AdminTimelyNotesPage/AdminTimelyNotesPage'));
+const AdminFieldTechListPage = lazy(() => import('../7AdminFieldTechListPage/AdminFieldTechListPage'));
+const AdminDataEntryPage = lazy(() => import('../8AdminDataEntryPage/AdminDataEntryPage'));
+const InfoPage = lazy(() => import('../InfoPage/InfoPage'));
+const LandingPage = lazy(() => import('../LandingPage/LandingPage'));
+const LoginPage = lazy(() => import('../LoginPage/LoginPage'));
+const RegisterPage = lazy(() => import('../RegisterPage/RegisterPage'));
 
 import './App.css';
 
@@ -41,12 +42,22 @@ function App() {
     dispatch({ type: 'FETCH_USER' });
   }, [dispatch]);
 
+  // Prefetch likely next routes once user is known (helps perceived perf)
+  useEffect(() => {
+    if (user?.id) {
+      // fire-and-forget dynamic imports to warm chunks
+      import('../2YourRoutePage/YourRoutePage');
+      import('../3ClientVisitPage/ClientVisitPage');
+    }
+  }, [user?.id]);
+
   // Line 45 begins the "Front-End" Router
   return (
-    <Router>     
+    <Router>
       <div>
         <Nav />
-        <Switch>
+        <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
+          <Switch>
           {/* Visiting localhost:5173 will redirect to localhost:5173/home */}
           <Redirect exact from="/" to="/home" />
           {/* For protected routes, the view could show one of several things on the same route. Visiting localhost:5173/user will show the UserPage if the user is logged in. If the user is not logged in, the ProtectedRoute will show the LoginPage (component). Even though it seems like they are different pages, the user is always on localhost:5173/user */}
@@ -181,7 +192,8 @@ function App() {
             <h1>404</h1>
           </Route>
 
-        </Switch>
+          </Switch>
+        </Suspense>
         <Footer />
       </div>
     </Router> 

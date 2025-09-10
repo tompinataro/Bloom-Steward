@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -168,7 +168,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     try { await load(); } finally { setRefreshing(false); }
   };
 
-  const openMaps = async (address: string) => {
+  const openMaps = useCallback(async (address: string) => {
     const q = encodeURIComponent(address);
     // Prefer Google Maps directions. Fallback to web if app isn't available.
     if (Platform.OS === 'ios') {
@@ -188,7 +188,75 @@ export default function RouteListScreen({ navigation, route }: Props) {
     }
     const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
     Linking.openURL(web).catch(() => {});
+  }, []);
+
+  const onOpenVisit = useCallback((id: number) => {
+    navigation.navigate('VisitDetail', { id });
+  }, [navigation]);
+
+  const keyExtractor = useCallback((item: TodayRoute) => String(item.id), []);
+
+  type ItemProps = {
+    route: TodayRoute;
+    isDone: boolean;
+    inProg: boolean;
+    onOpen: (id: number) => void;
+    onOpenMaps: (address: string) => void;
   };
+
+  const RouteListItem = memo(function RouteListItem({ route, isDone, inProg, onOpen, onOpenMaps }: ItemProps) {
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => onOpen(route.id)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open visit for ${route.clientName}`}
+      >
+        <View style={styles.rowTop}>
+          <View style={styles.leftWrap}>
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{route.clientName || 'Client Name'}</Text>
+            <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{route.address || '123 Main St'}</Text>
+          </View>
+          <View style={styles.centerWrap}>
+            <TouchableOpacity style={styles.mapBtn} onPress={() => onOpenMaps(route.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${route.clientName}`}>
+              <View style={styles.mapBtnInner}>
+                <Text style={styles.mapBtnText}>Map</Text>
+                <Text style={styles.mapBtnArrow}>›</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <MemoCheck done={isDone} progress={inProg && !isDone} />
+        </View>
+      </TouchableOpacity>
+    );
+  }, (prev, next) =>
+    prev.route.id === next.route.id &&
+    prev.route.clientName === next.route.clientName &&
+    prev.route.address === next.route.address &&
+    prev.isDone === next.isDone &&
+    prev.inProg === next.inProg
+  );
+
+  const MemoCheck = memo(function Check({ done, progress }: { done: boolean; progress: boolean }) {
+    const scale = useRef(new Animated.Value(done ? 1 : 0.9)).current;
+    const opacity = useRef(new Animated.Value(done ? 1 : 0)).current;
+    useEffect(() => {
+      if (done) {
+        Animated.parallel([
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+        ]).start();
+      } else {
+        opacity.setValue(0);
+        scale.setValue(0.9);
+      }
+    }, [done]);
+    return (
+      <View style={[styles.checkBadge, done ? styles.checkBadgeDone : progress ? styles.checkBadgeInProgress : null]} accessibilityRole="image">
+        <Animated.Text style={[styles.checkMark, styles.checkMarkDone, { opacity, transform: [{ scale }] }]}>✓</Animated.Text>
+      </View>
+    );
+  }, (prev, next) => prev.done === next.done && prev.progress === next.progress);
 
   function Check({ done, progress }: { done: boolean; progress: boolean }) {
     const scale = React.useRef(new Animated.Value(done ? 1 : 0.9)).current;
@@ -222,31 +290,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
         style={styles.list}
         contentContainerStyle={[styles.listContent, { paddingBottom: spacing(16) }]}
         data={routes}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={keyExtractor}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate('VisitDetail', { id: item.id })}
-            accessibilityRole="button"
-            accessibilityLabel={`Open visit for ${item.clientName}`}
-          >
-            <View style={styles.rowTop}>
-              <View style={styles.leftWrap}>
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{item.clientName || 'Client Name'}</Text>
-                <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{item.address || '123 Main St'}</Text>
-              </View>
-              <View style={styles.centerWrap}>
-                <TouchableOpacity style={styles.mapBtn} onPress={() => openMaps(item.address)} accessibilityRole="button" accessibilityLabel={`Open directions for ${item.clientName}`}>
-                  <View style={styles.mapBtnInner}>
-                    <Text style={styles.mapBtnText}>Map</Text>
-                    <Text style={styles.mapBtnArrow}>›</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-              <Check done={completed.has(item.id)} progress={inProgress.has(item.id) && !completed.has(item.id)} />
-            </View>
-          </TouchableOpacity>
+          <RouteListItem
+            route={item}
+            isDone={completed.has(item.id)}
+            inProg={inProgress.has(item.id)}
+            onOpen={onOpenVisit}
+            onOpenMaps={openMaps}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
