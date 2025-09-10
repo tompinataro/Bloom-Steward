@@ -259,8 +259,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
         }
       />
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
-        {/* Dev note: This Sign Off button exits the session (same action as header Sign Out) */}
-        <ThemedButton title="Sign Off" onPress={signOut} style={styles.submitBtn} />
+        {/* Log Out exits the session (same action as header Sign Out) */}
+        <ThemedButton title="Log Out" onPress={signOut} style={styles.submitBtn} />
       </SafeAreaView>
       <LoadingOverlay visible={loading || refreshing} />
     </>

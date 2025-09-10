@@ -68,7 +68,7 @@ function getFlags(visitId: number, userId?: number) {
   return { completedToday: !!cur?.completed, inProgress: !!cur?.inProgress };
 }
 
-const app = express();
+export const app = express();
 app.use(cors());
 app.use(express.json());
 // Request metrics (counts + duration)
@@ -294,6 +294,8 @@ app.post('/api/admin/visit-state/reset', requireAuth, requireAdmin, async (req, 
 });
 
 const port = Number(process.env.PORT) || 5100;
-app.listen(port, () => {
-  console.log(`Listening on port: ${port}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Listening on port: ${port}`);
+  });
+}
