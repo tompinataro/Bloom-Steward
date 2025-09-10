@@ -82,3 +82,12 @@ export async function pruneToIds(ids: number[]): Promise<void> {
 export async function clearAllProgress(): Promise<void> {
   await AsyncStorage.multiRemove([KEY, KEY_PROGRESS]);
 }
+
+// Server-truth sync: replace local persistent sets with server-provided flags
+export async function syncServerTruth(completedIds: number[], inProgressIds: number[]): Promise<void> {
+  await ensureToday();
+  try {
+    await AsyncStorage.setItem(KEY, JSON.stringify(Array.from(new Set(completedIds))));
+    await AsyncStorage.setItem(KEY_PROGRESS, JSON.stringify(Array.from(new Set(inProgressIds))));
+  } catch {}
+}

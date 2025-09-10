@@ -10,7 +10,7 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
-import { ensureToday, getCompleted, getInProgress, pruneToIds } from '../completed';
+import { ensureToday, getCompleted, getInProgress, pruneToIds, syncServerTruth } from '../completed';
 import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
@@ -53,6 +53,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
           if (r.inProgress) serverInProg.add(r.id);
         }
         if (serverCompleted.size || serverInProg.size) {
+          // Persist server truth to local storage for consistency across views
+          try { await syncServerTruth(Array.from(serverCompleted), Array.from(serverInProg)); } catch {}
           setCompleted(serverCompleted);
           setInProgress(serverInProg);
         } else {

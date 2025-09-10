@@ -10,7 +10,7 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [ ] Sprint 1: Remove Dev Artifacts (clean prod build, guard dev code)
 - [x] Sprint 2: Navigation Polish (headers/back, iOS/Web parity)
 - [ ] Sprint 3: Error Handling (centralize banners; keep auto 401 sign‑out)
-- [ ] Sprint 4: Type Safety & Lint (tsc clean; basic ESLint)
+- [x] Sprint 4: Type Safety & Lint (tsc clean; basic ESLint)
 
 ## Phase 2 — Data & API
 - [x] Sprint 5: Server Visit State (Phase A: in‑memory server truth now; Phase B: DB later; flags in `/api/routes/today`)
@@ -19,13 +19,12 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [ ] Sprint 8: DB Migrations (final schema + seed)
 
 ## Phase 3 — Offline & Sync
-- [ ] Sprint 9: Queue Robustness (dedupe/backoff; no lost submissions)
-- [x] Sprint 10: Foreground Sync (focus/network regain)
 - [x] Sprint 9: Queue Robustness (dedupe/backoff; no lost submissions)
+- [x] Sprint 10: Foreground Sync (focus/network regain)
 - [ ] Sprint 11: Background Sync (optional background fetch)
 - [ ] Sprint 12: Conflict Handling (double submit safety)
 - [ ] Sprint 13: Geo Attachments (check‑in/out loc with fallbacks)
-- [ ] Sprint 14: Status Consistency (server as source of truth)
+- [x] Sprint 14: Status Consistency (server as source of truth)
 
 ## Phase 4 — UX, A11y, Perf
 - [ ] Sprint 15: Accessibility Pass (labels/roles/hit areas; dynamic type)

@@ -8,5 +8,7 @@
 - Acceptance:
   - Reinstall app → same ✓/in‑progress after initial fetch.
 - Dependencies: Sprint 5
-- Status: TODO
-
+- Status: DONE
+- Notes:
+  - Client persists server truth to local storage when flags are present (completed/inProgress), ensuring offline screens reflect server truth.
+  - Dev reset action clears local state when server is reset for demos.
