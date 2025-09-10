@@ -1,5 +1,5 @@
-import React from 'react';
-import { Text, Pressable, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Text, Pressable, View, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -15,8 +15,7 @@ import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import SignOutButton from './src/components/SignOutButton';
 import AppSplash from './src/components/AppSplash';
 import { adminResetVisitState } from './src/api/client';
-import { Platform, useEffect } from 'react';
-import { registerBackgroundSync } from './src/background';
+import Constants from 'expo-constants';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -100,8 +99,9 @@ function RootNavigator() {
 
 export default function App() {
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      registerBackgroundSync().catch(() => {});
+    // Avoid importing background modules inside Expo Go (native module not linked there)
+    if (Platform.OS !== 'web' && Constants?.appOwnership !== 'expo') {
+      import('./src/background').then(m => m.registerBackgroundSync?.()).catch(() => {});
     }
   }, []);
   return (
