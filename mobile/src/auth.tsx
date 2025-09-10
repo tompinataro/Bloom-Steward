@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler } from './api/client';
+import { login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler, setTokenRefreshedHandler } from './api/client';
 
 type AuthState = {
   token: string | null;
@@ -53,6 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await AsyncStorage.removeItem('auth_token');
         await AsyncStorage.removeItem('auth_user');
+      } catch {}
+    });
+    setTokenRefreshedHandler(async (newToken, newUser) => {
+      try {
+        setToken(newToken);
+        if (newUser) setUser(newUser);
+        await AsyncStorage.setItem('auth_token', newToken);
+        if (newUser) await AsyncStorage.setItem('auth_user', JSON.stringify(newUser));
       } catch {}
     });
     return () => setUnauthorizedHandler(null);

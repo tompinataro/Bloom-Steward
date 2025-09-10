@@ -2,23 +2,54 @@ export const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:510
 
 // Allows AuthProvider to register a handler for 401s
 let unauthorizedHandler: (() => void) | null = null;
+let tokenRefreshedHandler: ((token: string, user: any) => void | Promise<void>) | null = null;
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   unauthorizedHandler = handler;
+}
+export function setTokenRefreshedHandler(handler: ((token: string, user: any) => void | Promise<void>) | null) {
+  tokenRefreshedHandler = handler;
 }
 
 function withBase(path: string) {
   return `${API_BASE.replace(/\/$/, '')}${path}`;
 }
 
-async function fetchJson(input: RequestInfo | URL, init?: RequestInit & { timeoutMs?: number }) {
+async function fetchJson(input: RequestInfo | URL, init?: RequestInit & { timeoutMs?: number }, _allowRetry = true) {
   const { timeoutMs = 10000, ...rest } = init || {};
   const ac = new AbortController();
   const timeout = setTimeout(() => ac.abort(), timeoutMs);
   try {
+    const originalBody = (rest as any)?.body;
     const res = await fetch(input, { ...rest, signal: ac.signal });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       if (res.status === 401) {
+        try {
+          // Attempt a one-time refresh+retry if caller used Bearer token
+          const hdr = (rest.headers || {}) as any;
+          const auth = (hdr['Authorization'] || hdr['authorization']) as string | undefined;
+          const isAuthReq = typeof input === 'string' ? input.includes('/api/auth/') : false;
+          if (_allowRetry && auth && /Bearer\s+/.test(auth) && !isAuthReq) {
+            // Try refresh with current token
+            const refreshRes = await fetch(withBase('/api/auth/refresh'), {
+              method: 'POST',
+              headers: { Authorization: auth },
+            });
+            if (refreshRes.ok) {
+              const rr = await refreshRes.json();
+              const newToken: string | undefined = rr?.token;
+              const user = rr?.user;
+              if (newToken) {
+                try { await tokenRefreshedHandler?.(newToken, user); } catch {}
+                const headers = new Headers(rest.headers as any);
+                headers.set('Authorization', `Bearer ${newToken}`);
+                // Retry original request once with new token
+                const retryRes = await fetchJson(input, { ...(rest as any), headers, body: originalBody }, false);
+                return retryRes;
+              }
+            }
+          }
+        } catch {}
         try { unauthorizedHandler?.(); } catch {}
       }
       throw new Error(`${res.status} ${res.statusText}${text ? `: ${text}` : ''}`);
