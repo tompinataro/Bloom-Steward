@@ -16,6 +16,17 @@
         "EXPO_PUBLIC_API_URL": "https://bloom-steward-2a872c497756.herokuapp.com"
       }
     },
+    "staging": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://bloom-steward-2a872c497756.herokuapp.com"
+      },
+      "channel": "staging",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
     "production": {
       "developmentClient": false,
       "distribution": "store",
@@ -28,4 +39,3 @@
     "production": {}
   }
 }
-

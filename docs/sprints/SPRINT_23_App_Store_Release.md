@@ -13,5 +13,20 @@
   - Binary successfully submitted to App Review.
   - Release notes drafted and ready.
 - Dependencies: Sprint 22, Sprint 5/8 (server truth), Sprint 21 (CI/CD)
-- Status: TODO
+- Status: In Progress — prepared store metadata doc and build numbers.
 
+## Changes Implemented
+- Set iOS `buildNumber` and Android `versionCode` in `mobile/app.json`.
+- Added App Store metadata draft: `docs/release/APP_STORE_METADATA.md`.
+- Added convenience scripts: `build:ios:staging`, `submit:ios:latest` in `mobile/package.json`.
+
+## Operator Steps
+1) Populate App Store Connect metadata using `docs/release/APP_STORE_METADATA.md`.
+2) Ensure signing is configured (EAS will guide; use the existing bundle identifier `com.pinataro.bloomsteward`).
+3) Build store binary: `cd mobile && npm run build:ios:prod`.
+4) Submit latest build: `npm run submit:ios:latest`.
+5) Fill App Privacy questionnaire (data collection/use as noted).
+6) Attach screenshots; submit for review.
+
+## Verification
+- Smoke test TestFlight build on staging/prod API before submitting for review.

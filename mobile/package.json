@@ -12,6 +12,8 @@
     "env:stage": "printf \"EXPO_PUBLIC_API_URL=https://bloom-steward-2a872c497756.herokuapp.com\\n\" > .env && cat .env",
     "build:ios:preview": "eas build -p ios --profile preview",
     "build:ios:prod": "eas build -p ios --profile production",
+    "build:ios:staging": "eas build -p ios --profile staging",
+    "submit:ios:latest": "eas submit -p ios --latest",
     "submit:ios:prod": "eas submit -p ios"
   },
   "dependencies": {

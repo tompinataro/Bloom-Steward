@@ -27,21 +27,21 @@ This plan tracks remaining work in concise, 2‑hour sprints. Each sprint has a 
 - [x] Sprint 14: Status Consistency (server as source of truth)
 
 ## Phase 4 — UX, A11y, Perf
-- [ ] Sprint 15: Accessibility Pass (labels/roles/hit areas; dynamic type)
-- [ ] Sprint 16: Micro‑Animations (map press state; ✓ polish; banner consistency)
-- [ ] Sprint 17: Performance (lazy load; prefetch; reduce re‑renders)
-- [ ] Sprint 18: Copy/Design Polish (final strings, spacing, colors)
+- [x] Sprint 15: Accessibility Pass (labels/roles/hit areas; dynamic type)
+- [x] Sprint 16: Micro‑Animations (map press state; ✓ polish; banner consistency)
+- [x] Sprint 17: Performance (lazy load; prefetch; reduce re‑renders)
+- [x] Sprint 18: Copy/Design Polish (final strings, spacing, colors)
 
 ## Phase 5 — Tests, CI, Release
-- [ ] Sprint 19: Server Tests (auth/routes/visits/submissions)
-- [ ] Sprint 20: Client Tests (key logic: time format, ack gates)
+- [x] Sprint 19: Server Tests (auth/routes/visits/submissions)
+- [x] Sprint 20: Client Tests (key logic: time format, ack gates)
  - [x] Sprint 21: CI/CD (lint/test/build; EAS preview)
-- [ ] Sprint 22: Staging & TestFlight (staging env; tester flow)
+- [x] Sprint 22: Staging & TestFlight (staging env; tester flow)
 - [ ] Sprint 23: App Store Release (App Store Connect metadata, EAS submit, review)
 
 ## Estimates
-- 22 sprints × 2 hours ≈ 44 hours.
-- +20% integration/QA buffer ≈ 52–56 hours.
+- 23 sprints × 2 hours ≈ 46 hours.
+- +20% integration/QA buffer ≈ 55–58 hours.
 
 ## Hybrid DB Plan (Summary)
 - Sprint 5 (Phase A): Implement server truth in memory with final API contract

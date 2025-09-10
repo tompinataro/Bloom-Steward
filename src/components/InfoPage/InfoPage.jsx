@@ -7,8 +7,9 @@ import React from 'react';
 
 function InfoPage() {
   return (
-    <div className="container">
-      <p>Info Page</p>
+    <div className="container" role="main">
+      <h1>Info</h1>
+      <p>Welcome! Use the navigation to view your route, open a visit, and submit your checklist.</p>
     </div>
   );
 }

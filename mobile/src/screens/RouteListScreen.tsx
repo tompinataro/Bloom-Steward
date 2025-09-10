@@ -205,26 +205,32 @@ export default function RouteListScreen({ navigation, route }: Props) {
   };
 
   const RouteListItem = memo(function RouteListItem({ route, isDone, inProg, onOpen, onOpenMaps }: ItemProps) {
+    const cardScale = useRef(new Animated.Value(1)).current;
+    const onCardPressIn = () => Animated.timing(cardScale, { toValue: 0.98, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    const onCardPressOut = () => Animated.timing(cardScale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
     return (
-      <TouchableOpacity
-        style={styles.card}
+      <Pressable
         onPress={() => onOpen(route.id)}
+        onPressIn={onCardPressIn}
+        onPressOut={onCardPressOut}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel={`Open visit for ${route.clientName}`}
         accessibilityHint="Opens the visit details"
       >
-        <View style={styles.rowTop}>
-          <View style={styles.leftWrap}>
-            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{route.clientName || 'Client Name'}</Text>
-            <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{route.address || '123 Main St'}</Text>
+        <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }] }>
+          <View style={styles.rowTop}>
+            <View style={styles.leftWrap}>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{route.clientName || 'Client Name'}</Text>
+              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{route.address || '123 Main St'}</Text>
+            </View>
+            <View style={styles.centerWrap}>
+              <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />
+            </View>
+            <MemoCheck done={isDone} progress={inProg && !isDone} label={isDone ? 'Completed' : inProg ? 'In progress' : 'Not started'} />
           </View>
-          <View style={styles.centerWrap}>
-            <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />
-          </View>
-          <MemoCheck done={isDone} progress={inProg && !isDone} label={isDone ? 'Completed' : inProg ? 'In progress' : 'Not started'} />
-        </View>
-      </TouchableOpacity>
+        </Animated.View>
+      </Pressable>
     );
   }, (prev, next) =>
     prev.route.id === next.route.id &&
@@ -294,6 +300,9 @@ export default function RouteListScreen({ navigation, route }: Props) {
         contentContainerStyle={[styles.listContent, { paddingBottom: spacing(16) }]}
         data={routes}
         keyExtractor={keyExtractor}
+        initialNumToRender={8}
+        windowSize={7}
+        removeClippedSubviews
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item }) => (
           <RouteListItem

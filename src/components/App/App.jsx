@@ -48,6 +48,12 @@ function App() {
       // fire-and-forget dynamic imports to warm chunks
       import('../2YourRoutePage/YourRoutePage');
       import('../3ClientVisitPage/ClientVisitPage');
+      // Prefetch admin screens as well to speed admin flows
+      import('../4AdminLandingPage/AdminLandingPage');
+      import('../5AdminClientListPage/AdminClientListPage');
+      import('../6AdminTimelyNotesPage/AdminTimelyNotesPage');
+      import('../7AdminFieldTechListPage/AdminFieldTechListPage');
+      import('../8AdminDataEntryPage/AdminDataEntryPage');
     }
   }, [user?.id]);
 
@@ -56,7 +62,7 @@ function App() {
     <Router>
       <div>
         <Nav />
-        <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
+        <Suspense fallback={<div style={{ padding: 16 }} role="status" aria-live="polite">Loading…</div>}>
           <Switch>
           {/* Visiting localhost:5173 will redirect to localhost:5173/home */}
           <Redirect exact from="/" to="/home" />

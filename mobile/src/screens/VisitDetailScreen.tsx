@@ -12,6 +12,7 @@ import { enqueueSubmission } from '../offlineQueue';
 import { addCompleted, addInProgress, removeInProgress } from '../completed';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
+import { isSubmitDisabled } from '../logic/gates';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VisitDetail'>;
 
@@ -238,7 +239,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         <ThemedButton
           title={submitting ? 'Submitting…' : 'Check Out & Complete Visit'}
           onPress={() => { if (!checkOutTs) setCheckOutTs(new Date().toISOString()); onSubmit(); }}
-          disabled={submitting || !checkInTs || ((timelyNotes?.trim()?.length || 0) > 0 && !ack)}
+          disabled={isSubmitDisabled({ submitting, checkInTs, timelyNotes, ack })}
           style={styles.submitBtn}
         />
       </SafeAreaView>

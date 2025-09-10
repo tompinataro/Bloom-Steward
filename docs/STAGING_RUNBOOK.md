@@ -36,10 +36,10 @@ EXPO_PUBLIC_API_URL=https://<staging-host>
 - `POST /api/admin/visit-state/reset` to clear today’s state.
 
 ## 6) Build TestFlight
-- `eas build -p ios --profile preview`
-- `eas submit -p ios --path <artifact>`
+- `eas build -p ios --profile staging` (internal testers)
+- Or `eas build -p ios --profile production` (store-ready)
+- `eas submit -p ios --latest` (or provide `--path <artifact>`) 
 
 Notes
 - The server implements dual‑write to `visit_state` and falls back to in‑memory when `DATABASE_URL` is not set.
 - Client prefers server flags for completed/in‑progress, then falls back to local if absent.
-
