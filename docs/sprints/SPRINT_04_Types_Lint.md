@@ -9,4 +9,8 @@
 - Acceptance:
   - `npm run typecheck` passes; ESLint minimal rules pass.
 - Dependencies: Sprint 1
-- Status: PARTIAL — strict TS enabled; add typecheck script; ESLint TBD
+- Status: DONE
+- Notes:
+  - Strict TS enabled; `npm run typecheck` added.
+  - ESLint config added at `.eslintrc.cjs` with TS + React rules.
+  - Scripts: `npm run lint`, `npm run lint:fix`.

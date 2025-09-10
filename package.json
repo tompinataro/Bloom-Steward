@@ -35,6 +35,8 @@
     "server": "node dist/server/server.js",
     "build": "tsc && cp -R server/sql dist/server/",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "test": "vitest",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts"
   },

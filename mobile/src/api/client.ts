@@ -42,6 +42,13 @@ export async function login(email: string, password: string): Promise<LoginRespo
   });
 }
 
+export async function refresh(token: string): Promise<LoginResponse> {
+  return fetchJson(withBase('/api/auth/refresh'), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export type TodayRoute = {
   id: number;
   clientName: string;

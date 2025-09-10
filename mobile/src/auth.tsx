@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, LoginResponse, setUnauthorizedHandler } from './api/client';
+import { login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler } from './api/client';
 
 type AuthState = {
   token: string | null;
@@ -26,6 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ]);
         if (t) setToken(t);
         if (u) setUser(JSON.parse(u));
+        // Best-effort: refresh token on startup to extend session
+        if (t) {
+          try {
+            const res = await apiRefresh(t);
+            setToken(res.token);
+            setUser(res.user);
+            await AsyncStorage.setItem('auth_token', res.token);
+            await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
+          } catch {
+            // ignore; user may be offline or token still fresh
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -68,4 +81,28 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
+}
+
+// Foreground refresh: global effect inside module
+// Note: runs once; relies on AuthProvider state updates via storage
+if (typeof AppState !== 'undefined') {
+  let lastState: AppStateStatus = AppState.currentState as AppStateStatus;
+  AppState.addEventListener('change', async (state) => {
+    try {
+      if (state === 'active' && lastState !== 'active') {
+        const t = await AsyncStorage.getItem('auth_token');
+        if (t) {
+          try {
+            const res = await apiRefresh(t);
+            await AsyncStorage.setItem('auth_token', res.token);
+            await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
+          } catch {
+            // ignore; offline or token still valid
+          }
+        }
+      }
+    } finally {
+      lastState = state;
+    }
+  });
 }

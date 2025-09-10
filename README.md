@@ -29,6 +29,7 @@ Bloom Steward is a custom accountability and quality control application designe
 - `GET /health` – liveness check
 - `GET /metrics` – Prometheus metrics
 - `POST /api/auth/login` – returns a demo token and user
+- `POST /api/auth/refresh` – returns a fresh token for a valid session
 - `GET /api/routes/today` – requires `Authorization: Bearer <token>`
 - `GET /api/visits/:id` – requires auth
 - `POST /api/visits/:id/submit` – requires auth
@@ -46,8 +47,12 @@ Bloom Steward is a custom accountability and quality control application designe
 - `VISIT_STATE_READ_MODE` — `db` | `memory` | `shadow` (default: `db` when DB present else `memory`).
   - `db`: read visit flags from `visit_state` table.
   - `memory`: read visit flags from in-memory map (Phase A).
-  - `shadow`: read from DB but log a one-time comparison against in-memory for the day.
+ - `shadow`: read from DB but log a one-time comparison against in-memory for the day.
  - Staging default: when `STAGING=1` (or `NODE_ENV` includes `staging`), the server defaults to `shadow` if DB is present.
+
+### Linting & Type Checking
+- Type check: `npm run typecheck`
+- Lint: `npm run lint` (fix with `npm run lint:fix`)
 
 ### Simulator Quick Start (recommended)
 1. Terminal A: `npm run dev`

@@ -130,6 +130,13 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
   return res.json({ ok: true, user: req.user });
 });
 
+// Issue a fresh token if the current one is valid
+app.post('/api/auth/refresh', requireAuth, (req, res) => {
+  if (!req.user) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  const token = signToken(req.user);
+  return res.json({ ok: true, token, user: req.user });
+});
+
 app.get('/api/routes/today', requireAuth, async (req, res) => {
   try {
     const routes = await getTodayRoutes(1);
