@@ -47,6 +47,26 @@
    - `docs/release/COMPLIANCE_CHECKLIST.md`
    - `docs/release/APP_PRIVACY.md`
 
+## Ticklist (Apple Portal)
+- [ ] Apple Developer → Identifiers → Register App ID
+  - [ ] Platform: iOS
+  - [ ] Description: see snippet below (no punctuation)
+  - [ ] Bundle ID (Explicit): `com.pinataro.bloomsteward`
+  - [ ] Capabilities: none for now
+- [ ] (If manual signing) Create iOS Distribution cert + App Store profile
+- [ ] App Store Connect → My Apps → New App
+  - [ ] Platform: iOS, Name: Bloom Steward, Language: English (US)
+  - [ ] Bundle ID: `com.pinataro.bloomsteward`, SKU: `bloom-steward-ios-1`, Access: Full
+  - [ ] Fill metadata & privacy using repo docs
+- [ ] First EAS iOS build (managed credentials): run interactively to create cert/profile
+- [ ] Confirm ASC build appears on 1.0.1 version page
+
+## Copy/Paste Snippets
+- App ID Description (Apple Developer):
+  - Bloom Steward mobile app
+- ASC SKU suggestion:
+  - bloom-steward-ios-1
+
 ## What I (repo) already prepared
 - Background fetch + location usage strings in `mobile/app.json` Info.plist
 - EAS profiles (`preview`, `staging`, `production`) and build scripts
@@ -56,4 +76,3 @@
 - App ID exists and matches `com.pinataro.bloomsteward`
 - ASC app created and linked to that Bundle ID
 - Decision doc updated (below) and this sprint marked complete
-
