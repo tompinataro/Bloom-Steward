@@ -136,6 +136,37 @@ app.post('/api/auth/login', (req, res) => {
   return res.status(401).json({ ok: false, error: 'invalid credentials' });
 });
 
+// Minimal Sign in with Apple endpoint for development/internal builds.
+// NOTE: For production, verify the identityToken with Apple's public keys
+// and map the Apple user to an internal account.
+app.post('/api/auth/apple', (req, res) => {
+  try {
+    const { identityToken, authorizationCode, email, name } = req.body ?? {};
+    try {
+      console.log('[auth/apple] req', {
+        hasIdentityToken: !!identityToken,
+        hasAuthorizationCode: !!authorizationCode,
+        email: email ? String(email) : null,
+      });
+    } catch {}
+    // In this demo server, accept the payload without external verification
+    // and synthesize a user. If an email is provided once (first consent), use it;
+    // otherwise generate a stable placeholder.
+    const userEmail: string = email || 'apple_user@bloomsteward.local';
+    const userName: string = name || 'Apple User';
+    const user: JwtUser = { id: 2, email: userEmail, name: userName, role: 'user' };
+
+    // Basic sanity: require at least one Apple credential field
+    if (!identityToken && !authorizationCode) {
+      return res.status(400).json({ ok: false, error: 'missing apple credential' });
+    }
+    const token = signToken(user);
+    return res.json({ ok: true, token, user });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message ?? 'apple auth error' });
+  }
+});
+
 app.get('/api/auth/me', requireAuth, (req, res) => {
   return res.json({ ok: true, user: req.user });
 });

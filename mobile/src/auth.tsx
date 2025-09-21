@@ -9,6 +9,7 @@ type AuthState = {
   user: LoginResponse['user'] | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithApple: (data: { identityToken?: string; authorizationCode?: string; email?: string | null; name?: string | null }) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -76,6 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
   };
 
+  const signInWithApple = async (data: { identityToken?: string; authorizationCode?: string; email?: string | null; name?: string | null }) => {
+    const { loginWithApple } = await import('./api/client');
+    const res = await loginWithApple(data);
+    setToken(res.token);
+    setUser(res.user);
+    await AsyncStorage.setItem('auth_token', res.token);
+    await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
+  };
+
   const signOut = async () => {
     setToken(null);
     setUser(null);
@@ -83,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.removeItem('auth_user');
   };
 
-  const value = useMemo<AuthState>(() => ({ token, user, loading, signIn, signOut }), [token, user, loading]);
+  const value = useMemo<AuthState>(() => ({ token, user, loading, signIn, signInWithApple, signOut }), [token, user, loading]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

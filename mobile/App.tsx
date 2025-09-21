@@ -100,8 +100,12 @@ function RootNavigator() {
 
 export default function App() {
   useEffect(() => {
-    // Avoid importing background modules inside Expo Go (native module not linked there)
-    if (Platform.OS !== 'web' && Constants?.appOwnership !== 'expo') {
+    // Only enable background tasks in standalone production builds.
+    // In Expo Go or Dev Client (appOwnership 'expo' or 'guest'), these native modules
+    // may not be linked and importing them will crash. Skip when __DEV__ is true.
+    const ownership = (Constants as any)?.appOwnership;
+    const isStandalone = ownership === 'standalone';
+    if (!__DEV__ && Platform.OS !== 'web' && isStandalone) {
       import('./src/background').then(m => m.registerBackgroundSync?.()).catch(() => {});
     }
   }, []);

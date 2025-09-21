@@ -80,6 +80,21 @@ export async function refresh(token: string): Promise<LoginResponse> {
   });
 }
 
+// Sign in with Apple (development-friendly endpoint)
+export type AppleLoginRequest = {
+  identityToken?: string;
+  authorizationCode?: string;
+  email?: string | null;
+  name?: string | null;
+};
+export async function loginWithApple(data: AppleLoginRequest): Promise<LoginResponse> {
+  return fetchJson(withBase('/api/auth/apple'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
 export type TodayRoute = {
   id: number;
   clientName: string;

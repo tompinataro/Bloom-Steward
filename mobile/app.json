@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/palms.jpg",
       "resizeMode": "cover",
@@ -18,7 +18,9 @@
       "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Your location is used to verify check-in/out at visit locations.",
-        "UIBackgroundModes": ["fetch"]
+        "UIBackgroundModes": ["fetch"],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true }
       }
     },
     "android": {
@@ -29,12 +31,14 @@
       "edgeToEdgeEnabled": true,
       "package": "com.pinataro.bloomsteward",
       "versionCode": 2,
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    
     "extra": {
       "eas": {
         "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"
