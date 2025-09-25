@@ -3,11 +3,11 @@
 Need help? Use the options below.
 
 Contact
-- Email (preferred): Replace with your support email
+- Email (preferred): TixPy@pinataro.com
 - GitHub Issues: https://github.com/tompinataro/Bloom-Steward/issues/new/choose
 
 Quick Checks
-- Server Health: Confirm the API responds at `/health` (see docs/STAGING_RUNBOOK.md)
+- Server Health: Confirm the API responds at `/health` (see [Staging Runbook](https://tompinataro.github.io/Bloom-Steward/docs/STAGING_RUNBOOK))
 - App Version: Ensure you’re on the latest TestFlight build
 - Network: Verify connectivity and try again after a few minutes
 
@@ -17,6 +17,5 @@ Common Topics
 - Location: Optional; deny permission if not required by your organization
 
 Links
-- Runbook (staging): docs/STAGING_RUNBOOK.md
+- Runbook (staging): https://tompinataro.github.io/Bloom-Steward/docs/STAGING_RUNBOOK
 - Privacy Policy: https://tompinataro.github.io/Bloom-Steward/privacy
-
