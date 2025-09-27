@@ -38,7 +38,9 @@ export default function RouteListScreen({ navigation, route }: Props) {
         }
       } catch {}
       const res = await fetchTodayRoutes(token);
-      setRoutes(res.routes);
+      // Deduplicate by id; some staging data sources can return repeated rows.
+      const deduped = Array.from(new Map(res.routes.map(r => [r.id, r])).values());
+      setRoutes(deduped);
       try {
         await ensureToday();
         await pruneToIds(res.routes.map(r => r.id));

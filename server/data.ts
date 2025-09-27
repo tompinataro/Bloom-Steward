@@ -38,9 +38,12 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     }
   }
   return [
-    { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '09:00' },
-    { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '10:30' },
-    { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '13:15' }
+    { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '08:30' },
+    { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '09:45' },
+    { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '11:15' },
+    { id: 104, clientName: 'Seaside Bistro', address: '910 Sago Palm Way', scheduledTime: '12:30' },
+    { id: 105, clientName: 'Harbor Suites', address: '22 Marina Blvd', scheduledTime: '14:00' },
+    { id: 106, clientName: 'Cypress Commons', address: '315 Bayberry Ln', scheduledTime: '15:15' }
   ];
 }
 
@@ -58,7 +61,13 @@ export async function getVisit(id: number): Promise<Visit> {
       return { id, clientName: visit.rows[0].client_name, checklist: items?.rows ?? [] };
     }
   }
-  const clientName = id === 101 ? 'Acme HQ' : id === 102 ? 'Blue Sky Co' : 'Sunset Mall';
+  const clientName =
+    id === 101 ? 'Acme HQ' :
+    id === 102 ? 'Blue Sky Co' :
+    id === 103 ? 'Sunset Mall' :
+    id === 104 ? 'Seaside Bistro' :
+    id === 105 ? 'Harbor Suites' :
+    id === 106 ? 'Cypress Commons' : 'Client';
   return {
     id,
     clientName,
