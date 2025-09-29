@@ -4,6 +4,16 @@ export type TodayRoute = { id: number; clientName: string; address: string; sche
 export type ChecklistItem = { key: string; label: string; done: boolean };
 export type Visit = { id: number; clientName: string; checklist: ChecklistItem[] };
 
+function dedupeRoutes(routes: TodayRoute[]): TodayRoute[] {
+  const map = new Map<number, TodayRoute>();
+  for (const route of routes) {
+    if (!map.has(route.id)) {
+      map.set(route.id, route);
+    }
+  }
+  return Array.from(map.values());
+}
+
 export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
   if (hasDb()) {
     const res = await dbQuery<{
@@ -22,7 +32,8 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     );
     const rows = res?.rows ?? [];
     if (rows.length > 0) {
-      return rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+      const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+      return dedupeRoutes(mapped);
     }
     // Fallback: if routes_today is empty or userId doesn't match, read from visits table
     const res2 = await dbQuery<{
@@ -34,16 +45,17 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     );
     const rows2 = res2?.rows ?? [];
     if (rows2.length > 0) {
-      return rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+      const mapped = rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+      return dedupeRoutes(mapped);
     }
   }
   return [
     { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '08:30' },
     { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '09:45' },
     { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '11:15' },
-    { id: 104, clientName: 'Seaside Bistro', address: '910 Sago Palm Way', scheduledTime: '12:30' },
-    { id: 105, clientName: 'Harbor Suites', address: '22 Marina Blvd', scheduledTime: '14:00' },
-    { id: 106, clientName: 'Cypress Commons', address: '315 Bayberry Ln', scheduledTime: '15:15' }
+    { id: 104, clientName: 'Harbor Plaza', address: '22 Marina Blvd', scheduledTime: '12:30' },
+    { id: 105, clientName: 'Palm Vista Resort', address: '910 Sago Palm Way', scheduledTime: '14:00' },
+    { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' }
   ];
 }
 
@@ -65,9 +77,9 @@ export async function getVisit(id: number): Promise<Visit> {
     id === 101 ? 'Acme HQ' :
     id === 102 ? 'Blue Sky Co' :
     id === 103 ? 'Sunset Mall' :
-    id === 104 ? 'Seaside Bistro' :
-    id === 105 ? 'Harbor Suites' :
-    id === 106 ? 'Cypress Commons' : 'Client';
+    id === 104 ? 'Harbor Plaza' :
+    id === 105 ? 'Palm Vista Resort' :
+    id === 106 ? 'Riverwalk Lofts' : 'Client';
   return {
     id,
     clientName,
