@@ -5,12 +5,12 @@ exports.getVisit = getVisit;
 exports.saveVisit = saveVisit;
 const db_1 = require("./db");
 const FALLBACK_ROUTES = [
-    { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '08:30' },
-    { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '09:45' },
-    { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '11:15' },
     { id: 104, clientName: 'Harbor Plaza', address: '22 Marina Blvd', scheduledTime: '12:30' },
     { id: 105, clientName: 'Palm Vista Resort', address: '910 Sago Palm Way', scheduledTime: '14:00' },
-    { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' }
+    { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' },
+    { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '08:30' },
+    { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '09:45' },
+    { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '11:15' }
 ];
 function normalizeKey(route) {
     const name = (route.clientName || '').trim().toLowerCase();
