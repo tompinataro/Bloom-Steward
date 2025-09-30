@@ -34,7 +34,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.pinataro.bloomsteward",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
