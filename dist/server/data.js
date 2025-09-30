@@ -4,17 +4,35 @@ exports.getTodayRoutes = getTodayRoutes;
 exports.getVisit = getVisit;
 exports.saveVisit = saveVisit;
 const db_1 = require("./db");
+function dedupeRoutes(routes) {
+    const map = new Map();
+    for (const route of routes) {
+        if (!map.has(route.id)) {
+            map.set(route.id, route);
+        }
+    }
+    return Array.from(map.values());
+}
 async function getTodayRoutes(userId) {
     if ((0, db_1.hasDb)()) {
-        const res = await (0, db_1.dbQuery)(`select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
+        const res = await (0, db_1.dbQuery)(
+        // Use LATERAL to select a single matching visit per route and avoid duplicate rows
+        `select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
        from routes_today rt
        join clients c on c.id = rt.client_id
-       join visits v on v.client_id = c.id and v.scheduled_time = rt.scheduled_time
+       join lateral (
+         select id, scheduled_time
+         from visits
+         where client_id = c.id and scheduled_time = rt.scheduled_time
+         order by id desc
+         limit 1
+       ) v on true
        where rt.user_id = $1
        order by rt.scheduled_time asc`, [userId]);
         const rows = res?.rows ?? [];
         if (rows.length > 0) {
-            return rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+            const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+            return dedupeRoutes(mapped);
         }
         // Fallback: if routes_today is empty or userId doesn't match, read from visits table
         const res2 = await (0, db_1.dbQuery)(`select v.id, c.name as client_name, c.address, v.scheduled_time
@@ -22,13 +40,17 @@ async function getTodayRoutes(userId) {
        order by v.scheduled_time asc`);
         const rows2 = res2?.rows ?? [];
         if (rows2.length > 0) {
-            return rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+            const mapped = rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+            return dedupeRoutes(mapped);
         }
     }
     return [
-        { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '09:00' },
-        { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '10:30' },
-        { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '13:15' }
+        { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '08:30' },
+        { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '09:45' },
+        { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '11:15' },
+        { id: 104, clientName: 'Harbor Plaza', address: '22 Marina Blvd', scheduledTime: '12:30' },
+        { id: 105, clientName: 'Palm Vista Resort', address: '910 Sago Palm Way', scheduledTime: '14:00' },
+        { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' }
     ];
 }
 async function getVisit(id) {
@@ -39,7 +61,12 @@ async function getVisit(id) {
             return { id, clientName: visit.rows[0].client_name, checklist: items?.rows ?? [] };
         }
     }
-    const clientName = id === 101 ? 'Acme HQ' : id === 102 ? 'Blue Sky Co' : 'Sunset Mall';
+    const clientName = id === 101 ? 'Acme HQ' :
+        id === 102 ? 'Blue Sky Co' :
+            id === 103 ? 'Sunset Mall' :
+                id === 104 ? 'Harbor Plaza' :
+                    id === 105 ? 'Palm Vista Resort' :
+                        id === 106 ? 'Riverwalk Lofts' : 'Client';
     return {
         id,
         clientName,
@@ -50,12 +77,10 @@ async function getVisit(id) {
         ]
     };
 }
-async function saveVisit(id, notes, checklist) {
+async function saveVisit(id, data) {
     if ((0, db_1.hasDb)()) {
-        // Enforce real persistence when a DB is available; let errors propagate
-        await (0, db_1.dbQuery)(`insert into visit_submissions (visit_id, notes, payload, created_at) values ($1, $2, $3, now())`, [id, notes ?? null, JSON.stringify(checklist)]);
+        await (0, db_1.dbQuery)(`insert into visit_submissions (visit_id, notes, payload, created_at) values ($1, $2, $3, now())`, [id, data?.notes ?? null, JSON.stringify(data)]);
         return { ok: true };
     }
-    // No DB configured (local dev without DATABASE_URL) — accept in-memory
     return { ok: true };
 }

@@ -22,10 +22,17 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
       address: string;
       scheduled_time: string;
     }>(
+      // Use LATERAL to select a single matching visit per route and avoid duplicate rows
       `select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
        from routes_today rt
        join clients c on c.id = rt.client_id
-       join visits v on v.client_id = c.id and v.scheduled_time = rt.scheduled_time
+       join lateral (
+         select id, scheduled_time
+         from visits
+         where client_id = c.id and scheduled_time = rt.scheduled_time
+         order by id desc
+         limit 1
+       ) v on true
        where rt.user_id = $1
        order by rt.scheduled_time asc`,
       [userId]
