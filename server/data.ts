@@ -13,26 +13,43 @@ const FALLBACK_ROUTES: TodayRoute[] = [
   { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' }
 ];
 
-function dedupeRoutes(routes: TodayRoute[]): TodayRoute[] {
+function normalizeKey(route: TodayRoute): string {
+  const name = (route.clientName || '').trim().toLowerCase();
+  const address = (route.address || '').trim().toLowerCase();
+  const time = route.scheduledTime || '';
+  return `${name}__${address}__${time}`;
+}
+
+function dedupeById(routes: TodayRoute[]): TodayRoute[] {
   const map = new Map<number, TodayRoute>();
   for (const route of routes) {
-    if (!map.has(route.id)) {
-      map.set(route.id, route);
-    }
+    if (!map.has(route.id)) map.set(route.id, route);
   }
   return Array.from(map.values());
 }
 
+function dedupeByKey(routes: TodayRoute[]): TodayRoute[] {
+  const seen = new Set<string>();
+  const result: TodayRoute[] = [];
+  for (const route of routes) {
+    const key = normalizeKey(route);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(route);
+  }
+  return result;
+}
+
 function ensureMinimumRoutes(routes: TodayRoute[], min = 6): TodayRoute[] {
   if (routes.length >= min) return routes;
-  const existing = new Set(routes.map(r => r.id));
+  const existing = new Set(routes.map(normalizeKey));
   const next = routes.slice();
   for (const fallback of FALLBACK_ROUTES) {
-    if (!existing.has(fallback.id)) {
-      next.push(fallback);
-      existing.add(fallback.id);
-      if (next.length >= min) break;
-    }
+    const key = normalizeKey(fallback);
+    if (existing.has(key)) continue;
+    next.push(fallback);
+    existing.add(key);
+    if (next.length >= min) break;
   }
   return next;
 }
@@ -63,7 +80,8 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     const rows = res?.rows ?? [];
     if (rows.length > 0) {
       const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
-      return ensureMinimumRoutes(dedupeRoutes(mapped));
+      const deduped = dedupeByKey(dedupeById(mapped));
+      return ensureMinimumRoutes(deduped);
     }
     // Fallback: if routes_today is empty or userId doesn't match, read from visits table
     const res2 = await dbQuery<{
@@ -76,7 +94,8 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     const rows2 = res2?.rows ?? [];
     if (rows2.length > 0) {
       const mapped = rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
-      return ensureMinimumRoutes(dedupeRoutes(mapped));
+      const deduped = dedupeByKey(dedupeById(mapped));
+      return ensureMinimumRoutes(deduped);
     }
   }
   return FALLBACK_ROUTES;

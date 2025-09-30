@@ -12,27 +12,45 @@ const FALLBACK_ROUTES = [
     { id: 105, clientName: 'Palm Vista Resort', address: '910 Sago Palm Way', scheduledTime: '14:00' },
     { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' }
 ];
-function dedupeRoutes(routes) {
+function normalizeKey(route) {
+    const name = (route.clientName || '').trim().toLowerCase();
+    const address = (route.address || '').trim().toLowerCase();
+    const time = route.scheduledTime || '';
+    return `${name}__${address}__${time}`;
+}
+function dedupeById(routes) {
     const map = new Map();
     for (const route of routes) {
-        if (!map.has(route.id)) {
+        if (!map.has(route.id))
             map.set(route.id, route);
-        }
     }
     return Array.from(map.values());
+}
+function dedupeByKey(routes) {
+    const seen = new Set();
+    const result = [];
+    for (const route of routes) {
+        const key = normalizeKey(route);
+        if (seen.has(key))
+            continue;
+        seen.add(key);
+        result.push(route);
+    }
+    return result;
 }
 function ensureMinimumRoutes(routes, min = 6) {
     if (routes.length >= min)
         return routes;
-    const existing = new Set(routes.map(r => r.id));
+    const existing = new Set(routes.map(normalizeKey));
     const next = routes.slice();
     for (const fallback of FALLBACK_ROUTES) {
-        if (!existing.has(fallback.id)) {
-            next.push(fallback);
-            existing.add(fallback.id);
-            if (next.length >= min)
-                break;
-        }
+        const key = normalizeKey(fallback);
+        if (existing.has(key))
+            continue;
+        next.push(fallback);
+        existing.add(key);
+        if (next.length >= min)
+            break;
     }
     return next;
 }
@@ -55,7 +73,8 @@ async function getTodayRoutes(userId) {
         const rows = res?.rows ?? [];
         if (rows.length > 0) {
             const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
-            return ensureMinimumRoutes(dedupeRoutes(mapped));
+            const deduped = dedupeByKey(dedupeById(mapped));
+            return ensureMinimumRoutes(deduped);
         }
         // Fallback: if routes_today is empty or userId doesn't match, read from visits table
         const res2 = await (0, db_1.dbQuery)(`select v.id, c.name as client_name, c.address, v.scheduled_time
@@ -64,7 +83,8 @@ async function getTodayRoutes(userId) {
         const rows2 = res2?.rows ?? [];
         if (rows2.length > 0) {
             const mapped = rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
-            return ensureMinimumRoutes(dedupeRoutes(mapped));
+            const deduped = dedupeByKey(dedupeById(mapped));
+            return ensureMinimumRoutes(deduped);
         }
     }
     return FALLBACK_ROUTES;
