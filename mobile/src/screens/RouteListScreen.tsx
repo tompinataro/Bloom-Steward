@@ -29,7 +29,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     const seen = new Set<string>();
     const result: TodayRoute[] = [];
     for (const item of items) {
-      const key = `${item.clientName}__${item.address}__${item.scheduledTime}`;
+      const key = `${item.clientName?.trim().toLowerCase()}__${item.address?.trim().toLowerCase()}`;
       if (seen.has(key)) continue;
       seen.add(key);
       result.push(item);
