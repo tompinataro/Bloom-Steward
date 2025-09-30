@@ -26,15 +26,32 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
 
   const dedupeRoutes = (items: TodayRoute[]) => {
-    const seen = new Set<string>();
-    const result: TodayRoute[] = [];
-    for (const item of items) {
-      const key = `${item.clientName?.trim().toLowerCase()}__${item.address?.trim().toLowerCase()}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      result.push(item);
+    // Always collapse by visit id first (protects legitimate duplicates)
+    const byId = Array.from(new Map(items.map(r => [r.id, r])).values());
+    if (byId.length <= 12) {
+      return byId;
     }
-    return result;
+
+    // If we still have an unusually large set, drop repeats by client/address/time
+    const counts = new Map<string, number>();
+    for (const item of byId) {
+      const key = `${item.clientName?.trim().toLowerCase()}__${item.address?.trim().toLowerCase()}__${item.scheduledTime ?? ''}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    const hasHeavyDupes = Array.from(counts.values()).some((n) => n >= 3);
+    if (!hasHeavyDupes) {
+      return byId;
+    }
+
+    const seenKeys = new Set<string>();
+    const trimmed: TodayRoute[] = [];
+    for (const item of byId) {
+      const key = `${item.clientName?.trim().toLowerCase()}__${item.address?.trim().toLowerCase()}__${item.scheduledTime ?? ''}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      trimmed.push(item);
+    }
+    return trimmed.length > 0 ? trimmed : byId;
   };
 
   const load = async () => {
