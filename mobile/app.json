@@ -15,12 +15,16 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pinataro.bloomsteward",
-      "buildNumber": "2",
+      "buildNumber": "5",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Your location is used to verify check-in/out at visit locations.",
-        "UIBackgroundModes": ["fetch"],
+        "UIBackgroundModes": [
+          "fetch"
+        ],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true }
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
