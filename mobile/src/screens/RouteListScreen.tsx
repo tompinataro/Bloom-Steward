@@ -25,6 +25,18 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
 
+  const dedupeRoutes = (items: TodayRoute[]) => {
+    const seen = new Set<string>();
+    const result: TodayRoute[] = [];
+    for (const item of items) {
+      const key = `${item.clientName}__${item.address}__${item.scheduledTime}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(item);
+    }
+    return result;
+  };
+
   const load = async () => {
     if (!token) return;
     setLoading(true);
@@ -38,16 +50,16 @@ export default function RouteListScreen({ navigation, route }: Props) {
         }
       } catch {}
       const res = await fetchTodayRoutes(token);
-      // Deduplicate by id; some staging data sources can return repeated rows.
-      const deduped = Array.from(new Map(res.routes.map(r => [r.id, r])).values());
+      // Deduplicate repeated rows coming from some staging/prod data sets.
+      const deduped = dedupeRoutes(res.routes);
       setRoutes(deduped);
       try {
         await ensureToday();
-        await pruneToIds(res.routes.map(r => r.id));
+        await pruneToIds(deduped.map(r => r.id));
         // Prefer server truth when present, fall back to local state
         const serverCompleted = new Set<number>();
         const serverInProg = new Set<number>();
-        for (const r of res.routes as any[]) {
+        for (const r of deduped as any[]) {
           if (r.completedToday) serverCompleted.add(r.id);
           if (r.inProgress) serverInProg.add(r.id);
         }
