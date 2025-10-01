@@ -6,9 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/palms.jpg",
+      "image": "./assets/palms.png",
       "resizeMode": "cover",
       "backgroundColor": "#e7bfbf"
     },
@@ -32,7 +31,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#e7bfbf"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.pinataro.bloomsteward",
       "versionCode": 3,
       "permissions": [
