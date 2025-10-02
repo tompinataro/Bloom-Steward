@@ -28,7 +28,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon-rgba.png",
         "backgroundColor": "#e7bfbf"
       },
       "package": "com.pinataro.bloomsteward",
