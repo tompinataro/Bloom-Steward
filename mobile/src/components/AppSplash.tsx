@@ -1,20 +1,10 @@
 import React from 'react';
-import { ImageBackground, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export default function AppSplash() {
-  return (
-    <ImageBackground
-      source={require('../../assets/palms.png')}
-      resizeMode="cover"
-      style={styles.bg}
-      accessibilityLabel="Loading"
-      accessibilityRole="image"
-    >
-      <View />
-    </ImageBackground>
-  );
+  return <View style={styles.screen} accessibilityLabel="Loading" />;
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1 },
+  screen: { flex: 1, backgroundColor: '#e7bfbf' },
 });
