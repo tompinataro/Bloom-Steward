@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Text, Pressable, View, Platform } from 'react-native';
+import { Text, Pressable, View, Platform, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -21,8 +21,12 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
   const { token, loading } = useAuth();
-  // Simple splash while restoring token
   if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#e7bfbf', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
   return token ? (
     <Stack.Navigator initialRouteName="RouteList" screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
