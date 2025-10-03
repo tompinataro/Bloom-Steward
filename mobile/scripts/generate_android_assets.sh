@@ -57,12 +57,12 @@ if [ -f "$BRAND" ]; then
     sips -z 500 1024 "$BRAND" --out "$FEATURE"
   fi
 else
-  echo "No brand-logo.png found; attempting to create feature graphic from palms.png if available"
-  if [ -f "$ASSETS_DIR/palms.png" ]; then
+  echo "No brand-logo.png found; attempting to create feature graphic from palms_full.png if available"
+  if [ -f "$ASSETS_DIR/palms_full.png" ]; then
     if has_convert; then
-      convert "$ASSETS_DIR/palms.png" -resize 1400x700^ -gravity center -extent 1024x500 "$FEATURE"
+      convert "$ASSETS_DIR/palms_full.png" -resize 1400x700^ -gravity center -extent 1024x500 "$FEATURE"
     else
-      sips -z 500 1024 "$ASSETS_DIR/palms.png" --out "$FEATURE"
+      sips -z 500 1024 "$ASSETS_DIR/palms_full.png" --out "$FEATURE"
     fi
   else
     echo "No image available to create feature graphic; skipping" >&2

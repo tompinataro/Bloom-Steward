@@ -1,15 +1,11 @@
 import React from 'react';
 import { ImageBackground, StyleSheet } from 'react-native';
 
-// Temporary: load splash from GitHub raw URL to avoid Metro require resolution issues in EAS.
-// Replace with local require('../../assets/palms.jpg') once bundler issue is resolved.
-const REMOTE_SPLASH =
-  'https://raw.githubusercontent.com/tompinataro/Bloom-Steward/main/mobile/assets/palms.jpg';
-
+// use explicit local require to ensure Metro bundles the image
 export default function AppSplash(): JSX.Element {
   return (
     <ImageBackground
-      source={{ uri: REMOTE_SPLASH }}
+      source={require('../../assets/palms_splash.jpg')}
       resizeMode="cover"
       style={styles.bg}
       accessibilityLabel="Loading"
