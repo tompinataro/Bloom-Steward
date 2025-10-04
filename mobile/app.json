@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bloom Steward",
     "slug": "bloom-steward",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,10 +15,12 @@
       "assets/*"
     ],
     "android": {
-      "package": "com.tompinataro.bloomsteward"
+      "package": "com.tompinataro.bloomsteward",
+      "versionCode": 2
     },
     "ios": {
-      "bundleIdentifier": "com.tompinataro.bloomsteward"
+      "bundleIdentifier": "com.tompinataro.bloomsteward",
+      "buildNumber": "2"
     },
     "extra": {
       "eas": {
