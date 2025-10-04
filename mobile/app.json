@@ -7,32 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/palms_full.png",
+      "image": "./assets/palms_splash.jpg",
       "resizeMode": "cover",
-      "backgroundColor": "#e7bfbf"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon-rgba.png",
-        "backgroundColor": "#e7bfbf"
-      },
-      "package": "com.pinataro.bloomsteward",
-      "versionCode": 3,
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"
-      }
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "assets/*"
