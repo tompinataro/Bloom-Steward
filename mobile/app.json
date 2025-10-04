@@ -1,4 +1,7 @@
-{
+# from repo root
+cd mobile || exit
+eas build --platform android --profile production --clear-cache --non-interactive 2>&1 | tee ~/eas-build-output.txt
+tail -n 200 ~/eas-build-output.txt{
   "expo": {
     "name": "Bloom Steward",
     "slug": "bloom-steward",
