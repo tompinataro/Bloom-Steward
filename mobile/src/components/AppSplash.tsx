@@ -1,22 +1,18 @@
-import React from 'react';
-import { ImageBackground, StyleSheet, ImageSourcePropType } from 'react-native';
+import React from 'react'
+import { ImageBackground } from 'react-native'
+import styles from './styles'
 
-// reference both filenames so Metro includes either asset during bundling
-const palmsSplash = require('../../assets/palms_splash.jpg');
-const palmsLegacy = require('../../assets/palms.jpg');
-
-export default function AppSplash(): JSX.Element {
-  const source: ImageSourcePropType = palmsSplash || palmsLegacy;
+const AppSplash = () => {
   return (
     <ImageBackground
-      source={source}
+      source={require('../../assets/palms_splash.jpg')}
       resizeMode="cover"
       style={styles.bg}
       accessibilityLabel="Loading"
-    />
-  );
+    >
+      {/* ...existing content... */}
+    </ImageBackground>
+  )
 }
 
-const styles = StyleSheet.create({
-  bg: { flex: 1 },
-});
+export default AppSplash
