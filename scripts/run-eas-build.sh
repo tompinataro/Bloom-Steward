@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 echo "branch: $(git rev-parse --abbrev-ref HEAD)"
@@ -16,9 +15,7 @@ if git show HEAD:mobile/assets/palms.jpg 2>/dev/null | sed -n '1,1' | grep -q 'v
 else
   echo "palms.jpg appears to be a real file or is missing"
 fi
-npx react-native bundle --entry-file index.ts --platform android --dev false \
-  --bundle-output /tmp/main.bundle --assets-dest /tmp/assets || true
-echo "---- /tmp/assets ----"
+npx react-native bundle --entry-file index.ts --platform android --dev false --bundle-output /tmp/main.bundle --assets-dest /tmp/assets || true
 ls -l /tmp/assets | sed -n '1,200p' || true
 eas whoami || eas login
 eas build --platform android --profile production --clear-cache
