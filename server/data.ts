@@ -5,12 +5,12 @@ export type ChecklistItem = { key: string; label: string; done: boolean };
 export type Visit = { id: number; clientName: string; checklist: ChecklistItem[] };
 
 const FALLBACK_ROUTES: TodayRoute[] = [
-  { id: 104, clientName: 'Harbor Plaza', address: '22 Marina Blvd', scheduledTime: '12:30' },
-  { id: 105, clientName: 'Palm Vista', address: '910 Sago Palm Way', scheduledTime: '14:00' },
-  { id: 106, clientName: 'Riverwalk Lofts', address: '315 Bayberry Ln', scheduledTime: '15:15' },
-  { id: 101, clientName: 'Acme HQ', address: '123 Main St', scheduledTime: '08:30' },
-  { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Ave', scheduledTime: '09:45' },
-  { id: 103, clientName: 'Sunset Mall', address: '789 Pine Rd', scheduledTime: '11:15' }
+  { id: 104, clientName: 'Harbor Plaza', address: '50 S 6th St, Minneapolis, MN 55402', scheduledTime: '12:30' },
+  { id: 105, clientName: 'Palm Vista', address: '1000 Nicollet Mall, Minneapolis, MN 55403', scheduledTime: '14:00' },
+  { id: 106, clientName: 'Riverwalk Lofts', address: '225 3rd Ave S, Minneapolis, MN 55401', scheduledTime: '15:15' },
+  { id: 101, clientName: 'Acme HQ', address: '123 Main St SE, Minneapolis, MN 55414', scheduledTime: '08:30' },
+  { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Grove St, Minneapolis, MN 55403', scheduledTime: '09:45' },
+  { id: 103, clientName: 'Sunset Mall', address: '789 University Ave NE, Minneapolis, MN 55413', scheduledTime: '11:15' }
 ];
 
 function normalizeKey(route: TodayRoute): string {
