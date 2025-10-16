@@ -20,7 +20,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.tompinataro.bloomsteward",
-      "buildNumber": "6"
+      "buildNumber": "25"
     },
     "extra": {
       "eas": {
