@@ -7,7 +7,7 @@ import java.io.File
 import java.util.Properties
 import expo.modules.plugin.Version
 import expo.modules.plugin.safeGet
-import org.gradle.internal.extensions.core.extra
+import expo.modules.plugin.extraProperties
 
 /**
  * An user-facing interface to interact with the `ExpoGradleHelperExtension`.
@@ -31,7 +31,7 @@ open class ExpoModuleExtension(val project: Project) {
     get() = gradleHelper.getReactNativeVersion(project)
 
   fun safeExtGet(name: String, default: Any): Any {
-    return project.rootProject.extra.safeGet<Any>(name) ?: default
+    return project.rootProject.extraProperties().safeGet<Any>(name) ?: default
   }
 
   fun getExpoDependency(name: String): Any {

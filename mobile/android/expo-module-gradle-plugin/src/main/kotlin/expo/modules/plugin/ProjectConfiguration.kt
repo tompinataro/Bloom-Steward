@@ -15,7 +15,7 @@ import expo.modules.plugin.android.createReleasePublication
 import expo.modules.plugin.gradle.ExpoModuleExtension
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
-import org.gradle.internal.extensions.core.extra
+import expo.modules.plugin.extraProperties
 import java.io.File
 
 internal fun Project.applyDefaultPlugins() {
@@ -31,8 +31,8 @@ internal fun Project.applyDefaultPlugins() {
 }
 
 internal fun Project.applyKotlin(kotlinVersion: String, kspVersion: String) {
-  extra.set("kotlinVersion", kotlinVersion)
-  extra.set("kspVersion", kspVersion)
+  extraProperties().set("kotlinVersion", kotlinVersion)
+  extraProperties().set("kspVersion", kspVersion)
 
   project.dependencies.add("implementation", "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion")
 }
@@ -50,11 +50,11 @@ internal fun Project.applyDefaultDependencies() {
 internal fun Project.applyDefaultAndroidSdkVersions() {
   with(androidLibraryExtension()) {
     applySDKVersions(
-      compileSdk = rootProject.extra.safeGet("compileSdkVersion")
+      compileSdk = rootProject.extraProperties().safeGet("compileSdkVersion")
         ?: logger.warnIfNotDefined("compileSdkVersion", 36),
-      minSdk = rootProject.extra.safeGet("minSdkVersion")
+      minSdk = rootProject.extraProperties().safeGet("minSdkVersion")
         ?: logger.warnIfNotDefined("minSdkVersion", 24),
-      targetSdk = rootProject.extra.safeGet("targetSdkVersion")
+      targetSdk = rootProject.extraProperties().safeGet("targetSdkVersion")
         ?: logger.warnIfNotDefined("targetSdkVersion", 36)
     )
     applyLinterOptions()

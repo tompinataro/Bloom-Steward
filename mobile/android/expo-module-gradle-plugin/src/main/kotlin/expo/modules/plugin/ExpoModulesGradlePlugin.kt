@@ -7,7 +7,7 @@ import expo.modules.plugin.gradle.ExpoGradleHelperExtension
 import expo.modules.plugin.gradle.ExpoModuleExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.internal.extensions.core.extra
+import expo.modules.plugin.extraProperties
 
 private val lock = Any()
 
@@ -42,12 +42,12 @@ abstract class ExpoModulesGradlePlugin : Plugin<Project> {
   }
 
   private fun getKotlinVersion(project: Project): String {
-    return project.rootProject.extra.safeGet<String>("kotlinVersion")
+    return project.rootProject.extraProperties().safeGet<String>("kotlinVersion")
       ?: project.logger.warnIfNotDefined("kotlinVersion", "2.0.21")
   }
 
   private fun getKSPVersion(project: Project): String {
-    return project.rootProject.extra.safeGet<String>("kspVersion")
+    return project.rootProject.extraProperties().safeGet<String>("kspVersion")
       ?: project.logger.warnIfNotDefined("kspVersion", "2.0.21-1.0.28")
   }
 }

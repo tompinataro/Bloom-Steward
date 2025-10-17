@@ -4,9 +4,17 @@ pluginManagement {
   }.standardOutput.asText.get().trim()
   def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
-  includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile().toString())
+  def reactNativeGradlePluginDir = new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile()
+  includeBuild(reactNativeGradlePluginDir.toString())
   if(reactNativeMinor == 74 && reactNativePatch <= 3){
     includeBuild("react-settings-plugin")
+  }
+  def localExpoGradlePluginDir = new File(rootDir, "expo-module-gradle-plugin")
+  if (localExpoGradlePluginDir.exists()) {
+    includeBuild(localExpoGradlePluginDir)
+  } else {
+    def expoModulesCoreDir = new File(["node", "--print", "require.resolve('expo-modules-core/package.json')"].execute(null, rootDir).text.trim()).getParentFile()
+    includeBuild(new File(expoModulesCoreDir, "expo-module-gradle-plugin"))
   }
 }
 
