@@ -20,7 +20,8 @@
     "submit:ios:prod": "eas submit -p ios",
     "build:android:internal": "eas build -p android --profile preview",
     "build:android:prod": "eas build -p android --profile production",
-    "submit:android:latest": "eas submit -p android --latest"
+    "submit:android:latest": "eas submit -p android --latest",
+    "postinstall": "node ./scripts/patch-background-fetch.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
