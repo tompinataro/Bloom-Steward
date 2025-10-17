@@ -3,56 +3,89 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(
-  __dirname,
-  '..',
-  'node_modules',
-  'expo-background-fetch',
-  'android',
-  'src',
-  'main',
-  'java',
-  'expo',
-  'modules',
-  'backgroundfetch',
-  'BackgroundFetchTaskConsumer.java'
-);
+const candidatePaths = [
+  path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'expo-background-fetch',
+    'android',
+    'src',
+    'main',
+    'java',
+    'expo',
+    'modules',
+    'backgroundfetch',
+    'BackgroundFetchTaskConsumer.java'
+  ),
+  path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'expo',
+    'node_modules',
+    'expo-background-fetch',
+    'android',
+    'src',
+    'main',
+    'java',
+    'expo',
+    'modules',
+    'backgroundfetch',
+    'BackgroundFetchTaskConsumer.java'
+  ),
+];
 
-if (!fs.existsSync(filePath)) {
-  console.warn('[patch-background-fetch] Target file not found:', filePath);
-  process.exit(0);
-}
+const executeBlockNeedles = [
+  '      TaskManagerUtilsInterface taskManagerUtils = getTaskManagerUtils();\n\n      if (context != null) {\n        taskManagerUtils.executeTask(mTask, null, null);\n      }',
+  '      TaskManagerUtilsInterface taskManagerUtils = getTaskManagerUtils();\n\n      if (context != null) {\n        Bundle emptyData = new Bundle();\n        taskManagerUtils.executeTask(mTask, emptyData, null);\n      }',
+  '      TaskManagerUtilsInterface taskManagerUtils = getTaskManagerUtils();\n\n      if (context != null) {\n        Bundle emptyData = new Bundle();\n        taskManagerUtils.executeTask(mTask, emptyData);\n      }'
+];
 
-let source = fs.readFileSync(filePath, 'utf8');
+const replacementBlock =
+  '      if (context != null) {\n' +
+  '        mTask.execute(null, null, new TaskExecutionCallback() {\n' +
+  '          @Override\n' +
+  '          public void onFinished(Map<String, Object> response) {\n' +
+  '            // no-op\n' +
+  '          }\n' +
+  '        });\n' +
+  '      }';
 
-const importNeedle = 'import expo.modules.core.interfaces.LifecycleEventListener;';
-const importPatch = 'import android.os.Bundle;\n\nimport expo.modules.core.interfaces.LifecycleEventListener;';
-const executeNeedle = 'taskManagerUtils.executeTask(mTask, null, null);';
-const executePatch = 'Bundle emptyData = new Bundle();\n        taskManagerUtils.executeTask(mTask, emptyData, null);';
+let appliedToAny = false;
 
-let modified = false;
+for (const filePath of candidatePaths) {
+  if (!fs.existsSync(filePath)) {
+    continue;
+  }
 
-if (!source.includes('Bundle emptyData = new Bundle();')) {
-  if (source.includes(executeNeedle)) {
-    source = source.replace(executeNeedle, executePatch);
+  let source = fs.readFileSync(filePath, 'utf8');
+  let modified = false;
+
+  let blockReplaced = false;
+  for (const needle of executeBlockNeedles) {
+    if (source.includes(needle)) {
+      source = source.replace(needle, replacementBlock);
+      blockReplaced = true;
+      break;
+    }
+  }
+  if (blockReplaced) {
     modified = true;
-  } else {
-    console.warn('[patch-background-fetch] Expected executeTask call not found; skipping bundle patch.');
+    source = source.replace(
+      '      TaskManagerUtilsInterface taskManagerUtils = getTaskManagerUtils();\n\n      if (context != null) {\n        mTask.execute(null, null, new TaskExecutionCallback() {\n',
+      '      if (context != null) {\n        mTask.execute(null, null, new TaskExecutionCallback() {\n'
+    );
+    source = source.replace('import android.os.Bundle;\n', '');
+  }
+
+  if (modified) {
+    fs.writeFileSync(filePath, source, 'utf8');
+    appliedToAny = true;
+    console.log('[patch-background-fetch] Patched', filePath);
   }
 }
 
-if (!source.includes('import android.os.Bundle;')) {
-  if (source.includes(importNeedle)) {
-    source = source.replace(importNeedle, importPatch);
-    modified = true;
-  } else {
-    console.warn('[patch-background-fetch] Expected import sentinel not found; skipping import patch.');
-  }
-}
-
-if (modified) {
-  fs.writeFileSync(filePath, source, 'utf8');
-  console.log('[patch-background-fetch] Applied BackgroundFetchTaskConsumer patch.');
-} else {
-  console.log('[patch-background-fetch] No changes needed.');
+if (!appliedToAny) {
+  console.log('[patch-background-fetch] No changes applied.');
 }
