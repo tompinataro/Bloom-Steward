@@ -16,11 +16,11 @@
     ],
     "android": {
       "package": "com.tompinataro.bloomsteward",
-      "versionCode": 3
+      "versionCode": 28
     },
     "ios": {
       "bundleIdentifier": "com.tompinataro.bloomsteward",
-      "buildNumber": "25"
+      "buildNumber": "28"
     },
     "extra": {
       "eas": {
