@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const candidatePaths = [
+const bgFetchCandidatePaths = [
   path.join(
     __dirname,
     '..',
@@ -54,7 +54,7 @@ const replacementBlock =
 
 let appliedToAny = false;
 
-for (const filePath of candidatePaths) {
+for (const filePath of bgFetchCandidatePaths) {
   if (!fs.existsSync(filePath)) {
     continue;
   }
@@ -86,6 +86,68 @@ for (const filePath of candidatePaths) {
   }
 }
 
-if (!appliedToAny) {
+const permissionsPaths = [
+  path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'expo-modules-core',
+    'android',
+    'src',
+    'main',
+    'java',
+    'expo',
+    'modules',
+    'adapters',
+    'react',
+    'permissions',
+    'PermissionsService.kt'
+  ),
+  path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'expo',
+    'node_modules',
+    'expo-modules-core',
+    'android',
+    'src',
+    'main',
+    'java',
+    'expo',
+    'modules',
+    'adapters',
+    'react',
+    'permissions',
+    'PermissionsService.kt'
+  ),
+];
+
+const permissionNeedle = '        return requestedPermissions.contains(permission)';
+const permissionReplacement = '        return requestedPermissions?.contains(permission) == true';
+
+let permissionsPatched = false;
+
+for (const filePath of permissionsPaths) {
+  if (!fs.existsSync(filePath)) {
+    continue;
+  }
+
+  let source = fs.readFileSync(filePath, 'utf8');
+
+  if (source.includes(permissionReplacement)) {
+    permissionsPatched = true;
+    continue;
+  }
+
+  if (source.includes(permissionNeedle)) {
+    source = source.replace(permissionNeedle, permissionReplacement);
+    fs.writeFileSync(filePath, source, 'utf8');
+    permissionsPatched = true;
+    console.log('[patch-background-fetch] Patched', filePath);
+  }
+}
+
+if (!appliedToAny && !permissionsPatched) {
   console.log('[patch-background-fetch] No changes applied.');
 }
