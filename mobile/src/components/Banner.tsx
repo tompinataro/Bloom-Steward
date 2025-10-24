@@ -10,7 +10,7 @@ export default function Banner({ type = 'info', message }: Props) {
   else if (type === 'error') style.push(styles.error);
   else style.push(styles.info);
   return (
-    <View style={style} accessibilityRole="status">
+  <View style={style} accessibilityRole="text">
       <Text style={styles.text}>{message}</Text>
     </View>
   );
@@ -29,4 +29,3 @@ const styles = StyleSheet.create({
   success: { backgroundColor: colors.successBg, borderColor: '#86efac' },
   error: { backgroundColor: '#fee2e2', borderColor: '#fecaca' },
 });
-
