@@ -438,6 +438,6 @@ const styles = StyleSheet.create({
   bannerText: { color: colors.successText, fontWeight: '600' },
   errorWrap: { paddingHorizontal: spacing(4), marginTop: spacing(2) },
   retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(7), padding: spacing(2.5), paddingBottom: spacing(3), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(20), padding: spacing(3), paddingBottom: spacing(3), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
 });
