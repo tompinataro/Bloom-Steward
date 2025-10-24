@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   ackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
   // Slightly raised so it sits ~half its height above the bottom edge
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(3), padding: spacing(2.5), paddingBottom: spacing(3.5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(8), padding: spacing(2.5), paddingBottom: spacing(3.5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3) },
   checkInWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(3), paddingVertical: spacing(2) },
   checkInBtn: { minWidth: 220 },
