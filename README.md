@@ -84,5 +84,14 @@ Watch the Live Demo 🎥 — Live Demo (pending)
 - Heroku app: https://bloom-steward-2a872c497756.herokuapp.com/#/home
 - Release script applies schema/seed when `DATABASE_URL` is set.
 
+### Mobile Build Quick Start
+```bash
+cd mobile
+npm install
+npm run build:android:prod
+npm run build:ios:prod
+```
+See the detailed guides in `docs/release/ANDROID_BETA.md` and `docs/release/STORE_BUILD_SUBMIT.md` for submission steps.
+
 ## License
 This project was developed as part of Prime Digital Academy and is maintained by Tom Pinataro.

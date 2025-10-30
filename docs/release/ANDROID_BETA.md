@@ -46,6 +46,6 @@ Smoke Test
 - Sign in; run Route List → Visit → Submit
 
 Notes
-- Align versionCode increments with `mobile/app.json` (currently 2)
+- Align versionCode increments with `mobile/app.json` (currently 28)
 - Keep EAS credentials managed; rotate service account key if needed
 - For staging pointing, use `.env` or EAS `preview` env like on iOS

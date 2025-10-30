@@ -109,9 +109,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.tompinataro.bloomsteward'
+    namespace 'com.pinataro.bloomsteward'
     defaultConfig {
-        applicationId 'com.tompinataro.bloomsteward'
+        applicationId 'com.pinataro.bloomsteward'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 28

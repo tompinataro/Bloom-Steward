@@ -15,11 +15,15 @@
       "assets/*"
     ],
     "android": {
-      "package": "com.tompinataro.bloomsteward",
-      "versionCode": 28
+      "package": "com.pinataro.bloomsteward",
+      "versionCode": 28,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "ios": {
-      "bundleIdentifier": "com.tompinataro.bloomsteward",
+      "bundleIdentifier": "com.pinataro.bloomsteward",
       "buildNumber": "28"
     },
     "extra": {

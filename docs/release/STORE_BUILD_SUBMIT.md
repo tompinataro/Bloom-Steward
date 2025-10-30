@@ -8,8 +8,8 @@ Prereqs
 Build (Production)
 ```
 cd mobile
-# Optional: confirm API base for production in eas.json
-cat eas.json | jq .build.production.env
+# Optional: confirm API base for production in mobile/eas.json
+cat mobile/eas.json | jq .build.production.env
 
 # Build iOS production (store)
 npm run build:ios:prod
@@ -29,7 +29,7 @@ npm run submit:ios:latest
 ```
 
 Finalize in App Store Connect
-1) Select the uploaded build on the 1.0.1 version page
+1) Select the uploaded build on the 1.0.3 version page
 2) Paste What’s New; confirm metadata and screenshots
 3) Complete App Privacy and Export Compliance
 4) Submit for review
@@ -38,4 +38,3 @@ Notes
 - First time signing: EAS can create and manage certificates and profiles automatically.
 - If you need to re-run with different credentials, use `eas credentials` to inspect/rotate.
 - For 2FA prompts, prefer API Key auth to avoid interactive logins in CI.
-
