@@ -1,17 +1,18 @@
-import React from 'react';
-import { ImageBackground, StyleSheet } from 'react-native';
+import React from 'react'
+import { ImageBackground } from 'react-native'
+import styles from './styles'
 
-export default function AppSplash(): JSX.Element {
+const AppSplash = () => {
   return (
     <ImageBackground
       source={require('../../assets/palms_splash.jpg')}
       resizeMode="cover"
       style={styles.bg}
       accessibilityLabel="Loading"
-    />
-  );
+    >
+      {/* ...existing content... */}
+    </ImageBackground>
+  )
 }
 
-const styles = StyleSheet.create({
-  bg: { flex: 1 },
-});
+export default AppSplash

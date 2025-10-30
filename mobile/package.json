@@ -1,7 +1,9 @@
 {
   "name": "mobile",
-  "version": "1.0.0",
-  "main": "index.ts",
+  "version": "1.0.3",
+  "engines": {
+    "node": ">=20.19.4"
+  },
   "scripts": {
     "start": "expo start --tunnel",
     "android": "expo run:android",
@@ -18,7 +20,8 @@
     "submit:ios:prod": "eas submit -p ios",
     "build:android:internal": "eas build -p android --profile preview",
     "build:android:prod": "eas build -p android --profile production",
-    "submit:android:latest": "eas submit -p android --latest"
+    "submit:android:latest": "eas submit -p android --latest",
+    "postinstall": "node ./scripts/patch-background-fetch.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -30,6 +33,7 @@
     "expo-apple-authentication": "~6.4.2",
     "expo-asset": "~10.0.10",
     "expo-background-fetch": "^14.0.7",
+    "expo-dev-client": "~4.0.29",
     "expo-location": "~17.0.1",
     "expo-sqlite": "~14.0.6",
     "expo-status-bar": "~1.12.1",

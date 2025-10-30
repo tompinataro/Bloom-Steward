@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bloom Steward",
     "slug": "bloom-steward",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -11,18 +11,17 @@
       "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
-    "android": {
-      "package": "com.pinataro.bloomsteward",
-      "versionCode": 2,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "permissions": []
-    },
     "assetBundlePatterns": [
       "assets/*"
     ],
+    "android": {
+      "package": "com.tompinataro.bloomsteward",
+      "versionCode": 28
+    },
+    "ios": {
+      "bundleIdentifier": "com.tompinataro.bloomsteward",
+      "buildNumber": "28"
+    },
     "extra": {
       "eas": {
         "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"

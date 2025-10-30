@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, memo, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus, Easing } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus, Easing, GestureResponderEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -199,26 +199,51 @@ export default function RouteListScreen({ navigation, route }: Props) {
     try { await load(); } finally { setRefreshing(false); }
   };
 
-  const openMaps = useCallback(async (address: string) => {
+  const openMaps = useCallback(async (address?: string | null) => {
+    if (!address?.trim()) {
+      showBanner({ type: 'error', message: 'No address available for maps' });
+      return;
+    }
+
     const q = encodeURIComponent(address);
-    // Prefer Google Maps directions. Fallback to web if app isn't available.
+    // Prefer native Maps apps; gracefully fall back to web directions.
     if (Platform.OS === 'ios') {
       const googleScheme = `comgooglemaps://?daddr=${q}&directionsmode=driving`;
-      const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
-      const can = await Linking.canOpenURL('comgooglemaps://');
-      await Linking.openURL(can ? googleScheme : web).catch(() => {});
+      const appleScheme = `maps://?daddr=${q}&dirflg=d`;
+      const appleWeb = `https://maps.apple.com/?daddr=${q}&dirflg=d`;
+      const googleWeb = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
+      try {
+        if (await Linking.canOpenURL(googleScheme)) {
+          await Linking.openURL(googleScheme);
+          return;
+        }
+        if (await Linking.canOpenURL(appleScheme)) {
+          await Linking.openURL(appleScheme);
+          return;
+        }
+        await Linking.openURL(appleWeb);
+        return;
+      } catch {
+        await Linking.openURL(googleWeb).catch(() => {
+          showBanner({ type: 'error', message: 'Unable to open maps' });
+        });
+      }
       return;
     }
     if (Platform.OS === 'android') {
       const intent = `google.navigation:q=${q}&mode=d`;
       const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
       await Linking.openURL(intent).catch(async () => {
-        await Linking.openURL(web).catch(() => {});
+        await Linking.openURL(web).catch(() => {
+          showBanner({ type: 'error', message: 'Unable to open maps' });
+        });
       });
       return;
     }
     const web = `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=driving`;
-    Linking.openURL(web).catch(() => {});
+    Linking.openURL(web).catch(() => {
+      showBanner({ type: 'error', message: 'Unable to open maps' });
+    });
   }, []);
 
   const onOpenVisit = useCallback((id: number) => {
@@ -232,7 +257,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     isDone: boolean;
     inProg: boolean;
     onOpen: (id: number) => void;
-    onOpenMaps: (address: string) => void;
+    onOpenMaps: (address?: string | null) => void;
   };
 
   const RouteListItem = memo(function RouteListItem({ route, isDone, inProg, onOpen, onOpenMaps }: ItemProps) {
@@ -298,14 +323,23 @@ export default function RouteListScreen({ navigation, route }: Props) {
 
   const MapButton = ({ onPress, label }: { onPress: () => void; label: string }) => {
     const scale = useRef(new Animated.Value(1)).current;
-    const onPressIn = () => Animated.timing(scale, { toValue: 0.96, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-    const onPressOut = () => Animated.timing(scale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    const animatePressIn = () => Animated.timing(scale, { toValue: 0.96, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    const animatePressOut = () => Animated.timing(scale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
     return (
       <Pressable
         style={styles.mapBtn}
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
+        onPress={(event: GestureResponderEvent) => {
+          event.stopPropagation();
+          onPress();
+        }}
+        onPressIn={(event: GestureResponderEvent) => {
+          event.stopPropagation();
+          animatePressIn();
+        }}
+        onPressOut={(event: GestureResponderEvent) => {
+          event.stopPropagation();
+          animatePressOut();
+        }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -404,6 +438,6 @@ const styles = StyleSheet.create({
   bannerText: { color: colors.successText, fontWeight: '600' },
   errorWrap: { paddingHorizontal: spacing(4), marginTop: spacing(2) },
   retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(4), padding: spacing(3), paddingBottom: spacing(5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(20), padding: spacing(3), paddingBottom: spacing(3), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
 });

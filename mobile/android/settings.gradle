@@ -1,47 +1,20 @@
 pluginManagement {
-  repositories {
-    gradlePluginPortal()
-    google()
-    mavenCentral()
-  }
   def version = providers.exec {
     commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
   }.standardOutput.asText.get().trim()
   def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
-  includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile().toString())
+  def reactNativeGradlePluginDir = new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile()
+  includeBuild(reactNativeGradlePluginDir.toString())
   if(reactNativeMinor == 74 && reactNativePatch <= 3){
     includeBuild("react-settings-plugin")
   }
-  def localExpoPluginDir = file("expo-module-gradle-plugin")
-  if (localExpoPluginDir.exists()) {
-    includeBuild(localExpoPluginDir)
+  def localExpoGradlePluginDir = new File(rootDir, "expo-module-gradle-plugin")
+  if (localExpoGradlePluginDir.exists()) {
+    includeBuild(localExpoGradlePluginDir)
   } else {
-    def expoModuleGradlePluginPath = providers.exec {
-      commandLine("node", "-e", """
-        const path = require('path');
-        const fs = require('fs');
-        const pkgDir = path.dirname(require.resolve('expo-modules-core/package.json'));
-        const candidates = [
-          path.join(pkgDir, 'expo-module-gradle-plugin'),
-          path.join(pkgDir, '..', 'expo-module-gradle-plugin'),
-          path.join(pkgDir, '..', '..', 'expo-module-gradle-plugin'),
-        ];
-        let found = '';
-        for (const candidate of candidates) {
-          if (fs.existsSync(candidate)) {
-            found = candidate;
-            break;
-          }
-        }
-        process.stdout.write(found);
-      """.stripIndent())
-    }.standardOutput.asText.get().trim()
-    if (expoModuleGradlePluginPath) {
-      includeBuild(new File(expoModuleGradlePluginPath))
-    } else {
-      println("Warning: expo-module-gradle-plugin directory not found. Expo modules may fail to build.")
-    }
+    def expoModulesCoreDir = new File(["node", "--print", "require.resolve('expo-modules-core/package.json')"].execute(null, rootDir).text.trim()).getParentFile()
+    includeBuild(new File(expoModulesCoreDir, "expo-module-gradle-plugin"))
   }
 }
 

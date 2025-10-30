@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.9.23"
+  kotlin("jvm") version "2.1.20"
   id("java-gradle-plugin")
 }
 
@@ -31,8 +31,6 @@ dependencies {
   compileOnly("com.android.tools.build:gradle:8.5.0")
   implementation("com.facebook.react:react-native-gradle-plugin")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-  implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.23")
-  implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.23")
 
   if (isExpoAutolinkingSettingsPluginAvailable) {
     implementation("expo.modules:expo-autolinking-plugin-shared")

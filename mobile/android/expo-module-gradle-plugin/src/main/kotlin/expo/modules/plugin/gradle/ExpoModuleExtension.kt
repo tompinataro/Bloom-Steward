@@ -6,8 +6,8 @@ import org.gradle.api.Project
 import java.io.File
 import java.util.Properties
 import expo.modules.plugin.Version
-import expo.modules.plugin.extraProperties
 import expo.modules.plugin.safeGet
+import expo.modules.plugin.extraProperties
 
 /**
  * An user-facing interface to interact with the `ExpoGradleHelperExtension`.
@@ -38,5 +38,5 @@ open class ExpoModuleExtension(val project: Project) {
     return autolinking.getExpoDependency(project, name)
   }
 
-  var canBePublished: Boolean = false
+  var canBePublished: Boolean = true
 }

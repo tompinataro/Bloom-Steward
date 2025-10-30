@@ -55,7 +55,7 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
           { transform: [{ translateY }], opacity },
           msg?.type === 'error' ? styles.error : msg?.type === 'success' ? styles.success : styles.info
         ]}
-        accessibilityRole="status"
+        accessibilityRole="text"
         accessibilityLabel={msg?.type === 'error' ? 'Error' : msg?.type === 'success' ? 'Saved' : 'Notice'}
       >
         {msg ? <Text style={styles.text}>{msg.message}</Text> : null}

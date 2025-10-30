@@ -7,7 +7,7 @@ import expo.modules.plugin.gradle.ExpoGradleHelperExtension
 import expo.modules.plugin.gradle.ExpoModuleExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.plugins.ExtensionAware
+import expo.modules.plugin.extraProperties
 
 private val lock = Any()
 
@@ -25,7 +25,7 @@ abstract class ExpoModulesGradlePlugin : Plugin<Project> {
       applyDefaultDependencies()
       applyDefaultAndroidSdkVersions()
 
-      this.extensions.getByType(AndroidComponentsExtension::class.java).finalizeDsl {
+      extensions.getByType(AndroidComponentsExtension::class.java).finalizeDsl {
         applyPublishing(expoModuleExtension)
       }
     }
@@ -33,8 +33,7 @@ abstract class ExpoModulesGradlePlugin : Plugin<Project> {
     // Adds the expoGradleHelper extension to the gradle instance if it doesn't exist.
     // If it does exist, that means it was added by a different project.
     synchronized(lock) {
-      val gradleExtensions = (project.gradle as ExtensionAware).extensions
-      with(gradleExtensions) {
+      with(project.gradle.extensions) {
         if (findByType(ExpoGradleHelperExtension::class.java) == null) {
           create("expoGradleHelper", ExpoGradleHelperExtension::class.java)
         }

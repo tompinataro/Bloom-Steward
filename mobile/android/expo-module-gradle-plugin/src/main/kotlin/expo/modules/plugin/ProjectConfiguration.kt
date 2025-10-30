@@ -15,6 +15,7 @@ import expo.modules.plugin.android.createReleasePublication
 import expo.modules.plugin.gradle.ExpoModuleExtension
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
+import expo.modules.plugin.extraProperties
 import java.io.File
 
 internal fun Project.applyDefaultPlugins() {
