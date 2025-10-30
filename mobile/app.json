@@ -11,8 +11,22 @@
       "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
+    "android": {
+      "package": "com.pinataro.bloomsteward",
+      "versionCode": 2,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": []
+    },
     "assetBundlePatterns": [
       "assets/*"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"
+      }
+    }
   }
 }
