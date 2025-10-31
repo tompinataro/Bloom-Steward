@@ -80,6 +80,18 @@ export async function refresh(token: string): Promise<LoginResponse> {
   });
 }
 
+export type DeleteAccountResponse = { ok: boolean; deleted?: boolean; requiresManualCleanup?: boolean };
+export async function deleteAccount(token: string, options?: { reason?: string }): Promise<DeleteAccountResponse> {
+  return fetchJson(withBase('/api/auth/account'), {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ reason: options?.reason ?? null })
+  });
+}
+
 // Sign in with Apple (development-friendly endpoint)
 export type AppleLoginRequest = {
   identityToken?: string;

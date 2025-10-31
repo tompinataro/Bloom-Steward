@@ -16,6 +16,7 @@ import SignOutButton from './src/components/SignOutButton';
 import { GlobalBannerProvider } from './src/components/GlobalBannerProvider';
 import { adminResetVisitState } from './src/api/client';
 import Constants from 'expo-constants';
+import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -51,23 +52,34 @@ function RootNavigator() {
           ),
           // Dev/Admin: server-state reset button (staging/demo convenience)
           headerRight: () => (
-            (__DEV__) ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Pressable
-                onPress={async () => {
-                  try {
-                    if (!token) return;
-                    await adminResetVisitState(undefined, token);
-                    navigation.setParams({ devResetTS: Date.now() } as any);
-                  } catch {}
-                }}
+                onPress={() => navigation.navigate('DeleteAccount')}
                 hitSlop={12}
                 accessibilityRole="button"
-                accessibilityLabel="Reset server visit state"
+                accessibilityLabel="Manage account"
                 style={{ paddingHorizontal: 12, paddingVertical: 4 }}
               >
-                <Text style={{ color: colors.primary, fontWeight: '600' }}>Reset</Text>
+                <Text style={{ color: colors.primary, fontWeight: '600', marginRight: __DEV__ ? 8 : 0 }}>Account</Text>
               </Pressable>
-            ) : null
+              {(__DEV__) ? (
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      if (!token) return;
+                      await adminResetVisitState(undefined, token);
+                      navigation.setParams({ devResetTS: Date.now() } as any);
+                    } catch {}
+                  }}
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reset server visit state"
+                  style={{ paddingHorizontal: 12, paddingVertical: 4 }}
+                >
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>Reset</Text>
+                </Pressable>
+              ) : null}
+            </View>
           ),
         })}
       />
@@ -91,6 +103,7 @@ function RootNavigator() {
         })}
       />
       <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete Account' }} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   ) : (

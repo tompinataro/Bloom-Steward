@@ -5,5 +5,5 @@ export type RootStackParamList = {
   VisitDetail: { id: number };
   Home: undefined;
   About: undefined;
+  DeleteAccount: undefined;
 };
-

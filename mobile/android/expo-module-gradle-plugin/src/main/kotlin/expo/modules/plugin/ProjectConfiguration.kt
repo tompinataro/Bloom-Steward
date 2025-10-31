@@ -78,7 +78,13 @@ internal fun Project.applyPublishing(expoModulesExtension: ExpoModuleExtension) 
     .applyPublishingVariant()
 
   afterEvaluate {
-    val publicationInfo = PublicationInfo(this)
+    val releaseComponent = components.findByName("release")
+    if (releaseComponent == null) {
+      logger.warn("Skipping publishing configuration for $path because the 'release' software component is not registered.")
+      return@afterEvaluate
+    }
+
+    val publicationInfo = PublicationInfo(this, releaseComponent)
 
     publishingExtension()
       .publications

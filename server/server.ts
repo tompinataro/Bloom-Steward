@@ -178,6 +178,51 @@ app.post('/api/auth/refresh', requireAuth, (req, res) => {
   return res.json({ ok: true, token, user: req.user });
 });
 
+app.delete('/api/auth/account', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
+
+    const reasonInput = (req.body as any)?.reason;
+    const reason = typeof reasonInput === 'string' ? reasonInput.slice(0, 500) : undefined;
+
+    // Clear any in-memory visit state owned by this user
+    for (const key of Array.from(stateMap.keys())) {
+      const parts = key.split(':');
+      if (parts.length >= 3 && Number(parts[2]) === Number(userId)) {
+        stateMap.delete(key);
+      }
+    }
+
+    let deleted = false;
+    if (hasDb()) {
+      try {
+        const result = await dbQuery<{ id: number }>('delete from users where id = $1 returning id', [userId]);
+        deleted = !!result?.rows?.length;
+      } catch (err) {
+        console.error('[account/delete] failed to delete user from database', err);
+        return res.status(500).json({ ok: false, error: 'failed to delete account' });
+      }
+    } else {
+      deleted = true;
+    }
+
+    try {
+      const msg = `[account/delete] user ${userId} requested deletion${reason ? ` (reason: ${reason})` : ''}${hasDb() ? '' : ' (no database configured; treated as stateless deletion)'}`;
+      console.log(msg);
+    } catch {}
+
+    return res.json({
+      ok: true,
+      deleted,
+      requiresManualCleanup: !hasDb(),
+    });
+  } catch (err) {
+    console.error('[account/delete] unexpected error', err);
+    return res.status(500).json({ ok: false, error: 'account deletion error' });
+  }
+});
+
 app.get('/api/routes/today', requireAuth, async (req, res) => {
   try {
     const routes = await getTodayRoutes(1);

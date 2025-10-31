@@ -32,6 +32,9 @@ export default function AboutScreen({ navigation }: Props) {
       <Pressable onPress={() => Linking.openURL('https://tompinataro.github.io/Bloom-Steward/privacy').catch(() => {})} accessibilityRole="link" accessibilityLabel="Open Privacy Policy">
         <Text style={styles.link}>Privacy Policy</Text>
       </Pressable>
+      <Pressable onPress={() => navigation.navigate('DeleteAccount')} accessibilityRole="button" accessibilityLabel="Delete my account">
+        <Text style={[styles.link, styles.dangerLink]}>Delete My Account</Text>
+      </Pressable>
       <Button title="Back to Home" onPress={() => navigation.navigate('Home')} />
     </View>
   );
@@ -42,5 +45,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
   sub: { fontSize: 14, color: '#6b7280', marginBottom: 12 },
   body: { fontSize: 14, marginBottom: 12 },
-  link: { fontSize: 16, color: '#2563eb', fontWeight: '600', marginBottom: 8 }
+  link: { fontSize: 16, color: '#2563eb', fontWeight: '600', marginBottom: 8 },
+  dangerLink: { color: '#dc2626' }
 });

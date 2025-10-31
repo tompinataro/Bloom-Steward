@@ -27,7 +27,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.toPath
 
 internal data class PublicationInfo(
-  val components: SoftwareComponent,
+  val component: SoftwareComponent,
   val groupId: String,
   val artifactId: String,
   val version: String,
@@ -35,7 +35,15 @@ internal data class PublicationInfo(
   constructor(
     project: Project,
   ) : this(
-    components = project.components.getByName("release"),
+    project = project,
+    component = project.components.getByName("release"),
+  )
+
+  constructor(
+    project: Project,
+    component: SoftwareComponent,
+  ) : this(
+    component = component,
     groupId = project.group.toString(),
     artifactId = requireNotNull(project.androidLibraryExtension().namespace) {
       "'android.namespace' is not defined"
@@ -61,7 +69,7 @@ internal data class PublicationInfo(
 internal fun PublicationContainer.createReleasePublication(publicationInfo: PublicationInfo) {
   create("release", MavenPublication::class.java) { mavenPublication ->
     with(mavenPublication) {
-      from(publicationInfo.components)
+      from(publicationInfo.component)
       groupId = publicationInfo.groupId
       artifactId = publicationInfo.artifactId
       version = publicationInfo.version

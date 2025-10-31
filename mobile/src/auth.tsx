@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler, setTokenRefreshedHandler } from './api/client';
+import { deleteAccount as apiDeleteAccount, login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler, setTokenRefreshedHandler } from './api/client';
 import { showBanner } from './components/globalBannerBus';
 
 type AuthState = {
@@ -11,6 +11,7 @@ type AuthState = {
   signIn: (email: string, password: string) => Promise<void>;
   signInWithApple: (data: { identityToken?: string; authorizationCode?: string; email?: string | null; name?: string | null }) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: (options?: { reason?: string }) => Promise<{ ok: boolean; deleted?: boolean; requiresManualCleanup?: boolean }>;
 };
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -86,15 +87,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
   };
 
-  const signOut = async () => {
+  const performSignOut = async () => {
     setToken(null);
     setUser(null);
     await AsyncStorage.removeItem('auth_token');
     await AsyncStorage.removeItem('auth_user');
   };
 
-  const value = useMemo<AuthState>(() => ({ token, user, loading, signIn, signInWithApple, signOut }), [token, user, loading]);
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const signOut = async () => {
+    await performSignOut();
+  };
+
+  const deleteAccount: AuthState['deleteAccount'] = async (options) => {
+    if (!token) throw new Error('Not authenticated');
+    const result = await apiDeleteAccount(token, options);
+    await performSignOut();
+    return result;
+  };
+
+  return <AuthContext.Provider value={{ token, user, loading, signIn, signInWithApple, signOut, deleteAccount }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
