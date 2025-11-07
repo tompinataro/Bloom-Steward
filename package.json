@@ -34,7 +34,7 @@
     "start": "node dist/server/server.js",
     "client": "vite",
     "server": "node dist/server/server.js",
-    "build": "tsc && cp -R server/sql dist/server/",
+"build": "tsc && cp -R server/sql dist/server/ && cp -R server/modules dist/server/"
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
