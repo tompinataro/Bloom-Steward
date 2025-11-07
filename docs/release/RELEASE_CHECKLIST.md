@@ -3,7 +3,7 @@
 Metadata & Compliance
 - [ ] Fill metadata in ASC (use docs/release/APP_STORE_METADATA.md)
 - [ ] Complete App Privacy + Export Compliance (docs/release/COMPLIANCE_CHECKLIST.md)
-- [ ] Publish/verify Privacy + Support pages via GitHub Pages (`docs/privacy.md`, `docs/support.md`)
+- [ ] Publish/verify Privacy + Support pages via GitHub Pages (`docs/privacy/index.html`, `docs/support/index.html`)
 
 QA & Screenshots
 - [ ] Run staging QA (docs/release/STAGING_QA_CHECKLIST.md)
