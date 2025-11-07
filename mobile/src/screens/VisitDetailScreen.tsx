@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { fetchVisit, submitVisit, Visit, markVisitInProgress } from '../api/client';
 import { useAuth } from '../auth';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
+import Banner from '../components/Banner';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { enqueueSubmission } from '../offlineQueue';
@@ -20,19 +21,16 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const { id } = route.params;
   const { token } = useAuth();
   const [visit, setVisit] = useState<Visit | null>(null);
-  const [timelyNotes, setTimelyNotes] = useState('');
+  const [timelyInstruction, setTimelyInstruction] = useState('');
   const [ack, setAck] = useState(false);
   const [checkInTs, setCheckInTs] = useState<string | null>(null);
   const [checkOutTs, setCheckOutTs] = useState<string | null>(null);
   const [noteToOffice, setNoteToOffice] = useState('');
+  const [onSiteContact, setOnSiteContact] = useState('');
+  const [odometerReading, setOdometerReading] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  // Timely Notes fade-out when empty, keep input height reserved to avoid layout shift
-  const [timelyHidden, setTimelyHidden] = useState(false);
-  const timelyOpacity = useRef(new Animated.Value(1)).current;
-  const timelyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -42,6 +40,14 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         const res = await fetchVisit(id, token);
         setVisit(res.visit);
         navigation.setOptions({ title: res.visit.clientName });
+        setTimelyInstruction(res.visit.timelyNote || '');
+        setAck(false);
+        setNoteToOffice('');
+        setOnSiteContact('');
+        setOdometerReading('');
+        setCheckInTs(null);
+        setCheckOutTs(null);
+        setSubmitError(null);
         // mark visit as in progress as soon as it's opened
         try { await addInProgress(id); } catch {}
         try { await markVisitInProgress(id, token); } catch {}
@@ -51,38 +57,23 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     })();
   }, [id, token]);
 
-  // Hide Timely Notes section after 5s if there are no notes (without layout shift)
-  useEffect(() => {
-    // Clear any prior timer
-    if (timelyTimer.current) { clearTimeout(timelyTimer.current); timelyTimer.current = null; }
-    const empty = !timelyNotes || timelyNotes.trim().length === 0;
-    if (empty) {
-      timelyTimer.current = setTimeout(() => {
-        Animated.timing(timelyOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
-          if (finished) setTimelyHidden(true);
-        });
-      }, 5000);
-    } else {
-      setTimelyHidden(false);
-      timelyOpacity.setValue(1);
-    }
-    return () => { if (timelyTimer.current) { clearTimeout(timelyTimer.current); timelyTimer.current = null; } };
-  }, [timelyNotes]);
-
   const onSubmit = async () => {
     if (!token || !visit) return;
     setSubmitting(true);
     try {
       const outTs = checkOutTs || new Date().toISOString();
-      const hasTimely = !!timelyNotes && timelyNotes.trim().length > 0;
+      const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
       const payload = {
-        notes: timelyNotes,
+        notes: noteToOffice || undefined,
         checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })),
-        timelyAck: hasTimely ? ack : undefined,
+        timelyAck: requiresAck ? ack : undefined,
+        timelyInstruction: timelyInstruction || undefined,
         checkInTs: checkInTs || undefined,
         checkOutTs: outTs,
         checkOutLoc: await getLocation(),
         noteToOffice: noteToOffice || undefined,
+        onSiteContact: onSiteContact || undefined,
+        odometerReading: odometerReading || undefined,
       };
       if (!checkOutTs) setCheckOutTs(outTs);
       setSubmitError(null);
@@ -150,34 +141,27 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   if (loading && !visit) return <View style={styles.center}><ActivityIndicator /></View>;
   if (!visit) return <View style={styles.center}><Text>Visit not found</Text></View>;
 
+  const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.content}>
           {submitError ? <Banner type="error" message={submitError} /> : null}
-          {timelyHidden ? (
-            // Reserve space so layout doesn't shift when section hides
-            <View style={{ height: 88 }} />
-          ) : (
-            <Animated.View style={{ opacity: timelyOpacity }} pointerEvents={timelyNotes.trim().length === 0 ? 'none' : 'auto'}>
-              <View style={styles.headerRow}>
-                <Text style={styles.sectionTitle} numberOfLines={1}>Timely Notes</Text>
+          <View style={styles.timelyCard}>
+            <View style={styles.headerRow}>
+              <Text style={styles.sectionTitle} numberOfLines={1}>Timely Notes</Text>
+              {requiresAck ? (
                 <View style={styles.ackInline}>
                   <Text style={styles.ackLabel}>Acknowledge</Text>
                   <Switch style={styles.ackSwitch} value={ack} onValueChange={setAck} />
                 </View>
-              </View>
-              <TextInput
-                style={styles.notes}
-                multiline
-                numberOfLines={1}
-                value={timelyNotes}
-                onChangeText={setTimelyNotes}
-                placeholder="Urgent issues, if necessary, will appear here."
-                placeholderTextColor={colors.muted}
-              />
-            </Animated.View>
-          )}
+              ) : null}
+            </View>
+            <Text style={requiresAck ? styles.timelyCopy : styles.timelyPlaceholder}>
+              {requiresAck ? timelyInstruction : 'No timely notes today.'}
+            </Text>
+          </View>
           <View style={styles.checkInWrap}>
             <ThemedButton
               title={checkInTs ? 'Checked In' : 'Check In'}
@@ -188,22 +172,25 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
                 if (!token || !visit) return;
                 const loc = await getLocation();
                 const payload = {
-                  notes: timelyNotes,
+                  notes: noteToOffice || undefined,
                   checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })),
-                  timelyAck: ack,
+                  timelyAck: requiresAck ? ack : undefined,
+                  timelyInstruction: timelyInstruction || undefined,
                   checkInTs: ts,
                   checkInLoc: loc,
+                  onSiteContact: onSiteContact || undefined,
+                  odometerReading: odometerReading || undefined,
                 } as any;
                 try {
                   await submitVisit(visit.id, payload, token);
                 } catch {
                   await enqueueSubmission(visit.id, payload);
-                  showBanner({ type: 'info', message: 'Checked in offline — will sync when online' });
+                  showBanner({ type: 'info', message: 'Checked in offline - will sync when online' });
                 }
               }}
               style={styles.checkInBtn}
             />
-            <Text style={styles.timeText}>{checkInTs ? formatTime(checkInTs) : '—'}</Text>
+            <Text style={styles.timeText}>{checkInTs ? formatTime(checkInTs) : '--'}</Text>
           </View>
           {visit.checklist.map((item) => (
             <TouchableOpacity
@@ -232,14 +219,39 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
             placeholder="Optional notes from the field to the office"
             placeholderTextColor={colors.muted}
           />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>On-site contact</Text>
+            <TextInput
+              style={styles.textInput}
+              value={onSiteContact}
+              onChangeText={setOnSiteContact}
+              placeholder="Who you met with (name, title, or phone)"
+              placeholderTextColor={colors.muted}
+              accessibilityLabel="On-site contact"
+              returnKeyType="done"
+            />
+          </View>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Odometer Reading</Text>
+            <TextInput
+              style={styles.textInput}
+              value={odometerReading}
+              onChangeText={setOdometerReading}
+              placeholder="Enter current mileage"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              accessibilityLabel="Odometer reading"
+              returnKeyType="done"
+            />
+          </View>
           <View style={{ height: spacing(14) }} />
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
         <ThemedButton
-          title={submitting ? 'Submitting…' : 'Check Out & Complete Visit'}
+          title={submitting ? 'Submitting...' : 'Check Out & Complete Visit'}
           onPress={() => { if (!checkOutTs) setCheckOutTs(new Date().toISOString()); onSubmit(); }}
-          disabled={isSubmitDisabled({ submitting, checkInTs, timelyNotes, ack })}
+          disabled={isSubmitDisabled({ submitting, checkInTs, requiresAck, ack })}
           style={styles.submitBtn}
         />
       </SafeAreaView>
@@ -254,7 +266,7 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 360, alignSelf: 'center', gap: spacing(3) },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(4), borderBottomColor: colors.border, borderBottomWidth: 1 },
   label: { fontSize: 17, color: colors.text },
-  notes: { borderColor: colors.border, color: colors.text, backgroundColor: colors.card, borderWidth: 1, borderRadius: 8, paddingVertical: spacing(1.5), paddingHorizontal: spacing(3), height: 44, textAlignVertical: 'center' },
+  notes: { borderColor: colors.border, color: colors.text, backgroundColor: colors.card, borderWidth: 1, borderRadius: 8, paddingVertical: spacing(1.5), paddingHorizontal: spacing(3), minHeight: 52, textAlignVertical: 'top' },
   sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: spacing(2) },
   nameRow: { alignItems: 'center', marginBottom: spacing(1) },
   clientName: { fontSize: 20, fontWeight: '700', color: colors.text, textAlign: 'center' },
@@ -264,6 +276,9 @@ const styles = StyleSheet.create({
   // Smaller switch to better fit inline with the label
   ackSwitch: { transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }] },
   ackRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3), borderBottomColor: colors.border, borderBottomWidth: 1 },
+  timelyCard: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 10, padding: spacing(3), gap: spacing(2) },
+  timelyCopy: { color: colors.text, fontSize: 16, lineHeight: 22 },
+  timelyPlaceholder: { color: colors.muted, fontSize: 16 },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
   // Slightly raised so it sits ~half its height above the bottom edge
   stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(22), padding: spacing(3), paddingBottom: spacing(3.5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
@@ -271,5 +286,16 @@ const styles = StyleSheet.create({
   checkInWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(3), paddingVertical: spacing(2) },
   checkInBtn: { minWidth: 220 },
   // Larger, bolder time next to the Check In button
-  timeText: { color: colors.muted, fontSize: 18, fontWeight: '700' }
+  timeText: { color: colors.muted, fontSize: 18, fontWeight: '700' },
+  fieldGroup: { width: '100%', maxWidth: 360, gap: spacing(1) },
+  fieldLabel: { fontSize: 15, fontWeight: '600', color: colors.text },
+  textInput: {
+    borderColor: colors.border,
+    color: colors.text,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: spacing(1.5),
+    paddingHorizontal: spacing(3),
+  },
 });

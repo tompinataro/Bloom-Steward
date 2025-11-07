@@ -1,10 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
 import healthRouter from './routes/health';
 import metricsRouter, { requestMetrics } from './routes/metrics';
 import { getTodayRoutes, getVisit, saveVisit } from './data';
 import { dbQuery, hasDb } from './db';
+const encryptLib = require('./modules/encryption') as {
+  encryptPassword: (password: string) => string;
+  comparePassword: (candidate: string, stored: string) => boolean;
+};
 
 // In-memory visit state (Sprint 5 Phase A)
 // Keyed by day + visit id + user id. Example: 2025-09-09:101:1
@@ -81,10 +86,11 @@ app.use(metricsRouter);
 // JWT auth
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
-type JwtUser = { id: number; email: string; name: string; role?: 'admin' | 'user' };
+type UserRole = 'admin' | 'tech';
+type JwtUser = { id: number; email: string; name: string; role?: UserRole };
 
 function signToken(user: JwtUser) {
-  return jwt.sign({ sub: user.id, email: user.email, name: user.name, role: user.role || 'user' }, JWT_SECRET, { expiresIn: '12h' });
+  return jwt.sign({ sub: user.id, email: user.email, name: user.name, role: user.role || 'tech' }, JWT_SECRET, { expiresIn: '12h' });
 }
 
 declare global {
@@ -115,6 +121,14 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
   return next();
 }
 
+function ensureDatabase(res: express.Response): boolean {
+  if (!hasDb()) {
+    res.status(503).json({ ok: false, error: 'database not configured' });
+    return false;
+  }
+  return true;
+}
+
 // API routes (DB-backed when configured; demo otherwise)
 // Sprint 8 controls: visit state read strategy
 type ReadMode = 'db' | 'memory' | 'shadow';
@@ -123,48 +137,41 @@ const defaultReadMode: ReadMode = hasDb()
   : 'memory';
 let readMode: ReadMode = defaultReadMode;
 const shadowLogOncePerDay = new Set<string>();
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body ?? {};
-  const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@example.com';
+  if (!email || !password) {
+    return res.status(400).json({ ok: false, error: 'missing credentials' });
+  }
+  if (hasDb()) {
+    try {
+      const result = await dbQuery<{ id: number; email: string; name: string; password_hash: string; role: string }>(
+        `select id, email, name, password_hash, coalesce(role, 'tech') as role
+         from users
+         where lower(email) = lower($1)
+         limit 1`,
+        [email]
+      );
+      const record = result?.rows?.[0];
+      if (record && record.password_hash && encryptLib.comparePassword(password, record.password_hash)) {
+        const role: UserRole = record.role === 'admin' ? 'admin' : 'tech';
+        const user: JwtUser = { id: record.id, name: record.name, email: record.email, role };
+        const token = signToken(user);
+        return res.json({ ok: true, token, user });
+      }
+    } catch (err) {
+      console.error('[auth/login] database error', err);
+      return res.status(500).json({ ok: false, error: 'login error' });
+    }
+  }
+  const DEMO_EMAIL = (process.env.DEMO_EMAIL || 'demo@example.com').toLowerCase();
   const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password';
-  if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-    const isAdmin = (process.env.ADMIN_EMAIL || DEMO_EMAIL) === email;
-    const user: JwtUser = { id: 1, name: 'Demo User', email, role: isAdmin ? 'admin' : 'user' };
+  if (String(email).toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
+    const isAdmin = (process.env.ADMIN_EMAIL || DEMO_EMAIL).toLowerCase() === String(email).toLowerCase();
+    const user: JwtUser = { id: isAdmin ? 9991 : 9990, name: isAdmin ? 'Admin User' : 'Demo User', email, role: isAdmin ? 'admin' : 'tech' };
     const token = signToken(user);
     return res.json({ ok: true, token, user });
   }
   return res.status(401).json({ ok: false, error: 'invalid credentials' });
-});
-
-// Minimal Sign in with Apple endpoint for development/internal builds.
-// NOTE: For production, verify the identityToken with Apple's public keys
-// and map the Apple user to an internal account.
-app.post('/api/auth/apple', (req, res) => {
-  try {
-    const { identityToken, authorizationCode, email, name } = req.body ?? {};
-    try {
-      console.log('[auth/apple] req', {
-        hasIdentityToken: !!identityToken,
-        hasAuthorizationCode: !!authorizationCode,
-        email: email ? String(email) : null,
-      });
-    } catch {}
-    // In this demo server, accept the payload without external verification
-    // and synthesize a user. If an email is provided once (first consent), use it;
-    // otherwise generate a stable placeholder.
-    const userEmail: string = email || 'apple_user@bloomsteward.local';
-    const userName: string = name || 'Apple User';
-    const user: JwtUser = { id: 2, email: userEmail, name: userName, role: 'user' };
-
-    // Basic sanity: require at least one Apple credential field
-    if (!identityToken && !authorizationCode) {
-      return res.status(400).json({ ok: false, error: 'missing apple credential' });
-    }
-    const token = signToken(user);
-    return res.json({ ok: true, token, user });
-  } catch (e: any) {
-    return res.status(500).json({ ok: false, error: e?.message ?? 'apple auth error' });
-  }
 });
 
 app.get('/api/auth/me', requireAuth, (req, res) => {
@@ -225,8 +232,8 @@ app.delete('/api/auth/account', requireAuth, async (req, res) => {
 
 app.get('/api/routes/today', requireAuth, async (req, res) => {
   try {
-    const routes = await getTodayRoutes(1);
     const userId = req.user?.id;
+    const routes = await getTodayRoutes(userId || 0);
     let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
     const day = dayKey();
     const wantDb = readMode === 'db' || readMode === 'shadow';
@@ -317,20 +324,259 @@ app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
 
 // Admin endpoints (MVP)
 app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
+  if (!ensureDatabase(res)) return;
   try {
-    const q = await dbQuery<{ id: number; email: string; name: string }>('select id, email, name from users order by id asc');
-    res.json({ ok: true, users: q?.rows ?? [] });
+    const q = await dbQuery<{ id: number; email: string; name: string; role: string }>(
+      'select id, email, name, coalesce(role, \'tech\') as role from users order by id asc'
+    );
+    const users = (q?.rows ?? []).map((u) => ({ ...u, role: u.role === 'admin' ? 'admin' : 'tech' }));
+    res.json({ ok: true, users });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'users error' });
   }
 });
 
 app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
+  if (!ensureDatabase(res)) return;
   try {
-    const q = await dbQuery<{ id: number; name: string; address: string }>('select id, name, address from clients order by id asc');
+    const q = await dbQuery<{
+      id: number;
+      name: string;
+      address: string;
+      contact_name: string | null;
+      contact_phone: string | null;
+      assigned_user_id: number | null;
+      assigned_user_name: string | null;
+      assigned_user_email: string | null;
+      scheduled_time: string | null;
+      timely_note: string | null;
+    }>(
+      `select
+         c.id,
+         c.name,
+         c.address,
+         c.contact_name,
+         c.contact_phone,
+         rt.user_id as assigned_user_id,
+         u.name as assigned_user_name,
+         u.email as assigned_user_email,
+         rt.scheduled_time,
+         tn.note as timely_note
+       from clients c
+       left join routes_today rt on rt.client_id = c.id
+       left join users u on u.id = rt.user_id
+       left join lateral (
+         select note
+         from timely_notes t
+         where t.client_id = c.id and t.active
+         order by t.created_at desc
+         limit 1
+       ) tn on true
+       order by c.name asc`
+    );
     res.json({ ok: true, clients: q?.rows ?? [] });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'clients error' });
+  }
+});
+
+function generatePassword(length = 12): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const bytes = randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i += 1) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
+app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const { name, email, role } = req.body ?? {};
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+  if (!trimmedName || !trimmedEmail) {
+    return res.status(400).json({ ok: false, error: 'name and email required' });
+  }
+  const normalizedEmail = trimmedEmail.toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ ok: false, error: 'invalid email address' });
+  }
+  const normalizedRole: UserRole = role === 'admin' ? 'admin' : 'tech';
+  const tempPassword = generatePassword();
+  const passwordHash = encryptLib.encryptPassword(tempPassword);
+  try {
+    const result = await dbQuery<{ id: number; name: string; email: string; role: string }>(
+      `insert into users (name, email, password_hash, role)
+       values ($1, $2, $3, $4)
+       returning id, name, email, coalesce(role, 'tech') as role`,
+      [trimmedName, normalizedEmail, passwordHash, normalizedRole]
+    );
+    const user = result?.rows?.[0];
+    return res.json({
+      ok: true,
+      user: user ? { ...user, role: user.role === 'admin' ? 'admin' : 'tech' } : null,
+      tempPassword
+    });
+  } catch (e: any) {
+    const message = String(e?.message ?? '');
+    if (/duplicate key value violates unique constraint/i.test(message)) {
+      return res.status(409).json({ ok: false, error: 'email already exists' });
+    }
+    console.error('[admin/users] create error', e);
+    return res.status(500).json({ ok: false, error: 'failed to create user' });
+  }
+});
+
+app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const { name, address, contactName, contactPhone } = req.body ?? {};
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  const trimmedAddress = typeof address === 'string' ? address.trim() : '';
+  if (!trimmedName || !trimmedAddress) {
+    return res.status(400).json({ ok: false, error: 'name and address required' });
+  }
+  const result = await dbQuery<{
+    id: number;
+    name: string;
+    address: string;
+    contact_name: string | null;
+    contact_phone: string | null;
+  }>(
+    `insert into clients (name, address, contact_name, contact_phone)
+     values ($1, $2, nullif($3, ''), nullif($4, ''))
+     returning id, name, address, contact_name, contact_phone`,
+    [trimmedName, trimmedAddress, contactName || null, contactPhone || null]
+  ).catch((e: any) => {
+    const message = String(e?.message ?? '');
+    if (/duplicate key value violates unique constraint/i.test(message)) {
+      return { error: 'duplicate' };
+    }
+    console.error('[admin/clients] create error', e);
+    return { error: 'unknown' };
+  });
+  if ((result as any)?.error === 'duplicate') {
+    return res.status(409).json({ ok: false, error: 'client already exists' });
+  }
+  if ((result as any)?.error) {
+    return res.status(500).json({ ok: false, error: 'failed to create client' });
+  }
+  const client = (result as any)?.rows?.[0];
+  return res.json({ ok: true, client });
+});
+
+app.post('/api/admin/routes/assign', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const { clientId, userId, scheduledTime } = req.body ?? {};
+  const cid = Number(clientId);
+  if (!cid || Number.isNaN(cid)) {
+    return res.status(400).json({ ok: false, error: 'invalid client' });
+  }
+  const clientCheck = await dbQuery<{ id: number }>('select id from clients where id = $1', [cid]);
+  if (!clientCheck?.rows?.length) {
+    return res.status(404).json({ ok: false, error: 'client not found' });
+  }
+  if (userId === null || userId === undefined || userId === '') {
+    try {
+      await dbQuery('delete from routes_today where client_id = $1', [cid]);
+      return res.json({ ok: true, removed: true });
+    } catch (e: any) {
+      console.error('[admin/routes] delete error', e);
+      return res.status(500).json({ ok: false, error: 'failed to remove assignment' });
+    }
+  }
+  const uid = Number(userId);
+  if (!uid || Number.isNaN(uid)) {
+    return res.status(400).json({ ok: false, error: 'invalid user' });
+  }
+  const userCheck = await dbQuery<{ role: string }>('select coalesce(role, \'tech\') as role from users where id = $1', [uid]);
+  if (!userCheck?.rows?.length) {
+    return res.status(404).json({ ok: false, error: 'user not found' });
+  }
+  const userRole = userCheck.rows[0].role;
+  if (userRole !== 'tech') {
+    return res.status(400).json({ ok: false, error: 'assignment requires a field tech account' });
+  }
+  const time =
+    typeof scheduledTime === 'string' && scheduledTime.trim()
+      ? scheduledTime.trim()
+      : '08:30';
+  try {
+    await dbQuery(
+      `insert into routes_today (user_id, client_id, scheduled_time)
+       values ($1, $2, $3)
+       on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time`,
+      [uid, cid, time]
+    );
+    return res.json({ ok: true });
+  } catch (e: any) {
+    console.error('[admin/routes] assign error', e);
+    return res.status(500).json({ ok: false, error: 'failed to assign client' });
+  }
+});
+
+app.get('/api/admin/routes/overview', requireAuth, requireAdmin, async (_req, res) => {
+  if (!ensureDatabase(res)) return;
+  try {
+    const result = await dbQuery<{
+      user_id: number;
+      user_name: string;
+      user_email: string;
+      client_id: number;
+      client_name: string;
+      address: string;
+      scheduled_time: string;
+    }>(
+      `select
+         rt.user_id,
+         u.name as user_name,
+         u.email as user_email,
+         rt.client_id,
+         c.name as client_name,
+         c.address,
+         rt.scheduled_time
+       from routes_today rt
+       join users u on u.id = rt.user_id
+       join clients c on c.id = rt.client_id
+       order by u.name asc, rt.scheduled_time asc, c.name asc`
+    );
+    res.json({ ok: true, assignments: result?.rows ?? [] });
+  } catch (e: any) {
+    console.error('[admin/routes] overview error', e);
+    res.status(500).json({ ok: false, error: e?.message ?? 'routes overview error' });
+  }
+});
+
+app.post('/api/admin/timely-notes', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const { clientId, note, active } = req.body ?? {};
+  const cid = Number(clientId);
+  if (!cid || Number.isNaN(cid)) {
+    return res.status(400).json({ ok: false, error: 'invalid client' });
+  }
+  const shouldActivate = active !== false;
+  const trimmedNote = typeof note === 'string' ? note.trim() : '';
+  if (!trimmedNote) {
+    try {
+      await dbQuery('update timely_notes set active = false where client_id = $1 and active', [cid]);
+      return res.json({ ok: true, note: null });
+    } catch (e: any) {
+      console.error('[admin/timely-notes] clear error', e);
+      return res.status(500).json({ ok: false, error: 'failed to clear note' });
+    }
+  }
+  try {
+    await dbQuery('update timely_notes set active = false where client_id = $1 and active', [cid]);
+    const result = await dbQuery<{ id: number; note: string; created_at: string }>(
+      `insert into timely_notes (client_id, note, created_by, active)
+       values ($1, $2, $3, $4)
+       returning id, note, created_at`,
+      [cid, trimmedNote, req.user?.id ?? null, shouldActivate]
+    );
+    return res.json({ ok: true, note: result?.rows?.[0] ?? null });
+  } catch (e: any) {
+    console.error('[admin/timely-notes] create error', e);
+    return res.status(500).json({ ok: false, error: 'failed to save note' });
   }
 });
 

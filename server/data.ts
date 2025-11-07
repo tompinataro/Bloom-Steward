@@ -2,7 +2,7 @@ import { dbQuery, hasDb } from './db';
 
 export type TodayRoute = { id: number; clientName: string; address: string; scheduledTime: string };
 export type ChecklistItem = { key: string; label: string; done: boolean };
-export type Visit = { id: number; clientName: string; checklist: ChecklistItem[] };
+export type Visit = { id: number; clientName: string; checklist: ChecklistItem[]; timelyNote?: string | null; address?: string | null };
 
 const FALLBACK_ROUTES: TodayRoute[] = [
   { id: 104, clientName: 'Harbor Plaza', address: '50 S 6th St', scheduledTime: '12:30' },
@@ -103,16 +103,39 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
 
 export async function getVisit(id: number): Promise<Visit> {
   if (hasDb()) {
-    const visit = await dbQuery<{ id: number; client_name: string }>(
-      `select v.id, c.name as client_name from visits v join clients c on c.id = v.client_id where v.id = $1`,
+    const visit = await dbQuery<{ id: number; client_name: string; address: string | null; timely_note: string | null }>(
+      `select
+         v.id,
+         c.name as client_name,
+         c.address,
+         tn.note as timely_note
+       from visits v
+       join clients c on c.id = v.client_id
+       left join lateral (
+         select note
+         from timely_notes t
+         where t.client_id = c.id and t.active
+         order by t.created_at desc
+         limit 1
+       ) tn on true
+       where v.id = $1`,
       [id]
     );
     const items = await dbQuery<{ key: string; label: string; done: boolean }>(
-      `select key, label, done from visit_checklist where visit_id = $1 order by key asc`,
+      `select key, label, done
+       from visit_checklist
+       where visit_id = $1
+       order by array_position(array['watered','pruned','replaced'], key), key asc`,
       [id]
     );
     if (visit && visit.rows[0]) {
-      return { id, clientName: visit.rows[0].client_name, checklist: items?.rows ?? [] };
+      return {
+        id,
+        clientName: visit.rows[0].client_name,
+        checklist: items?.rows ?? [],
+        timelyNote: visit.rows[0].timely_note,
+        address: visit.rows[0].address
+      };
     }
   }
   const clientName =
@@ -126,10 +149,11 @@ export async function getVisit(id: number): Promise<Visit> {
     id,
     clientName,
     checklist: [
-      { key: 'watered', label: 'Watered plants', done: false },
+      { key: 'watered', label: 'Watered Plants', done: false },
       { key: 'pruned', label: 'Pruned and cleaned', done: false },
       { key: 'replaced', label: 'Replaced unhealthy plants', done: false }
-    ]
+    ],
+    timelyNote: null
   };
 }
 

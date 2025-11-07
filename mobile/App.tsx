@@ -12,11 +12,11 @@ import AboutScreen from './src/screens/AboutScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
-import SignOutButton from './src/components/SignOutButton';
 import { GlobalBannerProvider } from './src/components/GlobalBannerProvider';
 import { adminResetVisitState } from './src/api/client';
 import Constants from 'expo-constants';
 import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
+import AccountScreen from './src/screens/AccountScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -54,7 +54,7 @@ function RootNavigator() {
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Pressable
-                onPress={() => navigation.navigate('DeleteAccount')}
+                onPress={() => navigation.navigate('Account')}
                 hitSlop={12}
                 accessibilityRole="button"
                 accessibilityLabel="Manage account"
@@ -103,6 +103,7 @@ function RootNavigator() {
         })}
       />
       <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Account' }} />
       <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete Account' }} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>

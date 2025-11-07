@@ -91,10 +91,33 @@ async function getTodayRoutes(userId) {
 }
 async function getVisit(id) {
     if ((0, db_1.hasDb)()) {
-        const visit = await (0, db_1.dbQuery)(`select v.id, c.name as client_name from visits v join clients c on c.id = v.client_id where v.id = $1`, [id]);
-        const items = await (0, db_1.dbQuery)(`select key, label, done from visit_checklist where visit_id = $1 order by key asc`, [id]);
+        const visit = await (0, db_1.dbQuery)(`select
+         v.id,
+         c.name as client_name,
+         c.address,
+         tn.note as timely_note
+       from visits v
+       join clients c on c.id = v.client_id
+       left join lateral (
+         select note
+         from timely_notes t
+         where t.client_id = c.id and t.active
+         order by t.created_at desc
+         limit 1
+       ) tn on true
+       where v.id = $1`, [id]);
+        const items = await (0, db_1.dbQuery)(`select key, label, done
+       from visit_checklist
+       where visit_id = $1
+       order by array_position(array['watered','pruned','replaced'], key), key asc`, [id]);
         if (visit && visit.rows[0]) {
-            return { id, clientName: visit.rows[0].client_name, checklist: items?.rows ?? [] };
+            return {
+                id,
+                clientName: visit.rows[0].client_name,
+                checklist: items?.rows ?? [],
+                timelyNote: visit.rows[0].timely_note,
+                address: visit.rows[0].address
+            };
         }
     }
     const clientName = id === 101 ? 'Acme HQ' :
@@ -107,10 +130,11 @@ async function getVisit(id) {
         id,
         clientName,
         checklist: [
-            { key: 'watered', label: 'Watered plants', done: false },
+            { key: 'watered', label: 'Watered Plants', done: false },
             { key: 'pruned', label: 'Pruned and cleaned', done: false },
             { key: 'replaced', label: 'Replaced unhealthy plants', done: false }
-        ]
+        ],
+        timelyNote: null
     };
 }
 async function saveVisit(id, data) {

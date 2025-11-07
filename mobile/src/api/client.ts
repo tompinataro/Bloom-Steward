@@ -64,7 +64,7 @@ export async function health(): Promise<{ ok: boolean; ts?: string; message?: st
   return fetchJson(withBase('/health'));
 }
 
-export type LoginResponse = { ok: boolean; token: string; user: { id: number; name: string; email: string } };
+export type LoginResponse = { ok: boolean; token: string; user: { id: number; name: string; email: string; role?: 'admin' | 'tech' } };
 export async function login(email: string, password: string): Promise<LoginResponse> {
   return fetchJson(withBase('/api/auth/login'), {
     method: 'POST',
@@ -92,21 +92,6 @@ export async function deleteAccount(token: string, options?: { reason?: string }
   });
 }
 
-// Sign in with Apple (development-friendly endpoint)
-export type AppleLoginRequest = {
-  identityToken?: string;
-  authorizationCode?: string;
-  email?: string | null;
-  name?: string | null;
-};
-export async function loginWithApple(data: AppleLoginRequest): Promise<LoginResponse> {
-  return fetchJson(withBase('/api/auth/apple'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-}
-
 export type TodayRoute = {
   id: number;
   clientName: string;
@@ -122,7 +107,13 @@ export async function fetchTodayRoutes(token: string): Promise<{ ok: boolean; ro
   });
 }
 
-export type Visit = { id: number; clientName: string; checklist: { key: string; label: string; done: boolean }[] };
+export type Visit = {
+  id: number;
+  clientName: string;
+  checklist: { key: string; label: string; done: boolean }[];
+  timelyNote?: string | null;
+  address?: string | null;
+};
 export async function fetchVisit(id: number, token: string): Promise<{ ok: boolean; visit: Visit }> {
   return fetchJson(withBase(`/api/visits/${id}`), {
     headers: { Authorization: `Bearer ${token}` }
@@ -164,5 +155,89 @@ export async function adminResetVisitState(date: string | undefined, token: stri
   return fetchJson(withBase(`/api/admin/visit-state/reset${q}`), {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type AdminUser = { id: number; name: string; email: string; role: 'admin' | 'tech' };
+export async function adminFetchUsers(token: string): Promise<{ ok: boolean; users: AdminUser[] }> {
+  return fetchJson(withBase('/api/admin/users'), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type AdminClient = {
+  id: number;
+  name: string;
+  address: string;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  assigned_user_id?: number | null;
+  assigned_user_name?: string | null;
+  assigned_user_email?: string | null;
+  scheduled_time?: string | null;
+  timely_note?: string | null;
+};
+export async function adminFetchClients(token: string): Promise<{ ok: boolean; clients: AdminClient[] }> {
+  return fetchJson(withBase('/api/admin/clients'), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function adminCreateUser(
+  token: string,
+  data: { name: string; email: string; role?: 'admin' | 'tech' }
+): Promise<{ ok: boolean; user: AdminUser; tempPassword: string }> {
+  return fetchJson(withBase('/api/admin/users'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function adminCreateClient(
+  token: string,
+  data: { name: string; address: string; contactName?: string; contactPhone?: string }
+): Promise<{ ok: boolean; client: AdminClient }> {
+  return fetchJson(withBase('/api/admin/clients'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function adminAssignClient(
+  token: string,
+  data: { clientId: number; userId: number | null; scheduledTime?: string }
+): Promise<{ ok: boolean; removed?: boolean }> {
+  return fetchJson(withBase('/api/admin/routes/assign'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export type AdminRouteAssignment = {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  client_id: number;
+  client_name: string;
+  address: string;
+  scheduled_time: string;
+};
+export async function adminFetchRoutes(token: string): Promise<{ ok: boolean; assignments: AdminRouteAssignment[] }> {
+  return fetchJson(withBase('/api/admin/routes/overview'), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function adminSetTimelyNote(
+  token: string,
+  data: { clientId: number; note: string; active?: boolean }
+): Promise<{ ok: boolean; note: { id: number; note: string; created_at: string } | null }> {
+  return fetchJson(withBase('/api/admin/timely-notes'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
   });
 }

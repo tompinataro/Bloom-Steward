@@ -16,7 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 
 export default function RouteListScreen({ navigation, route }: Props) {
-  const { token, signOut } = useAuth();
+  const { token, signOut, user } = useAuth();
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -24,6 +24,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
+  const isAdmin = user?.role === 'admin';
 
   const dedupeRoutes = (items: TodayRoute[]) => {
     // Always collapse by visit id first (protects legitimate duplicates)
@@ -63,7 +64,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
       try {
         const stats = await getQueueStats();
         if (stats.pending > 0 && stats.maxAttempts >= 3) {
-          showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend` });
+          showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} - will auto-resend` });
         }
       } catch {}
       const res = await fetchTodayRoutes(token);
@@ -103,7 +104,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     load();
   }, [token]);
 
-  // Sprint 10 — Foreground sync: when app becomes active, flush queue and refresh
+  // Sprint 10 - Foreground sync: when app becomes active, flush queue and refresh
   useEffect(() => {
     const onChange = (state: AppStateStatus) => {
       if (state === 'active') {
@@ -113,7 +114,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
             try {
               const stats = await getQueueStats();
               if (stats.pending > 0 && stats.maxAttempts >= 3) {
-                showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend` });
+                showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} - will auto-resend` });
               }
             } catch {}
           }).catch(() => {});
@@ -134,7 +135,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
           try {
             const stats = await getQueueStats();
             if (stats.pending > 0 && stats.maxAttempts >= 3) {
-              showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} — will auto-resend` });
+              showBanner({ type: 'info', message: `Retrying ${stats.pending} submission${stats.pending>1?'s':''} - will auto-resend` });
             }
           } catch {}
         }).catch(() => {});
@@ -189,7 +190,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
       showBanner({ type: 'success', message: '✓ Saved' });
       navigation.setParams({ saved: undefined } as any);
     } else if (savedOffline) {
-      showBanner({ type: 'info', message: '✓ Saved offline — will sync when online' });
+      showBanner({ type: 'info', message: '✓ Saved offline - will sync when online' });
       navigation.setParams({ savedOffline: undefined } as any);
     }
   }, [route.params?.saved, route.params?.savedOffline]);
@@ -380,8 +381,10 @@ export default function RouteListScreen({ navigation, route }: Props) {
         )}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyTitle}>No visits today</Text>
-            <Text style={styles.emptySub}>Pull down to refresh</Text>
+            <Text style={styles.emptyTitle}>{isAdmin ? 'No assignments yet' : 'No visits today'}</Text>
+            <Text style={styles.emptySub}>
+              {isAdmin ? 'Assign clients from the Account tab to build today\'s route.' : 'Pull down to refresh'}
+            </Text>
           </View>
         }
       />

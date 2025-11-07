@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, Image, Platform } from 'react-native';
-import Constants from 'expo-constants';
-import * as AppleAuthentication from 'expo-apple-authentication';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -13,7 +11,7 @@ import { colors, spacing } from '../theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen(_props: Props) {
-  const { signIn, signInWithApple } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('demo@example.com');
   const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
@@ -27,35 +25,7 @@ export default function LoginScreen(_props: Props) {
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       setError(msg);
-      showBanner({ type: 'error', message: `Login failed — ${msg}` });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onApple = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      await signInWithApple({
-        identityToken: (credential as any)?.identityToken,
-        authorizationCode: (credential as any)?.authorizationCode,
-        email: credential.email ?? null,
-        name: credential.fullName ? `${credential.fullName.givenName ?? ''} ${credential.fullName.familyName ?? ''}`.trim() : null,
-      });
-    } catch (e: any) {
-      // user cancellations surface as error codes; ignore those
-      if (e?.code !== 'ERR_CANCELED') {
-        const msg = e?.message ?? String(e);
-        setError(msg);
-        showBanner({ type: 'error', message: `Apple sign-in failed — ${msg}` });
-      }
+      showBanner({ type: 'error', message: `Login failed - ${msg}` });
     } finally {
       setLoading(false);
     }
@@ -95,17 +65,6 @@ export default function LoginScreen(_props: Props) {
         ) : (
           <ThemedButton title="Log In" onPress={onSubmit} style={styles.fullWidthBtn} />
         )}
-        {Platform.OS === 'ios' && (Constants?.appOwnership !== 'expo') ? (
-          <View style={{ width: '100%', maxWidth: 360, marginTop: spacing(2) }}>
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-              cornerRadius={8}
-              style={{ width: '100%', height: 44 }}
-              onPress={onApple}
-            />
-          </View>
-        ) : null}
         {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
         <LoadingOverlay visible={loading} />
       </View>
