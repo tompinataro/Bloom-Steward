@@ -5,9 +5,9 @@
   - [ ] Subtitle: Route visits made simple
   - [ ] Primary Category: Productivity (alt: Business)
   - [ ] Age Rating: 4+
-  - [ ] Support URL: https://example.com/support (replace in Sprint 28)
-  - [ ] Privacy Policy URL: https://example.com/privacy (replace in Sprint 28)
-  - [ ] Marketing URL (optional)
+  - [ ] Support URL: https://tompinataro.github.io/Bloom-Steward/support
+  - [ ] Privacy Policy URL: https://tompinataro.github.io/Bloom-Steward/privacy
+  - [ ] Marketing URL (optional): https://tompinataro.github.io/Bloom-Steward/
 
 - [ ] Version Submission (1.0.1)
   - [ ] What’s New: Confirm text from metadata doc

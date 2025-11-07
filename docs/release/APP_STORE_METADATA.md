@@ -10,7 +10,7 @@ Basics
 - Age Rating: 4+
 - Privacy Policy URL: https://tompinataro.github.io/Bloom-Steward/privacy
 - Support URL: https://tompinataro.github.io/Bloom-Steward/support
-- Marketing URL: https://example.com  (optional)
+- Marketing URL: https://tompinataro.github.io/Bloom-Steward/
 
 Description (Short Form)
 Bloom Steward helps field technicians complete daily plant maintenance routes quickly and accurately. View today’s route, check in/out with optional location, complete a simple checklist, and leave notes for the office. Works offline and syncs automatically when online.

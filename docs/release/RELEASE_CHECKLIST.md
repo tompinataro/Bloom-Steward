@@ -3,7 +3,7 @@
 Metadata & Compliance
 - [ ] Fill metadata in ASC (use docs/release/APP_STORE_METADATA.md)
 - [ ] Complete App Privacy + Export Compliance (docs/release/COMPLIANCE_CHECKLIST.md)
-- [ ] Publish Privacy + Support pages via GitHub Pages
+- [ ] Publish/verify Privacy + Support pages via GitHub Pages (`docs/privacy.md`, `docs/support.md`)
 
 QA & Screenshots
 - [ ] Run staging QA (docs/release/STAGING_QA_CHECKLIST.md)
@@ -24,4 +24,3 @@ Tag & Docs
 
 Production Domain (optional)
 - [ ] Configure custom API domain and update production env (docs/release/PRODUCTION_API_DOMAIN.md)
-

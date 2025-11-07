@@ -12,7 +12,7 @@ App Privacy (ASC Questionnaire)
   - [ ] Diagnostics (server error logs) → App Functionality; Not linked; Not tracking
 
 App Privacy Policy
-- [ ] Provide a link (Sprint 28 will publish a minimal policy page)
+- [ ] Provide a link (hosted at https://tompinataro.github.io/Bloom-Steward/privacy)
 
 Export Compliance
 - [ ] Uses standard HTTPS/TLS only
