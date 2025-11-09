@@ -13,7 +13,6 @@ import LoginScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import { GlobalBannerProvider } from './src/components/GlobalBannerProvider';
-import { adminResetVisitState } from './src/api/client';
 import Constants from 'expo-constants';
 import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
 import AccountScreen from './src/screens/AccountScreen';
@@ -35,52 +34,27 @@ function RootNavigator() {
         name="RouteList"
         component={RouteListScreen}
         options={({ navigation }) => ({
-          // Dev-only: secret clickable title to reset local completion state during demos
-          // (No visual change — behaves like regular title text)
           headerTitle: () => (
-            <Pressable onPress={async () => {
-              const { clearAllProgress } = await import('./src/completed');
-              try { await clearAllProgress(); } catch {}
-              try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
-            }} onLongPress={async () => {
-              const { clearAllProgress } = await import('./src/completed');
-              try { await clearAllProgress(); } catch {}
-              try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
-            }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Today's Route (Dev Reset)">
-              <Text style={{ fontWeight: '700', fontSize: 17 }}>Today{"'"}s Route</Text>
+            <Pressable
+              onPress={async () => {
+                const { clearAllProgress } = await import('./src/completed');
+                try { await clearAllProgress(); } catch {}
+                try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
+              }}
+              onLongPress={async () => {
+                const { clearAllProgress } = await import('./src/completed');
+                try { await clearAllProgress(); } catch {}
+                try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
+              }}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Today's Route (Dev Reset)"
+            >
+              <Text style={{ fontWeight: '700', fontSize: 20 }}>Today{"'"}s Route</Text>
             </Pressable>
           ),
-          // Dev/Admin: server-state reset button (staging/demo convenience)
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Pressable
-                onPress={() => navigation.navigate('Account')}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel="Manage account"
-                style={{ paddingHorizontal: 12, paddingVertical: 4 }}
-              >
-                <Text style={{ color: colors.primary, fontWeight: '600', marginRight: __DEV__ ? 8 : 0 }}>Account</Text>
-              </Pressable>
-              {(__DEV__) ? (
-                <Pressable
-                  onPress={async () => {
-                    try {
-                      if (!token) return;
-                      await adminResetVisitState(undefined, token);
-                      navigation.setParams({ devResetTS: Date.now() } as any);
-                    } catch {}
-                  }}
-                  hitSlop={12}
-                  accessibilityRole="button"
-                  accessibilityLabel="Reset server visit state"
-                  style={{ paddingHorizontal: 12, paddingVertical: 4 }}
-                >
-                  <Text style={{ color: colors.primary, fontWeight: '600' }}>Reset</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ),
+          headerLeft: () => null,
+          headerRight: () => null,
         })}
       />
       <Stack.Screen

@@ -389,8 +389,10 @@ export default function RouteListScreen({ navigation, route }: Props) {
         }
       />
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
-        {/* Log Out exits the session (same action as header Sign Out) */}
-        <ThemedButton title="Log Out" onPress={signOut} style={styles.submitBtn} />
+        <View style={styles.accountRow}>
+          <ThemedButton title="Account" onPress={() => navigation.navigate('Account')} style={styles.secondaryBtn} />
+          <ThemedButton title="Log Out" onPress={signOut} style={styles.secondaryBtn} />
+        </View>
       </SafeAreaView>
       <LoadingOverlay visible={loading || refreshing} />
     </>
@@ -443,4 +445,6 @@ const styles = StyleSheet.create({
   retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
   stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(20), padding: spacing(3), paddingBottom: spacing(3), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
+  accountRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing(3) },
+  secondaryBtn: { minWidth: 160 },
 });

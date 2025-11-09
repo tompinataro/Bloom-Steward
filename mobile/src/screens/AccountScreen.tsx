@@ -38,6 +38,9 @@ function formatRole(role?: string | null) {
   return 'User';
 }
 
+const CLIENT_NAME_MAX = 40;
+const CLIENT_ADDRESS_MAX = 80;
+
 export default function AccountScreen({ navigation }: Props) {
   const { user, token, signOut } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -150,8 +153,8 @@ export default function AccountScreen({ navigation }: Props) {
 
   const handleCreateClient = useCallback(async () => {
     if (!ensureAdminToken()) return;
-    const name = newClientName.trim();
-    const address = newClientAddress.trim();
+    const name = newClientName.trim().slice(0, CLIENT_NAME_MAX);
+    const address = newClientAddress.trim().slice(0, CLIENT_ADDRESS_MAX);
     if (!name || !address) {
       showBanner({ type: 'error', message: 'Client name and address are required.' });
       return;
@@ -254,10 +257,6 @@ export default function AccountScreen({ navigation }: Props) {
       <>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Add Field Tech</Text>
-          <Text style={styles.bodyCopy}>
-            Create a field tech account and share the temporary password with them. They can request a personalized
-            password from you later.
-          </Text>
           <TextInput
             style={styles.input}
             value={newUserName}
@@ -299,6 +298,7 @@ export default function AccountScreen({ navigation }: Props) {
             onChangeText={setNewClientName}
             placeholder="Client name"
             placeholderTextColor={colors.muted}
+            maxLength={CLIENT_NAME_MAX}
           />
           <TextInput
             style={styles.input}
@@ -306,6 +306,7 @@ export default function AccountScreen({ navigation }: Props) {
             onChangeText={setNewClientAddress}
             placeholder="Service address"
             placeholderTextColor={colors.muted}
+            maxLength={CLIENT_ADDRESS_MAX}
           />
           <TextInput
             style={styles.input}
@@ -331,10 +332,6 @@ export default function AccountScreen({ navigation }: Props) {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Clients & Assignments</Text>
-          <Text style={styles.bodyCopy}>
-            Assign each client to a field tech and enter any Timely notes you want the tech to acknowledge during their
-            visit.
-          </Text>
           {clients.length === 0 ? (
             <Text style={styles.emptyCopy}>No clients yet. Add one above to get started.</Text>
           ) : (
@@ -428,7 +425,7 @@ export default function AccountScreen({ navigation }: Props) {
           <Text style={styles.bodyCopyMuted}>{user?.email}</Text>
           <Text style={styles.badge}>{formatRole(user?.role)}</Text>
           <View style={styles.accountActions}>
-            <ThemedButton title="Sign Out" onPress={signOut} style={{ flex: 1 }} />
+            <ThemedButton title="Sign Out" onPress={signOut} style={styles.accountButton} />
             <Pressable
               style={styles.deleteLink}
               onPress={() => navigation.navigate('DeleteAccount')}
@@ -438,13 +435,7 @@ export default function AccountScreen({ navigation }: Props) {
             </Pressable>
           </View>
         </View>
-        {isAdmin ? renderAdminContent() : (
-          <View style={styles.card}>
-            <Text style={styles.bodyCopy}>
-              Looking for route assignments or client updates? Contact an administrator to make changes.
-            </Text>
-          </View>
-        )}
+        {isAdmin ? renderAdminContent() : null}
         {loading ? (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="small" color={colors.primary} />
@@ -512,14 +503,14 @@ export default function AccountScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing(4),
-    gap: spacing(4),
+    padding: spacing(3),
+    gap: spacing(3),
     paddingBottom: spacing(16),
   },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
-    padding: spacing(4),
+    padding: spacing(3),
     borderWidth: 1,
     borderColor: colors.border,
     gap: spacing(2),
@@ -552,6 +543,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing(2),
     marginTop: spacing(2),
+  },
+  accountButton: {
+    width: 140,
   },
   deleteLink: {
     paddingHorizontal: spacing(2),

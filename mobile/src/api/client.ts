@@ -113,6 +113,7 @@ export type Visit = {
   checklist: { key: string; label: string; done: boolean }[];
   timelyNote?: string | null;
   address?: string | null;
+  checkInTs?: string | null;
 };
 export async function fetchVisit(id: number, token: string): Promise<{ ok: boolean; visit: Visit }> {
   return fetchJson(withBase(`/api/visits/${id}`), {

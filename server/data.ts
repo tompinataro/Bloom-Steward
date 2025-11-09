@@ -2,7 +2,7 @@ import { dbQuery, hasDb } from './db';
 
 export type TodayRoute = { id: number; clientName: string; address: string; scheduledTime: string };
 export type ChecklistItem = { key: string; label: string; done: boolean };
-export type Visit = { id: number; clientName: string; checklist: ChecklistItem[]; timelyNote?: string | null; address?: string | null };
+export type Visit = { id: number; clientName: string; checklist: ChecklistItem[]; timelyNote?: string | null; address?: string | null; checkInTs?: string | null };
 
 const FALLBACK_ROUTES: TodayRoute[] = [
   { id: 104, clientName: 'Harbor Plaza', address: '50 S 6th St', scheduledTime: '12:30' },
@@ -134,7 +134,8 @@ export async function getVisit(id: number): Promise<Visit> {
         clientName: visit.rows[0].client_name,
         checklist: items?.rows ?? [],
         timelyNote: visit.rows[0].timely_note,
-        address: visit.rows[0].address
+        address: visit.rows[0].address,
+        checkInTs: null,
       };
     }
   }
@@ -153,7 +154,8 @@ export async function getVisit(id: number): Promise<Visit> {
       { key: 'pruned', label: 'Pruned and cleaned', done: false },
       { key: 'replaced', label: 'Replaced unhealthy plants', done: false }
     ],
-    timelyNote: null
+    timelyNote: null,
+    checkInTs: null
   };
 }
 
