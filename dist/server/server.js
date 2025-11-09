@@ -381,26 +381,29 @@ exports.app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, re
          c.address,
          c.contact_name,
          c.contact_phone,
-         rt.user_id as assigned_user_id,
-         u.name as assigned_user_name,
-         u.email as assigned_user_email,
-         rt.scheduled_time,
-         tn.note as timely_note
+         sr.id as service_route_id,
+         sr.name as service_route_name
        from clients c
-       left join routes_today rt on rt.client_id = c.id
-       left join users u on u.id = rt.user_id
-       left join lateral (
-         select note
-         from timely_notes t
-         where t.client_id = c.id and t.active
-         order by t.created_at desc
-         limit 1
-       ) tn on true
+       left join service_routes sr on sr.id = c.service_route_id
        order by c.name asc`);
         res.json({ ok: true, clients: q?.rows ?? [] });
     }
     catch (e) {
         res.status(500).json({ ok: false, error: e?.message ?? 'clients error' });
+    }
+});
+exports.app.get('/api/admin/service-routes', requireAuth, requireAdmin, async (_req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    try {
+        const q = await (0, db_1.dbQuery)(`select sr.id, sr.name, sr.user_id, u.name as user_name, u.email as user_email
+       from service_routes sr
+       left join users u on u.id = sr.user_id
+       order by sr.name asc`);
+        res.json({ ok: true, routes: q?.rows ?? [] });
+    }
+    catch (e) {
+        res.status(500).json({ ok: false, error: e?.message ?? 'service routes error' });
     }
 });
 function generatePassword() {
@@ -526,6 +529,48 @@ exports.app.post('/api/admin/routes/assign', requireAuth, requireAdmin, async (r
     catch (e) {
         console.error('[admin/routes] assign error', e);
         return res.status(500).json({ ok: false, error: 'failed to assign client' });
+    }
+});
+exports.app.post('/api/admin/clients/:id/service-route', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const clientId = Number(req.params.id);
+    if (!clientId || Number.isNaN(clientId)) {
+        return res.status(400).json({ ok: false, error: 'invalid client id' });
+    }
+    const routeInput = req.body?.serviceRouteId;
+    const routeId = routeInput === null || routeInput === undefined ? null : Number(routeInput);
+    if (routeId !== null && Number.isNaN(routeId)) {
+        return res.status(400).json({ ok: false, error: 'invalid route id' });
+    }
+    try {
+        await (0, db_1.dbQuery)('update clients set service_route_id = $1 where id = $2', [routeId, clientId]);
+        res.json({ ok: true });
+    }
+    catch (e) {
+        console.error('[clients/service-route] update error', e);
+        res.status(500).json({ ok: false, error: 'failed to update client route' });
+    }
+});
+exports.app.post('/api/admin/service-routes/:id/tech', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const routeId = Number(req.params.id);
+    if (!routeId || Number.isNaN(routeId)) {
+        return res.status(400).json({ ok: false, error: 'invalid route id' });
+    }
+    const userInput = req.body?.userId;
+    const userId = userInput === null || userInput === undefined ? null : Number(userInput);
+    if (userId !== null && Number.isNaN(userId)) {
+        return res.status(400).json({ ok: false, error: 'invalid user id' });
+    }
+    try {
+        await (0, db_1.dbQuery)('update service_routes set user_id = $1 where id = $2', [userId, routeId]);
+        res.json({ ok: true });
+    }
+    catch (e) {
+        console.error('[service-routes/tech] update error', e);
+        res.status(500).json({ ok: false, error: 'failed to assign tech' });
     }
 });
 exports.app.get('/api/admin/routes/overview', requireAuth, requireAdmin, async (_req, res) => {

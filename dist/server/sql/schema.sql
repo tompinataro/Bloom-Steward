@@ -15,19 +15,28 @@ alter table users
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists must_change_password boolean not null default false;
 
+create table if not exists service_routes (
+  id serial primary key,
+  name text unique not null,
+  user_id integer references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists clients (
   id serial primary key,
   name text not null,
   address text not null default '',
   contact_name text,
   contact_phone text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  service_route_id integer references service_routes(id) on delete set null
 );
 
 alter table clients
   add column if not exists contact_name text,
   add column if not exists contact_phone text,
-  add column if not exists created_at timestamptz not null default now();
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists service_route_id integer references service_routes(id) on delete set null;
 
 -- Today's routes for a user (simple denormalized association for MVP)
 create table if not exists routes_today (

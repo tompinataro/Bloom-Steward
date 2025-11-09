@@ -206,39 +206,37 @@ export async function adminCreateClient(
   });
 }
 
-export async function adminAssignClient(
-  token: string,
-  data: { clientId: number; userId: number | null; scheduledTime?: string }
-): Promise<{ ok: boolean; removed?: boolean }> {
-  return fetchJson(withBase('/api/admin/routes/assign'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(data),
-  });
-}
-
-export type AdminRouteAssignment = {
-  user_id: number;
-  user_name: string;
-  user_email: string;
-  client_id: number;
-  client_name: string;
-  address: string;
-  scheduled_time: string;
+export type ServiceRoute = {
+  id: number;
+  name: string;
+  user_id?: number | null;
+  user_name?: string | null;
+  user_email?: string | null;
 };
-export async function adminFetchRoutes(token: string): Promise<{ ok: boolean; assignments: AdminRouteAssignment[] }> {
-  return fetchJson(withBase('/api/admin/routes/overview'), {
+export async function adminFetchServiceRoutes(token: string): Promise<{ ok: boolean; routes: ServiceRoute[] }> {
+  return fetchJson(withBase('/api/admin/service-routes'), {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
 
-export async function adminSetTimelyNote(
+export async function adminSetClientRoute(
   token: string,
-  data: { clientId: number; note: string; active?: boolean }
-): Promise<{ ok: boolean; note: { id: number; note: string; created_at: string } | null }> {
-  return fetchJson(withBase('/api/admin/timely-notes'), {
+  data: { clientId: number; serviceRouteId: number | null }
+): Promise<{ ok: boolean }> {
+  return fetchJson(withBase(`/api/admin/clients/${data.clientId}/service-route`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ serviceRouteId: data.serviceRouteId }),
+  });
+}
+
+export async function adminAssignServiceRoute(
+  token: string,
+  data: { routeId: number; userId: number | null }
+): Promise<{ ok: boolean }> {
+  return fetchJson(withBase(`/api/admin/service-routes/${data.routeId}/tech`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ userId: data.userId }),
   });
 }

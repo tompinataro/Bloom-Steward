@@ -13,9 +13,9 @@ export default function AccountScreen({ navigation }: Props) {
   const displayName = user?.name === 'Marc' ? 'Marc Peterson' : user?.name;
 
   const buttons = [
-    { title: 'Field Technicians', route: 'FieldTechnicians' as const },
     { title: 'Client Locations', route: 'ClientLocations' as const },
     { title: 'Service Routes', route: 'ServiceRoutes' as const },
+    { title: 'Field Technicians', route: 'FieldTechnicians' as const },
   ];
 
   return (

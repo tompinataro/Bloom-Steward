@@ -9,6 +9,10 @@ on conflict (email) do update set
   role = excluded.role,
   must_change_password = excluded.must_change_password;
 
+insert into service_routes (name)
+values ('North'), ('South'), ('East'), ('West')
+on conflict (name) do nothing;
+
 insert into clients (name, address) values
   ('Acme HQ', '123 Main St'),
   ('Blue Sky Co', '456 Oak Ave'),

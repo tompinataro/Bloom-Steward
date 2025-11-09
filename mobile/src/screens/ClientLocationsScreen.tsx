@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
-import { adminCreateClient, adminFetchClients, AdminClient } from '../api/client';
+import {
+  adminCreateClient,
+  adminFetchClients,
+  adminFetchServiceRoutes,
+  adminSetClientRoute,
+  AdminClient,
+  ServiceRoute
+} from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 
@@ -22,12 +29,18 @@ export default function ClientLocationsScreen(_props: Props) {
   const [creating, setCreating] = useState(false);
 
   const [clients, setClients] = useState<AdminClient[]>([]);
+  const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
+  const [pickerClient, setPickerClient] = useState<AdminClient | null>(null);
 
   const load = async () => {
     if (!token) return;
     try {
-      const res = await adminFetchClients(token);
-      setClients(res?.clients || []);
+      const [clientRes, routeRes] = await Promise.all([
+        adminFetchClients(token),
+        adminFetchServiceRoutes(token),
+      ]);
+      setClients(clientRes?.clients || []);
+      setServiceRoutes(routeRes?.routes || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load clients.' });
     }
@@ -66,6 +79,20 @@ export default function ClientLocationsScreen(_props: Props) {
     }
   };
 
+  const assignRoute = async (routeId: number | null) => {
+    if (!token || !pickerClient) return;
+    try {
+      await adminSetClientRoute(token, { clientId: pickerClient.id, serviceRouteId: routeId });
+      await load();
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to assign route.' });
+    } finally {
+      setPickerClient(null);
+    }
+  };
+
+  const uniqueClients = useUniqueClients(clients);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
@@ -103,23 +130,71 @@ export default function ClientLocationsScreen(_props: Props) {
         />
         <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
       </View>
-      </View>
       <View style={styles.card}>
         <Text style={styles.subTitle}>Client Locations</Text>
-        {clients.length === 0 ? (
+        {uniqueClients.length === 0 ? (
           <Text style={styles.emptyCopy}>No client locations yet.</Text>
         ) : (
-          clients.map(client => (
+          uniqueClients.map(client => (
             <View key={client.id} style={styles.listRow}>
-              <Text style={styles.listName}>{client.name}</Text>
-              <Text style={styles.listMeta}>{client.address}</Text>
-              <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.listName}>{client.name}</Text>
+                <Text style={styles.listMeta}>{client.address}</Text>
+                <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
+              </View>
+              <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
+                <Text style={styles.dropdownText}>
+                  {client.service_route_name || 'Assign route'}
+                </Text>
+              </Pressable>
             </View>
           ))
         )}
       </View>
+      <Modal
+        visible={!!pickerClient}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerClient(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              Assign {pickerClient?.name ?? 'client'}
+            </Text>
+            <ScrollView style={{ maxHeight: 300 }}>
+              {serviceRoutes.map(route => (
+                <Pressable key={route.id} style={styles.modalOption} onPress={() => assignRoute(route.id)}>
+                  <Text style={styles.modalOptionText}>{route.name}</Text>
+                  <Text style={styles.modalOptionSub}>{route.user_name ? `Tech: ${route.user_name}` : 'Unassigned'}</Text>
+                </Pressable>
+              ))}
+              <Pressable style={styles.modalOption} onPress={() => assignRoute(null)}>
+                <Text style={styles.modalOptionText}>Clear assignment</Text>
+              </Pressable>
+            </ScrollView>
+            <ThemedButton title="Cancel" variant="outline" onPress={() => setPickerClient(null)} />
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
+}
+
+  );
+}
+
+function useUniqueClients(clients: AdminClient[]) {
+  return useMemo(() => {
+    const seen = new Map<string, AdminClient>();
+    clients.forEach(client => {
+      const key = `${client.name}|${client.address}`;
+      if (!seen.has(key)) {
+        seen.set(key, client);
+      }
+    });
+    return Array.from(seen.values());
+  }, [clients]);
 }
 
 const styles = StyleSheet.create({
@@ -136,9 +211,23 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.card,
   },
-  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.5) },
+  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.5), flexDirection: 'row', alignItems: 'center' },
   listName: { fontWeight: '600', color: colors.text },
   listMeta: { color: colors.text },
   listMetaSmall: { color: colors.muted },
   emptyCopy: { color: colors.muted },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: spacing(2),
+    paddingVertical: spacing(1),
+  },
+  dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
+  modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+  modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
+  modalOptionSub: { fontSize: 13, color: colors.muted },
 });
