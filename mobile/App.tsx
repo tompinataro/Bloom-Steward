@@ -16,7 +16,9 @@ import { GlobalBannerProvider } from './src/components/GlobalBannerProvider';
 import Constants from 'expo-constants';
 import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
 import AccountScreen from './src/screens/AccountScreen';
-import ClientAssignmentsScreen from './src/screens/ClientAssignmentsScreen';
+import FieldTechniciansScreen from './src/screens/FieldTechniciansScreen';
+import ClientLocationsScreen from './src/screens/ClientLocationsScreen';
+import ServiceRoutesScreen from './src/screens/ServiceRoutesScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -79,7 +81,9 @@ function RootNavigator() {
       />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Account' }} />
-      <Stack.Screen name="ClientAssignments" component={ClientAssignmentsScreen} options={{ title: 'Client Assignments' }} />
+      <Stack.Screen name="FieldTechnicians" component={FieldTechniciansScreen} options={{ title: 'Field Technicians' }} />
+      <Stack.Screen name="ClientLocations" component={ClientLocationsScreen} options={{ title: 'Client Locations' }} />
+      <Stack.Screen name="ServiceRoutes" component={ServiceRoutesScreen} options={{ title: 'Service Routes' }} />
       <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete Account' }} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
