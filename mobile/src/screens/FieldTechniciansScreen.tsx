@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
-import { adminCreateUser } from '../api/client';
+import { adminCreateUser, adminFetchUsers, AdminUser } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 
@@ -16,6 +16,21 @@ export default function FieldTechniciansScreen(_props: Props) {
   const [email, setEmail] = useState('');
   const [creating, setCreating] = useState(false);
   const [lastTemp, setLastTemp] = useState<{ name: string; password: string } | null>(null);
+  const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
+
+  const load = async () => {
+    if (!token) return;
+    try {
+      const res = await adminFetchUsers(token);
+      setTechUsers((res?.users || []).filter(u => u.role === 'tech'));
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to load field techs.' });
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [token]);
 
   const createTech = async () => {
     if (!token) return;
@@ -33,6 +48,7 @@ export default function FieldTechniciansScreen(_props: Props) {
         setName('');
         setEmail('');
         showBanner({ type: 'success', message: `Added ${res.user.name}. Share their temp password.` });
+        await load();
       }
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to add field tech.' });
@@ -73,6 +89,19 @@ export default function FieldTechniciansScreen(_props: Props) {
           </View>
         ) : null}
       </View>
+      <View style={styles.card}>
+        <Text style={styles.subTitle}>Current Field Techs</Text>
+        {techUsers.length === 0 ? (
+          <Text style={styles.emptyCopy}>No field techs yet.</Text>
+        ) : (
+          techUsers.map(user => (
+            <View key={user.id} style={styles.listRow}>
+              <Text style={styles.listName}>{user.name}</Text>
+              <Text style={styles.listEmail}>{user.email}</Text>
+            </View>
+          ))
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -85,9 +114,10 @@ function formatPossessive(name?: string | null) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing(4) },
+  container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -99,4 +129,8 @@ const styles = StyleSheet.create({
   },
   notice: { marginTop: spacing(2), padding: spacing(2), backgroundColor: '#ecfdf5', borderRadius: 10, borderWidth: 1, borderColor: '#6ee7b7' },
   noticeText: { color: '#047857', fontWeight: '600' },
+  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5) },
+  listName: { fontWeight: '600', color: colors.text },
+  listEmail: { color: colors.muted },
+  emptyCopy: { color: colors.muted },
 });

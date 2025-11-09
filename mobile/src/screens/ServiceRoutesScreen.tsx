@@ -105,9 +105,26 @@ export default function ServiceRoutesScreen(_props: Props) {
     return Array.from(map.entries()).map(([userId, value]) => ({ userId, ...value }));
   }, [routes]);
 
+  const presetRoutes = ['North', 'South', 'East', 'West'];
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Create Service Route</Text>
+          <ThemedButton
+            title="Add Service Route"
+            onPress={() => showBanner({ type: 'info', message: 'Route creation coming soon.' })}
+          />
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.subTitle}>Existing Service Routes</Text>
+          {presetRoutes.map((route) => (
+            <View key={route} style={styles.routeListRow}>
+              <Text style={styles.routeListText}>{route}</Text>
+            </View>
+          ))}
+        </View>
         <View style={styles.card}>
           <Text style={styles.title}>Client Assignments</Text>
           {clients.length === 0 ? (
@@ -214,6 +231,9 @@ const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  routeListRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5) },
+  routeListText: { fontWeight: '600', color: colors.text },
   emptyCopy: { color: colors.muted, fontSize: 15 },
   clientCard: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: spacing(3), gap: spacing(2) },
   clientHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },

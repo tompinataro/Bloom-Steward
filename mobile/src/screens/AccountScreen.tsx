@@ -69,6 +69,6 @@ const styles = StyleSheet.create({
   email: { color: colors.muted, fontSize: 15 },
   inlineChip: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 999, backgroundColor: '#ede9fe' },
   inlineChipText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
-  buttonStack: { gap: spacing(2) },
-  stackButton: { width: '100%' },
+  buttonStack: { gap: spacing(2), marginTop: spacing(2) },
+  stackButton: { width: '60%', alignSelf: 'center' },
 });

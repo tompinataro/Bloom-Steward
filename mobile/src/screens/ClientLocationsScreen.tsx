@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
-import { adminCreateClient } from '../api/client';
+import { adminCreateClient, adminFetchClients, AdminClient } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 
@@ -20,6 +20,22 @@ export default function ClientLocationsScreen(_props: Props) {
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [creating, setCreating] = useState(false);
+
+  const [clients, setClients] = useState<AdminClient[]>([]);
+
+  const load = async () => {
+    if (!token) return;
+    try {
+      const res = await adminFetchClients(token);
+      setClients(res?.clients || []);
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to load clients.' });
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [token]);
 
   const addClient = async () => {
     if (!token) return;
@@ -42,6 +58,7 @@ export default function ClientLocationsScreen(_props: Props) {
       setAddress('');
       setContactName('');
       setContactPhone('');
+      await load();
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to add client.' });
     } finally {
@@ -86,14 +103,30 @@ export default function ClientLocationsScreen(_props: Props) {
         />
         <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
       </View>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.subTitle}>Client Locations</Text>
+        {clients.length === 0 ? (
+          <Text style={styles.emptyCopy}>No client locations yet.</Text>
+        ) : (
+          clients.map(client => (
+            <View key={client.id} style={styles.listRow}>
+              <Text style={styles.listName}>{client.name}</Text>
+              <Text style={styles.listMeta}>{client.address}</Text>
+              <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
+            </View>
+          ))
+        )}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing(4) },
+  container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -103,4 +136,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.card,
   },
+  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.5) },
+  listName: { fontWeight: '600', color: colors.text },
+  listMeta: { color: colors.text },
+  listMetaSmall: { color: colors.muted },
+  emptyCopy: { color: colors.muted },
 });
