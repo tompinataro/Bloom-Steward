@@ -108,7 +108,13 @@ exports.app.use(metrics_1.default);
 // JWT auth
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 function signToken(user) {
-    return jsonwebtoken_1.default.sign({ sub: user.id, email: user.email, name: user.name, role: user.role || 'tech' }, JWT_SECRET, { expiresIn: '12h' });
+    return jsonwebtoken_1.default.sign({
+        sub: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'tech',
+        mustChangePassword: user.mustChangePassword || false,
+    }, JWT_SECRET, { expiresIn: '12h' });
 }
 function requireAuth(req, res, next) {
     const auth = req.header('authorization') || '';
@@ -117,7 +123,7 @@ function requireAuth(req, res, next) {
         return res.status(401).json({ ok: false, error: 'missing token' });
     try {
         const payload = jsonwebtoken_1.default.verify(token, JWT_SECRET);
-        req.user = { id: Number(payload.sub), email: payload.email, name: payload.name, role: payload.role };
+        req.user = { id: Number(payload.sub), email: payload.email, name: payload.name, role: payload.role, mustChangePassword: !!payload.mustChangePassword };
         return next();
     }
     catch (err) {
@@ -150,14 +156,14 @@ exports.app.post('/api/auth/login', async (req, res) => {
     }
     if ((0, db_1.hasDb)()) {
         try {
-            const result = await (0, db_1.dbQuery)(`select id, email, name, password_hash, coalesce(role, 'tech') as role
+            const result = await (0, db_1.dbQuery)(`select id, email, name, password_hash, coalesce(role, 'tech') as role, must_change_password
          from users
          where lower(email) = lower($1)
          limit 1`, [email]);
             const record = result?.rows?.[0];
             if (record && record.password_hash && encryptLib.comparePassword(password, record.password_hash)) {
                 const role = record.role === 'admin' ? 'admin' : 'tech';
-                const user = { id: record.id, name: record.name, email: record.email, role };
+                const user = { id: record.id, name: record.name, email: record.email, role, mustChangePassword: !!record.must_change_password };
                 const token = signToken(user);
                 return res.json({ ok: true, token, user });
             }
@@ -171,7 +177,7 @@ exports.app.post('/api/auth/login', async (req, res) => {
     const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password';
     if (String(email).toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
         const isAdmin = (process.env.ADMIN_EMAIL || DEMO_EMAIL).toLowerCase() === String(email).toLowerCase();
-        const user = { id: isAdmin ? 9991 : 9990, name: isAdmin ? 'Admin User' : 'Demo User', email, role: isAdmin ? 'admin' : 'tech' };
+        const user = { id: isAdmin ? 9991 : 9990, name: isAdmin ? 'Admin User' : 'Demo User', email, role: isAdmin ? 'admin' : 'tech', mustChangePassword: false };
         const token = signToken(user);
         return res.json({ ok: true, token, user });
     }
@@ -186,6 +192,34 @@ exports.app.post('/api/auth/refresh', requireAuth, (req, res) => {
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     const token = signToken(req.user);
     return res.json({ ok: true, token, user: req.user });
+});
+exports.app.post('/api/auth/password', requireAuth, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    try {
+        const userId = req.user?.id;
+        if (!userId)
+            return res.status(401).json({ ok: false, error: 'unauthorized' });
+        const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword.trim() : '';
+        if (newPassword.length < 8) {
+            return res.status(400).json({ ok: false, error: 'password must be at least 8 characters' });
+        }
+        const hash = encryptLib.encryptPassword(newPassword);
+        await (0, db_1.dbQuery)('update users set password_hash = $1, must_change_password = false where id = $2', [hash, userId]);
+        const updatedUser = {
+            id: req.user.id,
+            email: req.user.email,
+            name: req.user.name,
+            role: req.user.role,
+            mustChangePassword: false,
+        };
+        const token = signToken(updatedUser);
+        return res.json({ ok: true, user: updatedUser, token });
+    }
+    catch (err) {
+        console.error('[auth/password] failed to update password', err);
+        return res.status(500).json({ ok: false, error: 'password update failed' });
+    }
 });
 exports.app.delete('/api/auth/account', requireAuth, async (req, res) => {
     try {
@@ -369,12 +403,16 @@ exports.app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, re
         res.status(500).json({ ok: false, error: e?.message ?? 'clients error' });
     }
 });
-function generatePassword(length = 12) {
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-    const bytes = (0, crypto_1.randomBytes)(length);
+function generatePassword() {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const digits = '23456789';
+    const bytes = (0, crypto_1.randomBytes)(6);
     let out = '';
-    for (let i = 0; i < length; i += 1) {
-        out += alphabet[bytes[i] % alphabet.length];
+    for (let i = 0; i < 3; i += 1) {
+        out += letters[bytes[i] % letters.length];
+    }
+    for (let i = 3; i < 6; i += 1) {
+        out += digits[bytes[i] % digits.length];
     }
     return out;
 }
@@ -395,13 +433,13 @@ exports.app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res)
     const tempPassword = generatePassword();
     const passwordHash = encryptLib.encryptPassword(tempPassword);
     try {
-        const result = await (0, db_1.dbQuery)(`insert into users (name, email, password_hash, role)
-       values ($1, $2, $3, $4)
-       returning id, name, email, coalesce(role, 'tech') as role`, [trimmedName, normalizedEmail, passwordHash, normalizedRole]);
+        const result = await (0, db_1.dbQuery)(`insert into users (name, email, password_hash, role, must_change_password)
+       values ($1, $2, $3, $4, true)
+       returning id, name, email, coalesce(role, 'tech') as role, must_change_password`, [trimmedName, normalizedEmail, passwordHash, normalizedRole]);
         const user = result?.rows?.[0];
         return res.json({
             ok: true,
-            user: user ? { ...user, role: user.role === 'admin' ? 'admin' : 'tech' } : null,
+            user: user ? { ...user, role: user.role === 'admin' ? 'admin' : 'tech', mustChangePassword: !!user.must_change_password } : null,
             tempPassword
         });
     }

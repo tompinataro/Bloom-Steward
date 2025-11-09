@@ -116,7 +116,8 @@ async function getVisit(id) {
                 clientName: visit.rows[0].client_name,
                 checklist: items?.rows ?? [],
                 timelyNote: visit.rows[0].timely_note,
-                address: visit.rows[0].address
+                address: visit.rows[0].address,
+                checkInTs: null,
             };
         }
     }
@@ -134,7 +135,8 @@ async function getVisit(id) {
             { key: 'pruned', label: 'Pruned and cleaned', done: false },
             { key: 'replaced', label: 'Replaced unhealthy plants', done: false }
         ],
-        timelyNote: null
+        timelyNote: null,
+        checkInTs: null
     };
 }
 async function saveVisit(id, data) {

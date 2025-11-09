@@ -1,12 +1,13 @@
 -- Seed demo admin and tech accounts
-insert into users (email, name, password_hash, role)
+insert into users (email, name, password_hash, role, must_change_password)
 values
-  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin'),
-  ('demo@example.com', 'Demo User', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech')
+  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false),
+  ('demo@example.com', 'Demo User', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false)
 on conflict (email) do update set
   name = excluded.name,
   password_hash = excluded.password_hash,
-  role = excluded.role;
+  role = excluded.role,
+  must_change_password = excluded.must_change_password;
 
 insert into clients (name, address) values
   ('Acme HQ', '123 Main St'),

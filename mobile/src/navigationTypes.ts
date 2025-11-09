@@ -1,3 +1,5 @@
+import type { AdminClient } from './api/client';
+
 // Central place for navigation param types to avoid import cycles
 export type RootStackParamList = {
   Login: undefined;
@@ -7,4 +9,5 @@ export type RootStackParamList = {
   About: undefined;
   DeleteAccount: undefined;
   Account: undefined;
+  ClientAssignments: { clients: AdminClient[] };
 };

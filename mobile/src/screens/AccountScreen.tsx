@@ -38,10 +38,22 @@ function formatRole(role?: string | null) {
   return 'User';
 }
 
+function formatPossessive(name?: string | null) {
+  if (!name) return '';
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  return /s$/i.test(trimmed) ? `${trimmed}'` : `${trimmed}'s`;
+}
+
 const CLIENT_NAME_MAX = 40;
 const CLIENT_ADDRESS_MAX = 80;
 
 export default function AccountScreen({ navigation }: Props) {
+  const accountData = useAccountDataInternal(navigation);
+  return <AccountScreenInner {...accountData} />;
+}
+
+function useAccountDataInternal(navigation: Props['navigation']) {
   const { user, token, signOut } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -256,7 +268,7 @@ export default function AccountScreen({ navigation }: Props) {
     return (
       <>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Add Field Tech</Text>
+          <Text style={styles.sectionTitle}>Create Field Tech</Text>
           <TextInput
             style={styles.input}
             value={newUserName}
@@ -277,21 +289,21 @@ export default function AccountScreen({ navigation }: Props) {
             returnKeyType="done"
           />
           <ThemedButton
-            title={creatingUser ? 'Creating...' : 'Create Field Tech'}
+            title={creatingUser ? 'Adding...' : 'Add Field Tech'}
             onPress={handleCreateUser}
             disabled={creatingUser}
           />
           {lastCreatedUser ? (
             <View style={styles.noticeBox}>
-              <Text style={styles.noticeTitle}>Share with {lastCreatedUser.name}</Text>
-              <Text style={styles.noticeBody}>Temporary password: {lastCreatedUser.tempPassword}</Text>
-              <Text style={styles.noticeFootnote}>Ask them to change it with you after first sign-in.</Text>
+              <Text style={styles.noticeBody}>
+                {formatPossessive(lastCreatedUser.name) || 'Field Tech\'s'} temp pw = {lastCreatedUser.tempPassword}
+              </Text>
             </View>
           ) : null}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Add Client Location</Text>
+          <Text style={styles.sectionTitle}>Create Client Location</Text>
           <TextInput
             style={styles.input}
             value={newClientName}
@@ -324,14 +336,18 @@ export default function AccountScreen({ navigation }: Props) {
             keyboardType="phone-pad"
           />
           <ThemedButton
-            title={creatingClient ? 'Saving...' : 'Add Client'}
+            title={creatingClient ? 'Adding...' : 'Add Client Location'}
             onPress={handleCreateClient}
             disabled={creatingClient}
+          />
+          <ThemedButton
+            title="Client Assignments"
+            onPress={() => navigation.navigate('ClientAssignments', { clients })}
           />
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Clients & Assignments</Text>
+          <Text style={styles.sectionTitle}>Client Assignments</Text>
           {clients.length === 0 ? (
             <Text style={styles.emptyCopy}>No clients yet. Add one above to get started.</Text>
           ) : (
@@ -413,6 +429,41 @@ export default function AccountScreen({ navigation }: Props) {
     );
   };
 
+  return {
+    renderAdminContent,
+    loading,
+    refreshing,
+    onRefresh,
+    navigation,
+    user,
+    isAdmin,
+    signOut,
+    modalVisible,
+    assigning,
+    assignTarget,
+    techUsers,
+    clients,
+    setModalVisible,
+    setAssignTarget,
+    handleAssign,
+  };
+}
+
+function AccountScreenInner({
+  renderAdminContent,
+  loading,
+  refreshing,
+  onRefresh,
+  navigation,
+  user,
+  isAdmin,
+  signOut,
+  modalVisible,
+  assigning,
+  assignTarget,
+  setModalVisible,
+  handleAssign,
+}: ReturnType<typeof useAccountDataInternal>) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -420,18 +471,27 @@ export default function AccountScreen({ navigation }: Props) {
         refreshControl={isAdmin ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined}
       >
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <Text style={styles.bodyCopy}>{user?.name}</Text>
-          <Text style={styles.bodyCopyMuted}>{user?.email}</Text>
-          <Text style={styles.badge}>{formatRole(user?.role)}</Text>
-          <View style={styles.accountActions}>
-            <ThemedButton title="Sign Out" onPress={signOut} style={styles.accountButton} />
+          <View style={styles.headerRow}>
+            <View style={styles.nameWrap}>
+              <Text style={styles.bodyCopy}>{user?.name === 'Marc' ? 'Marc Peterson' : user?.name}</Text>
+              <Text style={styles.badge}>{formatRole(user?.role)}</Text>
+            </View>
+            <Pressable
+              onPress={signOut}
+              accessibilityRole="button"
+              style={styles.inlineSignOut}
+            >
+              <Text style={styles.inlineSignOutText}>Sign Out</Text>
+            </Pressable>
+          </View>
+          <View style={styles.emailRow}>
+            <Text style={styles.bodyCopyMuted}>{user?.email}</Text>
             <Pressable
               style={styles.deleteLink}
               onPress={() => navigation.navigate('DeleteAccount')}
               accessibilityRole="button"
             >
-              <Text style={styles.deleteText}>Delete account</Text>
+              <Text style={styles.deleteText}>Delete Account</Text>
             </Pressable>
           </View>
         </View>
@@ -544,12 +604,14 @@ const styles = StyleSheet.create({
     gap: spacing(2),
     marginTop: spacing(2),
   },
-  accountButton: {
-    width: 140,
-  },
+  nameWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing(1.5) },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  inlineSignOut: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 999, backgroundColor: '#ede9fe' },
+  inlineSignOutText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  emailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing(1) },
   deleteLink: {
-    paddingHorizontal: spacing(2),
-    paddingVertical: spacing(1.5),
+    paddingHorizontal: spacing(0.5),
+    paddingVertical: spacing(0.5),
   },
   deleteText: {
     color: '#b91c1c',
