@@ -16,7 +16,10 @@ on conflict (name) do nothing;
 insert into clients (name, address) values
   ('Acme HQ', '123 Main St'),
   ('Blue Sky Co', '456 Oak Ave'),
-  ('Sunset Mall', '789 Pine Rd')
+  ('Sunset Mall', '789 Pine Rd'),
+  ('Harbor Plaza', '50 S 6th St'),
+  ('Palm Vista Resort', '1000 Nicollet Mall'),
+  ('Riverwalk Lofts', '225 3rd Ave S')
 on conflict do nothing;
 
 -- Create visits

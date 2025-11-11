@@ -181,9 +181,6 @@ export default function ClientLocationsScreen(_props: Props) {
   );
 }
 
-  );
-}
-
 function useUniqueClients(clients: AdminClient[]) {
   return useMemo(() => {
     const seen = new Map<string, AdminClient>();
