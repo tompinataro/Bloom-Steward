@@ -20,8 +20,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ClientLocations'>;
 const NAME_MAX = 40;
 const ADDRESS_MAX = 80;
 
-export default function ClientLocationsScreen(_props: Props) {
+export default function ClientLocationsScreen({ route, navigation }: Props) {
   const { token } = useAuth();
+  const showAll = route.params?.mode === 'all';
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [contactName, setContactName] = useState('');
@@ -49,6 +50,10 @@ export default function ClientLocationsScreen(_props: Props) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useEffect(() => {
+    navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
+  }, [navigation, showAll]);
 
   const addClient = async () => {
     if (!token) return;
@@ -95,20 +100,23 @@ export default function ClientLocationsScreen(_props: Props) {
     }
   };
 
-  const uniqueClients = useUniqueClients(clients).filter(client => !client.service_route_id);
+  const uniqueClients = useUniqueClients(clients);
+  const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
+  const listToRender = showAll ? uniqueClients : unassignedClients;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Create Client Location</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Client name"
-          placeholderTextColor={colors.muted}
-          maxLength={NAME_MAX}
-        />
+      {!showAll && (
+        <View style={styles.card}>
+          <Text style={styles.title}>Create Client Location</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Client name"
+            placeholderTextColor={colors.muted}
+            maxLength={NAME_MAX}
+          />
         <TextInput
           style={styles.input}
           value={address}
@@ -132,30 +140,35 @@ export default function ClientLocationsScreen(_props: Props) {
           placeholderTextColor={colors.muted}
           keyboardType="phone-pad"
         />
-        <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
-      </View>
+          <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
+        </View>
+      )}
       <View style={styles.card}>
-        <Text style={styles.subTitle}>Client Locations Awaiting Assignment</Text>
-          {uniqueClients.length === 0 ? (
-            <Text style={styles.emptyCopy}>No un-assigned client locations at this time.</Text>
+        <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Client Locations Awaiting Assignment'}</Text>
+          {listToRender.length === 0 ? (
+            <Text style={styles.emptyCopy}>
+              {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
+            </Text>
           ) : (
           <ScrollView
             style={styles.listScroll}
             contentContainerStyle={styles.listScrollContent}
             nestedScrollEnabled
           >
-            {uniqueClients.map(client => (
-              <View key={client.id} style={styles.listRow}>
+            {listToRender.map(client => (
+              <View key={`${client.id}-${client.name}`} style={styles.listRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.listName}>{client.name}</Text>
                   <Text style={styles.listMeta}>{client.address}</Text>
                   <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
                 </View>
-                <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
-                  <Text style={styles.dropdownText}>
-                    {client.service_route_name || 'Assign route'}
-                  </Text>
-                </Pressable>
+                {!showAll && (
+                  <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
+                    <Text style={styles.dropdownText}>
+                      {client.service_route_name || 'Assign route'}
+                    </Text>
+                  </Pressable>
+                )}
               </View>
             ))}
           </ScrollView>

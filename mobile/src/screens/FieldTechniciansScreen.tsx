@@ -10,8 +10,9 @@ import { colors, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldTechnicians'>;
 
-export default function FieldTechniciansScreen(_props: Props) {
+export default function FieldTechniciansScreen({ route, navigation }: Props) {
   const { token } = useAuth();
+  const showAll = route.params?.mode === 'all';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [creating, setCreating] = useState(false);
@@ -33,6 +34,10 @@ export default function FieldTechniciansScreen(_props: Props) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useEffect(() => {
+    navigation.setOptions({ title: showAll ? 'All Field Technicians' : 'Field Technicians' });
+  }, [navigation, showAll]);
 
   const createTech = async () => {
     if (!token) return;
@@ -78,38 +83,40 @@ export default function FieldTechniciansScreen(_props: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {!showAll && (
+        <View style={styles.card}>
+          <Text style={styles.title}>Create Field Tech</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Full name"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
+          <TextInput
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            returnKeyType="done"
+          />
+          <ThemedButton title={creating ? 'Adding...' : 'Add Field Tech'} onPress={createTech} disabled={creating} />
+          {lastTemp ? (
+            <View style={styles.notice}>
+              <Text style={styles.noticeText}>
+                {formatPossessive(lastTemp.name)} temp pw = {lastTemp.password}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      )}
       <View style={styles.card}>
-        <Text style={styles.title}>Create Field Tech</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Full name"
-          placeholderTextColor={colors.muted}
-          autoCapitalize="words"
-          returnKeyType="next"
-        />
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email"
-          placeholderTextColor={colors.muted}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          returnKeyType="done"
-        />
-        <ThemedButton title={creating ? 'Adding...' : 'Add Field Tech'} onPress={createTech} disabled={creating} />
-        {lastTemp ? (
-          <View style={styles.notice}>
-            <Text style={styles.noticeText}>
-              {formatPossessive(lastTemp.name)} temp pw = {lastTemp.password}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.subTitle}>Current Field Techs</Text>
+        <Text style={styles.subTitle}>{showAll ? 'All Field Techs' : 'Current Field Techs'}</Text>
         {techUsers.length === 0 ? (
           <Text style={styles.emptyCopy}>No field techs yet.</Text>
           ) : (

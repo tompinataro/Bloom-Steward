@@ -19,8 +19,9 @@ import { showBanner } from '../components/globalBannerBus';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ServiceRoutes'>;
 
-export default function ServiceRoutesScreen(_props: Props) {
+export default function ServiceRoutesScreen({ route, navigation }: Props) {
   const { token } = useAuth();
+  const showAll = route.params?.mode === 'all';
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
@@ -48,6 +49,10 @@ export default function ServiceRoutesScreen(_props: Props) {
     load();
   }, [token]);
 
+  useEffect(() => {
+    navigation.setOptions({ title: showAll ? 'All Service Routes' : 'Service Routes' });
+  }, [navigation, showAll]);
+
   const clientsByRoute = useMemo(() => {
     const map = new Map<number, AdminClient[]>();
     const seen = new Set<string>();
@@ -61,6 +66,8 @@ export default function ServiceRoutesScreen(_props: Props) {
     });
     return map;
   }, [clients]);
+
+  const unassignedClients = clientsByRoute.get(0) || [];
 
   const assignTech = async (userId: number | null) => {
     if (!token || !pickerRoute) return;
@@ -85,6 +92,50 @@ export default function ServiceRoutesScreen(_props: Props) {
       setClientPicker(null);
     }
   };
+
+  if (showAll) {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>All Service Routes</Text>
+          {serviceRoutes.length === 0 ? (
+            <Text style={styles.emptyCopy}>No service routes yet.</Text>
+          ) : (
+            serviceRoutes.map(routeItem => {
+              const assignedClients = clientsByRoute.get(routeItem.id) || [];
+              return (
+                <View key={routeItem.id} style={styles.routeCard}>
+                  <Text style={styles.routeName}>{routeItem.name}</Text>
+                  <Text style={styles.routeTechLine}>
+                    {routeItem.user_name ? `Technician: ${routeItem.user_name}` : 'No technician assigned'}
+                  </Text>
+                  {assignedClients.length === 0 ? (
+                    <Text style={styles.emptyCopy}>No client locations assigned.</Text>
+                  ) : (
+                    assignedClients.map(client => (
+                      <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
+                        • {client.name} — {client.address}
+                      </Text>
+                    ))
+                  )}
+                </View>
+              );
+            })
+          )}
+        </View>
+        {unassignedClients.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.subTitle}>Unassigned Client Locations</Text>
+            {unassignedClients.map(client => (
+              <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
+                • {client.name} — {client.address}
+              </Text>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -222,6 +273,7 @@ const styles = StyleSheet.create({
   subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
   emptyCopy: { color: colors.muted },
   routeCard: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(2), gap: spacing(1.5) },
+  routeTechLine: { color: colors.muted, fontWeight: '600' },
   listScroll: { maxHeight: 260 },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   routeListRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), paddingBottom: spacing(1.5) },

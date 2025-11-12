@@ -7,10 +7,7 @@ export type RootStackParamList = {
   About: undefined;
   DeleteAccount: undefined;
   Account: undefined;
-  FieldTechnicians: undefined;
-  ClientLocations: undefined;
-  ServiceRoutes: undefined;
-  AllClientLocations: undefined;
-  AllServiceRoutes: undefined;
-  AllFieldTechnicians: undefined;
+  FieldTechnicians: { mode?: 'all' } | undefined;
+  ClientLocations: { mode?: 'all' } | undefined;
+  ServiceRoutes: { mode?: 'all' } | undefined;
 };

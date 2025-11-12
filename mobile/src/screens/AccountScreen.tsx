@@ -13,9 +13,9 @@ export default function AccountScreen({ navigation }: Props) {
   const displayName = user?.name === 'Marc' ? 'Marc Peterson' : user?.name;
 
   const sections = [
-    { title: 'Client Locations', viewRoute: 'AllClientLocations' as const, addRoute: 'ClientLocations' as const },
-    { title: 'Service Routes', viewRoute: 'AllServiceRoutes' as const, addRoute: 'ServiceRoutes' as const },
-    { title: 'Field Technicians', viewRoute: 'AllFieldTechnicians' as const, addRoute: 'FieldTechnicians' as const },
+    { title: 'Client Locations', route: 'ClientLocations' as const },
+    { title: 'Service Routes', route: 'ServiceRoutes' as const },
+    { title: 'Field Technicians', route: 'FieldTechnicians' as const },
   ];
 
   return (
@@ -34,12 +34,12 @@ export default function AccountScreen({ navigation }: Props) {
             <View style={styles.sectionButtons}>
               <ThemedButton
                 title="View All"
-                onPress={() => navigation.navigate(section.viewRoute)}
+                onPress={() => navigation.navigate(section.route, { mode: 'all' })}
                 style={styles.sectionButton}
               />
               <ThemedButton
                 title="Add New"
-                onPress={() => navigation.navigate(section.addRoute)}
+                onPress={() => navigation.navigate(section.route)}
                 variant="outline"
                 style={styles.sectionButton}
               />
