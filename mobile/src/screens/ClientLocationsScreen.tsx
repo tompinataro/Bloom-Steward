@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(2),
     paddingVertical: spacing(1),
   },
-  listScroll: { maxHeight: 260 },
+  listScroll: { maxHeight: 320 },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },

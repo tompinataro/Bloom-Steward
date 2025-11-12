@@ -12,6 +12,19 @@ const FALLBACK_ROUTES = [
     { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Grove St, Minneapolis, MN 55403', scheduledTime: '09:45' },
     { id: 103, clientName: 'Sunset Mall', address: '789 University Ave NE, Minneapolis, MN 55413', scheduledTime: '11:15' }
 ];
+const DEFAULT_TIME_SLOTS = ['08:00', '09:15', '10:30', '11:45', '13:00', '14:15', '15:30'];
+function fallbackTimeFor(order) {
+    const idx = Math.max(order - 1, 0) % DEFAULT_TIME_SLOTS.length;
+    return DEFAULT_TIME_SLOTS[idx];
+}
+async function ensureVisitForClient(clientId, scheduledTime) {
+    const existing = await (0, db_1.dbQuery)(`select id, scheduled_time from visits where client_id = $1 order by id desc limit 1`, [clientId]);
+    if (existing?.rows?.[0]) {
+        return existing.rows[0];
+    }
+    const created = await (0, db_1.dbQuery)(`insert into visits (client_id, scheduled_time) values ($1, $2) returning id, scheduled_time`, [clientId, scheduledTime]);
+    return created?.rows?.[0] || { id: clientId, scheduled_time: scheduledTime };
+}
 function normalizeKey(route) {
     const name = (route.clientName || '').trim().toLowerCase();
     const address = (route.address || '').trim().toLowerCase();
@@ -54,11 +67,59 @@ function ensureMinimumRoutes(routes, min = 6) {
     }
     return next;
 }
+async function routesFromServiceAssignments(userId) {
+    const res = await (0, db_1.dbQuery)(`select
+       c.id as client_id,
+       c.name as client_name,
+       c.address,
+       v.id as visit_id,
+       v.scheduled_time as visit_time,
+       rt.scheduled_time as route_time,
+       row_number() over (order by coalesce(v.scheduled_time, rt.scheduled_time, c.created_at)::text, c.id) as route_order
+     from service_routes sr
+     join clients c on c.service_route_id = sr.id
+     left join routes_today rt on rt.client_id = c.id and rt.user_id = sr.user_id
+     left join lateral (
+       select id, scheduled_time
+       from visits
+       where client_id = c.id
+       order by id desc
+       limit 1
+     ) v on true
+     where sr.user_id = $1
+     order by route_order asc`, [userId]);
+    const rows = res?.rows ?? [];
+    if (!rows.length)
+        return [];
+    const mapped = [];
+    for (const row of rows) {
+        const fallbackTime = row.visit_time || row.route_time || fallbackTimeFor(row.route_order);
+        let visitId = row.visit_id;
+        let scheduledTime = fallbackTime;
+        if (!visitId) {
+            const ensured = await ensureVisitForClient(row.client_id, fallbackTime);
+            visitId = ensured.id;
+            scheduledTime = ensured.scheduled_time || fallbackTime;
+        }
+        else {
+            scheduledTime = row.visit_time || fallbackTime;
+        }
+        mapped.push({
+            id: visitId,
+            clientName: row.client_name,
+            address: row.address,
+            scheduledTime,
+        });
+    }
+    return ensureMinimumRoutes(dedupeByKey(dedupeById(mapped)));
+}
 async function getTodayRoutes(userId) {
     if ((0, db_1.hasDb)()) {
-        const res = await (0, db_1.dbQuery)(
-        // Use LATERAL to select a single matching visit per route and avoid duplicate rows
-        `select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
+        const serviceAssignments = await routesFromServiceAssignments(userId);
+        if (serviceAssignments.length > 0) {
+            return serviceAssignments;
+        }
+        const res = await (0, db_1.dbQuery)(`select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
        from routes_today rt
        join clients c on c.id = rt.client_id
        join lateral (
@@ -76,7 +137,6 @@ async function getTodayRoutes(userId) {
             const deduped = dedupeByKey(dedupeById(mapped));
             return ensureMinimumRoutes(deduped);
         }
-        // Fallback: if routes_today is empty or userId doesn't match, read from visits table
         const res2 = await (0, db_1.dbQuery)(`select v.id, c.name as client_name, c.address, v.scheduled_time
        from visits v join clients c on c.id = v.client_id
        order by v.scheduled_time asc`);

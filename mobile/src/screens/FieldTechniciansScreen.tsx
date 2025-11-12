@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   listName: { fontWeight: '600', color: colors.text },
   listEmail: { color: colors.muted },
   emptyCopy: { color: colors.muted },
-  listScroll: { maxHeight: 260 },
+  listScroll: { maxHeight: 320 },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },

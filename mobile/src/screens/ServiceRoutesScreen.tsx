@@ -26,6 +26,7 @@ export default function ServiceRoutesScreen(_props: Props) {
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
   const [pickerRoute, setPickerRoute] = useState<ServiceRoute | null>(null);
   const [clientPicker, setClientPicker] = useState<AdminClient | null>(null);
+  const unassignedRoutes = serviceRoutes.filter(route => !route.user_id);
 
   const load = async () => {
     if (!token) return;
@@ -94,6 +95,25 @@ export default function ServiceRoutesScreen(_props: Props) {
             title="Add Service Route"
             onPress={() => showBanner({ type: 'info', message: 'Route creation coming soon.' })}
           />
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.subTitle}>Unassigned Service Routes</Text>
+          {unassignedRoutes.length === 0 ? (
+            <Text style={styles.emptyCopy}>All service routes are assigned.</Text>
+          ) : (
+            <ScrollView
+              style={styles.listScroll}
+              contentContainerStyle={styles.listScrollContent}
+              nestedScrollEnabled
+            >
+              {unassignedRoutes.map(route => (
+                <View key={route.id} style={styles.routeListRow}>
+                  <Text style={styles.routeListText}>{route.name}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         <View style={styles.card}>
@@ -202,8 +222,10 @@ const styles = StyleSheet.create({
   subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
   emptyCopy: { color: colors.muted },
   routeCard: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(2), gap: spacing(1.5) },
-  listScroll: { maxHeight: 240 },
+  listScroll: { maxHeight: 260 },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
+  routeListRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), paddingBottom: spacing(1.5) },
+  routeListText: { fontWeight: '600', color: colors.text },
   routeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   routeName: { fontSize: 18, fontWeight: '700', color: colors.text },
   dropdown: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(1) },
