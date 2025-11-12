@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -6,30 +6,39 @@ import { useAuth } from '../auth';
 import { adminFetchUsers, AdminUser } from '../api/client';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllFieldTechnicians'>;
 
 export default function AllFieldTechniciansScreen(_props: Props) {
   const { token } = useAuth();
   const [techs, setTechs] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!token) return;
     try {
+      setLoading(true);
       const res = await adminFetchUsers(token);
       setTechs((res?.users || []).filter(u => u.role === 'tech'));
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load technicians.' });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
   }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {techs.length === 0 ? (
+      {loading ? (
+        <Text style={styles.emptyCopy}>Loading…</Text>
+      ) : techs.length === 0 ? (
         <Text style={styles.emptyCopy}>No field technicians yet.</Text>
       ) : (
         techs.map(tech => (

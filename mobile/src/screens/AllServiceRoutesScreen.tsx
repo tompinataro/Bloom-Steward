@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -11,7 +11,7 @@ import {
 } from '../api/client';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
-import { useUniqueClients } from './ClientLocationsScreen';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllServiceRoutes'>;
 
@@ -19,10 +19,12 @@ export default function AllServiceRoutesScreen(_props: Props) {
   const { token } = useAuth();
   const [routes, setRoutes] = useState<ServiceRoute[]>([]);
   const [clients, setClients] = useState<AdminClient[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!token) return;
     try {
+      setLoading(true);
       const [routeRes, clientRes] = await Promise.all([
         adminFetchServiceRoutes(token),
         adminFetchClients(token),
@@ -31,14 +33,18 @@ export default function AllServiceRoutesScreen(_props: Props) {
       setClients(clientRes?.clients || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load service routes.' });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
   }, [token]);
 
-  const uniqueClients = useUniqueClients(clients);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
+  const uniqueClients = dedupeClients(clients);
   const clientsByRoute = useMemo(() => {
     const map = new Map<number | null, typeof uniqueClients>();
     uniqueClients.forEach(client => {
@@ -53,7 +59,9 @@ export default function AllServiceRoutesScreen(_props: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {routes.length === 0 ? (
+      {loading ? (
+        <Text style={styles.emptyCopy}>Loading…</Text>
+      ) : routes.length === 0 ? (
         <Text style={styles.emptyCopy}>No service routes yet.</Text>
       ) : (
         routes.map(route => {
@@ -104,3 +112,14 @@ const styles = StyleSheet.create({
   clientItem: { color: colors.text, fontSize: 15, paddingLeft: spacing(1) },
   emptyCopy: { color: colors.muted, fontStyle: 'italic' },
 });
+
+function dedupeClients(clients: AdminClient[]): AdminClient[] {
+  const seen = new Map<string, AdminClient>();
+  clients.forEach(client => {
+    const key = `${client.name}|${client.address}`;
+    if (!seen.has(key)) {
+      seen.set(key, client);
+    }
+  });
+  return Array.from(seen.values());
+}
