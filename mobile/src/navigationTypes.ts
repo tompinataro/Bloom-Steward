@@ -10,4 +10,7 @@ export type RootStackParamList = {
   FieldTechnicians: undefined;
   ClientLocations: undefined;
   ServiceRoutes: undefined;
+  AllClientLocations: undefined;
+  AllServiceRoutes: undefined;
+  AllFieldTechnicians: undefined;
 };

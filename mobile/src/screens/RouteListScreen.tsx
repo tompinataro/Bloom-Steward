@@ -253,13 +253,19 @@ export default function RouteListScreen({ navigation, route }: Props) {
 
   const keyExtractor = useCallback((item: TodayRoute) => String(item.id), []);
 
-  type ItemProps = {
-    route: TodayRoute;
-    isDone: boolean;
-    inProg: boolean;
-    onOpen: (id: number) => void;
-    onOpenMaps: (address?: string | null) => void;
-  };
+type ItemProps = {
+  route: TodayRoute;
+  isDone: boolean;
+  inProg: boolean;
+  onOpen: (id: number) => void;
+  onOpenMaps: (address?: string | null) => void;
+};
+
+function shorten(text?: string | null, max = 28) {
+  if (!text) return '';
+  const trimmed = text.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
+}
 
   const RouteListItem = memo(function RouteListItem({ route, isDone, inProg, onOpen, onOpenMaps }: ItemProps) {
     const cardScale = useRef(new Animated.Value(1)).current;
@@ -278,8 +284,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
         <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }] }>
           <View style={styles.rowTop}>
             <View style={styles.leftWrap}>
-              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{route.clientName || 'Client Name'}</Text>
-              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{route.address || '123 Main St'}</Text>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{shorten(route.clientName)}</Text>
+              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{shorten(route.address, 36)}</Text>
             </View>
             <View style={styles.centerWrap}>
               <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />

@@ -7,13 +7,15 @@ create table if not exists users (
   password_hash text not null default '',
   role text not null default 'tech',
   created_at timestamptz not null default now(),
-  must_change_password boolean not null default false
+  must_change_password boolean not null default false,
+  managed_password text
 );
 
 alter table users
   add column if not exists role text not null default 'tech',
   add column if not exists created_at timestamptz not null default now(),
-  add column if not exists must_change_password boolean not null default false;
+  add column if not exists must_change_password boolean not null default false,
+  add column if not exists managed_password text;
 
 create table if not exists service_routes (
   id serial primary key,

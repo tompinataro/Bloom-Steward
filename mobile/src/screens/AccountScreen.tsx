@@ -12,10 +12,10 @@ export default function AccountScreen({ navigation }: Props) {
   const { user, signOut } = useAuth();
   const displayName = user?.name === 'Marc' ? 'Marc Peterson' : user?.name;
 
-  const buttons = [
-    { title: 'Client Locations', route: 'ClientLocations' as const },
-    { title: 'Service Routes', route: 'ServiceRoutes' as const },
-    { title: 'Field Technicians', route: 'FieldTechnicians' as const },
+  const sections = [
+    { title: 'Client Locations', viewRoute: 'AllClientLocations' as const, addRoute: 'ClientLocations' as const },
+    { title: 'Service Routes', viewRoute: 'AllServiceRoutes' as const, addRoute: 'ServiceRoutes' as const },
+    { title: 'Field Technicians', viewRoute: 'AllFieldTechnicians' as const, addRoute: 'FieldTechnicians' as const },
   ];
 
   return (
@@ -27,14 +27,24 @@ export default function AccountScreen({ navigation }: Props) {
         </View>
         <Text style={styles.email}>{user?.email}</Text>
       </View>
-      <View style={styles.buttonStack}>
-        {buttons.map(btn => (
-          <ThemedButton
-            key={btn.title}
-            title={btn.title}
-            onPress={() => navigation.navigate(btn.route)}
-            style={styles.stackButton}
-          />
+      <View style={styles.sectionStack}>
+        {sections.map(section => (
+          <View key={section.title} style={styles.sectionCard}>
+            <Text style={styles.sectionHeading}>{section.title}</Text>
+            <View style={styles.sectionButtons}>
+              <ThemedButton
+                title="View All"
+                onPress={() => navigation.navigate(section.viewRoute)}
+                style={styles.sectionButton}
+              />
+              <ThemedButton
+                title="Add New"
+                onPress={() => navigation.navigate(section.addRoute)}
+                variant="outline"
+                style={styles.sectionButton}
+              />
+            </View>
+          </View>
         ))}
       </View>
     </View>
@@ -69,6 +79,14 @@ const styles = StyleSheet.create({
   email: { color: colors.muted, fontSize: 15 },
   inlineChip: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 999, backgroundColor: '#ede9fe' },
   inlineChipText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
-  buttonStack: { gap: spacing(2), marginTop: spacing(2) },
-  stackButton: { width: '60%', alignSelf: 'center' },
+  sectionStack: { gap: spacing(3) },
+  sectionCard: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
+  sectionHeading: { fontSize: 18, fontWeight: '700', color: colors.text },
+  sectionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: spacing(2),
+    rowGap: spacing(1.25),
+  },
+  sectionButton: { width: '46%', minWidth: 140, paddingVertical: spacing(1.5) },
 });

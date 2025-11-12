@@ -358,8 +358,8 @@ app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
 app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
   if (!ensureDatabase(res)) return;
   try {
-    const q = await dbQuery<{ id: number; email: string; name: string; role: string }>(
-      'select id, email, name, coalesce(role, \'tech\') as role from users order by id asc'
+    const q = await dbQuery<{ id: number; email: string; name: string; role: string; managed_password: string | null }>(
+      'select id, email, name, coalesce(role, \'tech\') as role, managed_password from users order by id asc'
     );
     const users = (q?.rows ?? []).map((u) => ({ ...u, role: u.role === 'admin' ? 'admin' : 'tech' }));
     res.json({ ok: true, users });
@@ -449,11 +449,11 @@ app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
   const tempPassword = generatePassword();
   const passwordHash = encryptLib.encryptPassword(tempPassword);
   try {
-    const result = await dbQuery<{ id: number; name: string; email: string; role: string; must_change_password: boolean }>(
-      `insert into users (name, email, password_hash, role, must_change_password)
-       values ($1, $2, $3, $4, true)
-       returning id, name, email, coalesce(role, 'tech') as role, must_change_password`,
-      [trimmedName, normalizedEmail, passwordHash, normalizedRole]
+    const result = await dbQuery<{ id: number; name: string; email: string; role: string; must_change_password: boolean; managed_password: string | null }>(
+      `insert into users (name, email, password_hash, role, must_change_password, managed_password)
+       values ($1, $2, $3, $4, true, $5)
+       returning id, name, email, coalesce(role, 'tech') as role, must_change_password, managed_password`,
+      [trimmedName, normalizedEmail, passwordHash, normalizedRole, tempPassword]
     );
     const user = result?.rows?.[0];
     return res.json({
@@ -468,6 +468,26 @@ app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
     }
     console.error('[admin/users] create error', e);
     return res.status(500).json({ ok: false, error: 'failed to create user' });
+  }
+});
+
+app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const userId = Number(req.params.id);
+  if (!userId || Number.isNaN(userId)) {
+    return res.status(400).json({ ok: false, error: 'invalid user id' });
+  }
+  const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword.trim() : '';
+  if (newPassword.length < 8) {
+    return res.status(400).json({ ok: false, error: 'password must be at least 8 characters' });
+  }
+  try {
+    const hash = encryptLib.encryptPassword(newPassword);
+    await dbQuery('update users set password_hash = $1, managed_password = $2, must_change_password = false where id = $3', [hash, newPassword, userId]);
+    res.json({ ok: true });
+  } catch (err: any) {
+    console.error('[admin/users/password] update error', err);
+    res.status(500).json({ ok: false, error: 'failed to update password' });
   }
 });
 

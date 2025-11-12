@@ -8,6 +8,7 @@ import {
   adminFetchServiceRoutes,
   adminFetchUsers,
   adminAssignServiceRoute,
+  adminSetClientRoute,
   AdminClient,
   AdminUser,
   ServiceRoute,
@@ -24,6 +25,7 @@ export default function ServiceRoutesScreen(_props: Props) {
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
   const [pickerRoute, setPickerRoute] = useState<ServiceRoute | null>(null);
+  const [clientPicker, setClientPicker] = useState<AdminClient | null>(null);
 
   const load = async () => {
     if (!token) return;
@@ -47,8 +49,12 @@ export default function ServiceRoutesScreen(_props: Props) {
 
   const clientsByRoute = useMemo(() => {
     const map = new Map<number, AdminClient[]>();
+    const seen = new Set<string>();
     clients.forEach(client => {
       const key = client.service_route_id || 0;
+      const dedupKey = `${key}:${client.name}|${client.address}`;
+      if (seen.has(dedupKey)) return;
+      seen.add(dedupKey);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(client);
     });
@@ -67,7 +73,17 @@ export default function ServiceRoutesScreen(_props: Props) {
     }
   };
 
-  const presetRoutes = ['North', 'South', 'East', 'West'];
+  const updateClientRoute = async (client: AdminClient, routeId: number | null) => {
+    if (!token) return;
+    try {
+      await adminSetClientRoute(token, { clientId: client.id, serviceRouteId: routeId });
+      await load();
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to update client route.' });
+    } finally {
+      setClientPicker(null);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -81,20 +97,16 @@ export default function ServiceRoutesScreen(_props: Props) {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.subTitle}>Existing Service Routes</Text>
-          {presetRoutes.map(route => (
-            <View key={route} style={styles.routeListRow}>
-              <Text style={styles.routeListText}>{route}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.card}>
           <Text style={styles.title}>Assign Technicians</Text>
           {serviceRoutes.length === 0 ? (
-            <Text style={styles.emptyCopy}>No service routes yet.</Text>
+            <Text style={styles.emptyCopy}>No un-assigned service routes at this time.</Text>
           ) : (
-            serviceRoutes.map(route => {
+            <ScrollView
+              style={styles.listScroll}
+              contentContainerStyle={styles.listScrollContent}
+              nestedScrollEnabled
+            >
+            {serviceRoutes.map(route => {
               const assignedClients = clientsByRoute.get(route.id) || [];
               return (
                 <View key={route.id} style={styles.routeCard}>
@@ -108,12 +120,15 @@ export default function ServiceRoutesScreen(_props: Props) {
                     <Text style={styles.emptyCopy}>No client locations assigned.</Text>
                   ) : (
                     assignedClients.map(client => (
-                      <Text key={client.id} style={styles.clientItem}>{client.name}</Text>
+                      <Pressable key={client.id} onPress={() => setClientPicker(client)}>
+                        <Text style={styles.clientItem}>{client.name}</Text>
+                      </Pressable>
                     ))
                   )}
                 </View>
               );
-            })
+            })}
+            </ScrollView>
           )}
         </View>
       </ScrollView>
@@ -148,6 +163,34 @@ export default function ServiceRoutesScreen(_props: Props) {
           </View>
         </View>
       </Modal>
+      <Modal
+        visible={!!clientPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setClientPicker(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Move {clientPicker?.name ?? 'client'} to route</Text>
+            <ScrollView style={{ maxHeight: 280 }}>
+              {serviceRoutes.map(route => (
+                <Pressable
+                  key={route.id}
+                  style={styles.modalOption}
+                  onPress={() => updateClientRoute(clientPicker!, route.id)}
+                >
+                  <Text style={styles.modalOptionText}>{route.name}</Text>
+                  <Text style={styles.modalOptionSub}>{route.user_name ? `Tech: ${route.user_name}` : 'Unassigned'}</Text>
+                </Pressable>
+              ))}
+              <Pressable style={styles.modalOption} onPress={() => updateClientRoute(clientPicker!, null)}>
+                <Text style={styles.modalOptionText}>Clear assignment</Text>
+              </Pressable>
+            </ScrollView>
+            <ThemedButton title="Cancel" variant="outline" onPress={() => setClientPicker(null)} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -157,10 +200,10 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
-  routeListRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), paddingHorizontal: spacing(2) },
-  routeListText: { fontWeight: '600', color: colors.text },
   emptyCopy: { color: colors.muted },
   routeCard: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(2), gap: spacing(1.5) },
+  listScroll: { maxHeight: 240 },
+  listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   routeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   routeName: { fontSize: 18, fontWeight: '700', color: colors.text },
   dropdown: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(1) },

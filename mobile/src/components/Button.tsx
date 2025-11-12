@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   textOutline: {
     color: colors.primary,

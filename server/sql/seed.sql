@@ -1,13 +1,14 @@
 -- Seed demo admin and tech accounts
-insert into users (email, name, password_hash, role, must_change_password)
+insert into users (email, name, password_hash, role, must_change_password, managed_password)
 values
-  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false),
-  ('demo@example.com', 'Demo User', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false)
+  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, 'Tom'),
+  ('demo@example.com', 'Demo User', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
 on conflict (email) do update set
   name = excluded.name,
   password_hash = excluded.password_hash,
   role = excluded.role,
-  must_change_password = excluded.must_change_password;
+  must_change_password = excluded.must_change_password,
+  managed_password = excluded.managed_password;
 
 insert into service_routes (name)
 values ('North'), ('South'), ('East'), ('West')
@@ -21,6 +22,26 @@ insert into clients (name, address) values
   ('Palm Vista Resort', '1000 Nicollet Mall'),
   ('Riverwalk Lofts', '225 3rd Ave S')
 on conflict do nothing;
+
+-- Default assignments for demo data
+with demo_user as (
+  select id from users where email = 'demo@example.com' limit 1
+)
+update service_routes set user_id = demo_user.id
+from demo_user
+where name = 'North';
+
+update clients set service_route_id = sr.id
+from service_routes sr
+where clients.name = 'Acme HQ' and sr.name = 'North';
+
+update clients set service_route_id = sr.id
+from service_routes sr
+where clients.name = 'Blue Sky Co' and sr.name = 'North';
+
+update clients set service_route_id = sr.id
+from service_routes sr
+where clients.name = 'Sunset Mall' and sr.name = 'North';
 
 -- Create visits
 insert into visits (client_id, scheduled_time)

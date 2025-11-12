@@ -19,6 +19,9 @@ import AccountScreen from './src/screens/AccountScreen';
 import FieldTechniciansScreen from './src/screens/FieldTechniciansScreen';
 import ClientLocationsScreen from './src/screens/ClientLocationsScreen';
 import ServiceRoutesScreen from './src/screens/ServiceRoutesScreen';
+import AllClientLocationsScreen from './src/screens/AllClientLocationsScreen';
+import AllServiceRoutesScreen from './src/screens/AllServiceRoutesScreen';
+import AllFieldTechniciansScreen from './src/screens/AllFieldTechniciansScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -84,6 +87,9 @@ function RootNavigator() {
       <Stack.Screen name="FieldTechnicians" component={FieldTechniciansScreen} options={{ title: 'Field Technicians' }} />
       <Stack.Screen name="ClientLocations" component={ClientLocationsScreen} options={{ title: 'Client Locations' }} />
       <Stack.Screen name="ServiceRoutes" component={ServiceRoutesScreen} options={{ title: 'Service Routes' }} />
+      <Stack.Screen name="AllClientLocations" component={AllClientLocationsScreen} options={{ title: 'All Client Locations' }} />
+      <Stack.Screen name="AllServiceRoutes" component={AllServiceRoutesScreen} options={{ title: 'All Service Routes' }} />
+      <Stack.Screen name="AllFieldTechnicians" component={AllFieldTechniciansScreen} options={{ title: 'All Field Technicians' }} />
       <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete Account' }} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>

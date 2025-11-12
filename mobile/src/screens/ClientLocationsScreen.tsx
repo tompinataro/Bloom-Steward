@@ -30,7 +30,7 @@ export default function ClientLocationsScreen(_props: Props) {
 
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
-  const [pickerClient, setPickerClient] = useState<AdminClient | null>(null);
+  const [pickerClient, setPickerClient] = useState<UniqueClient | null>(null);
 
   const load = async () => {
     if (!token) return;
@@ -82,7 +82,11 @@ export default function ClientLocationsScreen(_props: Props) {
   const assignRoute = async (routeId: number | null) => {
     if (!token || !pickerClient) return;
     try {
-      await adminSetClientRoute(token, { clientId: pickerClient.id, serviceRouteId: routeId });
+      await Promise.all(
+        pickerClient.duplicateIds.map(id =>
+          adminSetClientRoute(token, { clientId: id, serviceRouteId: routeId })
+        )
+      );
       await load();
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to assign route.' });
@@ -91,7 +95,7 @@ export default function ClientLocationsScreen(_props: Props) {
     }
   };
 
-  const uniqueClients = useUniqueClients(clients);
+  const uniqueClients = useUniqueClients(clients).filter(client => !client.service_route_id);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -131,24 +135,30 @@ export default function ClientLocationsScreen(_props: Props) {
         <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
       </View>
       <View style={styles.card}>
-        <Text style={styles.subTitle}>Client Locations</Text>
-        {uniqueClients.length === 0 ? (
-          <Text style={styles.emptyCopy}>No client locations yet.</Text>
-        ) : (
-          uniqueClients.map(client => (
-            <View key={client.id} style={styles.listRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.listName}>{client.name}</Text>
-                <Text style={styles.listMeta}>{client.address}</Text>
-                <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
+        <Text style={styles.subTitle}>Client Locations Awaiting Assignment</Text>
+          {uniqueClients.length === 0 ? (
+            <Text style={styles.emptyCopy}>No un-assigned client locations at this time.</Text>
+          ) : (
+          <ScrollView
+            style={styles.listScroll}
+            contentContainerStyle={styles.listScrollContent}
+            nestedScrollEnabled
+          >
+            {uniqueClients.map(client => (
+              <View key={client.id} style={styles.listRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.listName}>{client.name}</Text>
+                  <Text style={styles.listMeta}>{client.address}</Text>
+                  <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
+                </View>
+                <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
+                  <Text style={styles.dropdownText}>
+                    {client.service_route_name || 'Assign route'}
+                  </Text>
+                </Pressable>
               </View>
-              <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
-                <Text style={styles.dropdownText}>
-                  {client.service_route_name || 'Assign route'}
-                </Text>
-              </Pressable>
-            </View>
-          ))
+            ))}
+          </ScrollView>
         )}
       </View>
       <Modal
@@ -181,13 +191,22 @@ export default function ClientLocationsScreen(_props: Props) {
   );
 }
 
-function useUniqueClients(clients: AdminClient[]) {
+type UniqueClient = AdminClient & { duplicateIds: number[] };
+
+export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
   return useMemo(() => {
-    const seen = new Map<string, AdminClient>();
+    const seen = new Map<string, UniqueClient>();
     clients.forEach(client => {
       const key = `${client.name}|${client.address}`;
-      if (!seen.has(key)) {
-        seen.set(key, client);
+      const existing = seen.get(key);
+      if (existing) {
+        existing.duplicateIds.push(client.id);
+        if (!existing.service_route_name && client.service_route_name) {
+          existing.service_route_name = client.service_route_name;
+          existing.service_route_id = client.service_route_id;
+        }
+      } else {
+        seen.set(key, { ...client, duplicateIds: [client.id] });
       }
     });
     return Array.from(seen.values());
@@ -220,6 +239,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing(2),
     paddingVertical: spacing(1),
   },
+  listScroll: { maxHeight: 260 },
+  listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
