@@ -406,6 +406,27 @@ exports.app.get('/api/admin/service-routes', requireAuth, requireAdmin, async (_
         res.status(500).json({ ok: false, error: e?.message ?? 'service routes error' });
     }
 });
+exports.app.post('/api/admin/service-routes', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const rawName = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    if (!rawName) {
+        return res.status(400).json({ ok: false, error: 'route name required' });
+    }
+    try {
+        const insert = await (0, db_1.dbQuery)(`insert into service_routes (name) values ($1) returning id, name`, [rawName]);
+        const route = insert?.rows?.[0];
+        return res.json({ ok: true, route });
+    }
+    catch (e) {
+        const message = String(e?.message ?? '');
+        if (/duplicate key value violates unique constraint/i.test(message)) {
+            return res.status(409).json({ ok: false, error: 'route name already exists' });
+        }
+        console.error('[service-routes] create error', e);
+        return res.status(500).json({ ok: false, error: 'failed to create route' });
+    }
+});
 function generatePassword() {
     const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     const digits = '23456789';
@@ -690,8 +711,9 @@ exports.app.post('/api/admin/visit-state/reset', requireAuth, requireAdmin, asyn
     }
 });
 const port = Number(process.env.PORT) || 5100;
+const host = process.env.HOST || '0.0.0.0';
 if (process.env.NODE_ENV !== 'test') {
-    exports.app.listen(port, () => {
-        console.log(`Listening on port: ${port}`);
+    exports.app.listen(port, host, () => {
+        console.log(`Listening on ${host}:${port}`);
     });
 }

@@ -219,6 +219,17 @@ export async function adminFetchServiceRoutes(token: string): Promise<{ ok: bool
   });
 }
 
+export async function adminCreateServiceRoute(
+  token: string,
+  data: { name: string }
+): Promise<{ ok: boolean; route: ServiceRoute }> {
+  return fetchJson(withBase('/api/admin/service-routes'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
 export async function adminSetClientRoute(
   token: string,
   data: { clientId: number; serviceRouteId: number | null }

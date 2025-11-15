@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -9,6 +9,7 @@ import {
   adminFetchUsers,
   adminAssignServiceRoute,
   adminSetClientRoute,
+  adminCreateServiceRoute,
   AdminClient,
   AdminUser,
   ServiceRoute,
@@ -27,6 +28,8 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
   const [pickerRoute, setPickerRoute] = useState<ServiceRoute | null>(null);
   const [clientPicker, setClientPicker] = useState<AdminClient | null>(null);
+  const [routeName, setRouteName] = useState('');
+  const [creatingRoute, setCreatingRoute] = useState(false);
   const unassignedRoutes = serviceRoutes.filter(route => !route.user_id);
 
   const load = async () => {
@@ -93,6 +96,26 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
     }
   };
 
+  const createRoute = async () => {
+    if (!token) return;
+    const trimmed = routeName.trim();
+    if (!trimmed) {
+      showBanner({ type: 'error', message: 'Route name is required.' });
+      return;
+    }
+    setCreatingRoute(true);
+    try {
+      await adminCreateServiceRoute(token, { name: trimmed });
+      setRouteName('');
+      await load();
+      showBanner({ type: 'success', message: `${trimmed} created.` });
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to create service route.' });
+    } finally {
+      setCreatingRoute(false);
+    }
+  };
+
   if (showAll) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
@@ -140,13 +163,24 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Create Service Route</Text>
-          <ThemedButton
-            title="Add Service Route"
-            onPress={() => showBanner({ type: 'info', message: 'Route creation coming soon.' })}
-          />
-        </View>
+        {!showAll && (
+          <View style={styles.card}>
+            <Text style={styles.title}>Create Service Route</Text>
+            <TextInput
+              style={styles.input}
+              value={routeName}
+              onChangeText={setRouteName}
+              placeholder="Route name"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="words"
+            />
+            <ThemedButton
+              title={creatingRoute ? 'Adding…' : 'Add Service Route'}
+              onPress={createRoute}
+              disabled={creatingRoute}
+            />
+          </View>
+        )}
 
         <View style={styles.card}>
           <Text style={styles.subTitle}>Unassigned Service Routes</Text>
@@ -271,6 +305,15 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: spacing(3),
+    paddingVertical: spacing(2),
+    color: colors.text,
+    backgroundColor: colors.card,
+  },
   emptyCopy: { color: colors.muted },
   routeCard: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(2), gap: spacing(1.5) },
   routeTechLine: { color: colors.muted, fontWeight: '600' },
