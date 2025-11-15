@@ -82,7 +82,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {!showAll && (
         <View style={styles.card}>
           <Text style={styles.title}>Create Field Tech</Text>
@@ -121,7 +121,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
           <Text style={styles.emptyCopy}>No field techs yet.</Text>
           ) : (
             <ScrollView
-              style={styles.listScroll}
+              style={showAll ? styles.listScrollFull : styles.listScroll}
               contentContainerStyle={styles.listScrollContent}
               nestedScrollEnabled
             >
@@ -196,6 +196,7 @@ const styles = StyleSheet.create({
   listEmail: { color: colors.muted },
   emptyCopy: { color: colors.muted },
   listScroll: { maxHeight: 320 },
+  listScrollFull: { maxHeight: undefined },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },

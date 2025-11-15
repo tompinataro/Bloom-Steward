@@ -105,7 +105,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const listToRender = showAll ? uniqueClients : unassignedClients;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {!showAll && (
         <View style={styles.card}>
           <Text style={styles.title}>Create Client Location</Text>
@@ -151,7 +151,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             </Text>
           ) : (
           <ScrollView
-            style={styles.listScroll}
+            style={showAll ? styles.listScrollFull : styles.listScroll}
             contentContainerStyle={styles.listScrollContent}
             nestedScrollEnabled
           >
@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(1),
   },
   listScroll: { maxHeight: 320 },
+  listScrollFull: { maxHeight: undefined },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },

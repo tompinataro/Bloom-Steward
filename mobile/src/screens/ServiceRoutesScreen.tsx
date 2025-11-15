@@ -105,10 +105,16 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
     }
     setCreatingRoute(true);
     try {
-      await adminCreateServiceRoute(token, { name: trimmed });
+      const res = await adminCreateServiceRoute(token, { name: trimmed });
+      if (res?.route) {
+        setServiceRoutes(prev => {
+          const next = [...prev, res.route];
+          return next.sort((a, b) => a.name.localeCompare(b.name));
+        });
+      }
       setRouteName('');
-      await load();
       showBanner({ type: 'success', message: `${trimmed} created.` });
+      await load();
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to create service route.' });
     } finally {
