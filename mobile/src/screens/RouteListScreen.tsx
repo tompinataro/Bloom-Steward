@@ -11,6 +11,7 @@ import ThemedButton from '../components/Button';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { ensureToday, getCompleted, getInProgress, pruneToIds, syncServerTruth } from '../completed';
+import { truncateText } from '../utils/text';
 import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
@@ -261,12 +262,6 @@ type ItemProps = {
   onOpenMaps: (address?: string | null) => void;
 };
 
-function shorten(text?: string | null, max = 28) {
-  if (!text) return '';
-  const trimmed = text.trim();
-  return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
-}
-
   const RouteListItem = memo(function RouteListItem({ route, isDone, inProg, onOpen, onOpenMaps }: ItemProps) {
     const cardScale = useRef(new Animated.Value(1)).current;
     const onCardPressIn = () => Animated.timing(cardScale, { toValue: 0.98, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
@@ -284,8 +279,8 @@ function shorten(text?: string | null, max = 28) {
         <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }] }>
           <View style={styles.rowTop}>
             <View style={styles.leftWrap}>
-              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{shorten(route.clientName)}</Text>
-              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{shorten(route.address, 36)}</Text>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName)}</Text>
+              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.address, 36)}</Text>
             </View>
             <View style={styles.centerWrap}>
               <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />

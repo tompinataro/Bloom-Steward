@@ -1,0 +1,87 @@
+import React, { useEffect, useState } from 'react';
+import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigationTypes';
+import { useAuth } from '../auth';
+import { adminFetchUsers, adminFetchServiceRoutes, AdminUser, ServiceRoute } from '../api/client';
+import { showBanner } from '../components/globalBannerBus';
+import { colors, spacing } from '../theme';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'AllFieldTechnicians'>;
+
+export default function AllFieldTechniciansScreen({ navigation }: Props) {
+  const { token } = useAuth();
+  const [techs, setTechs] = useState<AdminUser[]>([]);
+  const [routes, setRoutes] = useState<ServiceRoute[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const [userRes, routeRes] = await Promise.all([
+        adminFetchUsers(token),
+        adminFetchServiceRoutes(token),
+      ]);
+      setTechs((userRes?.users || []).filter(u => u.role === 'tech'));
+      setRoutes(routeRes?.routes || []);
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to load field technicians.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [token]);
+
+  const getRouteForTech = (techId: number) => routes.find(route => route.user_id === techId);
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>All Field Technicians</Text>
+        {loading ? (
+          <Text style={styles.empty}>Loading…</Text>
+        ) : techs.length === 0 ? (
+          <Text style={styles.empty}>No field technicians yet.</Text>
+        ) : (
+          techs.map(user => {
+            const assignedRoute = getRouteForTech(user.id);
+            return (
+              <Pressable
+                key={user.id}
+                style={styles.row}
+                onPress={() => {
+                  if (assignedRoute) {
+                    navigation.navigate('ServiceRoutes', { focusRouteId: assignedRoute.id });
+                  } else {
+                    showBanner({ type: 'info', message: `${user.name} has no assigned route yet.` });
+                  }
+                }}
+              >
+                <Text style={styles.name}>{user.name}</Text>
+                <Text style={styles.email}>{user.email}</Text>
+                <Text style={styles.routeLabel}>
+                  {assignedRoute ? assignedRoute.name : 'Unassigned'}
+                </Text>
+              </Pressable>
+            );
+          })
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { padding: spacing(4) },
+  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  empty: { color: colors.muted },
+  row: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingVertical: spacing(1.5), gap: spacing(0.25) },
+  name: { fontWeight: '700', color: colors.text },
+  email: { color: colors.muted, fontSize: 13 },
+  routeLabel: { color: colors.primary, fontWeight: '600' },
+});

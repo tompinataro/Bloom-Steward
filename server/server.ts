@@ -2,19 +2,248 @@ import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
+import nodemailer from 'nodemailer';
 import healthRouter from './routes/health';
 import metricsRouter, { requestMetrics } from './routes/metrics';
-import { getTodayRoutes, getVisit, saveVisit } from './data';
+import { getTodayRoutes, getVisit, saveVisit, buildReportRows } from './data';
 import { dbQuery, hasDb } from './db';
 const encryptLib = require('./modules/encryption') as {
   encryptPassword: (password: string) => string;
   comparePassword: (candidate: string, stored: string) => boolean;
 };
 
+const SMTP_URL = process.env.SMTP_URL || '';
+const mailTransport = SMTP_URL ? nodemailer.createTransport(SMTP_URL) : null;
+
+type ReportRow = {
+  techId: number;
+  techName: string;
+  routeName: string | null;
+  clientName: string;
+  address: string;
+  checkInTs: string | null;
+  checkOutTs: string | null;
+  durationMinutes: number;
+  durationFormatted: string;
+  onSiteContact?: string | null;
+  odometerReading?: number | null;
+  mileageDelta: number;
+  distanceFromClientFeet?: number | null;
+  geoValidated: boolean;
+};
+
+function haversineMiles(lat1?: number | null, lon1?: number | null, lat2?: number | null, lon2?: number | null) {
+  if (
+    lat1 === undefined ||
+    lon1 === undefined ||
+    lat2 === undefined ||
+    lon2 === undefined ||
+    lat1 === null ||
+    lon1 === null ||
+    lat2 === null ||
+    lon2 === null
+  ) {
+    return null;
+  }
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 3958.8; // miles
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function formatDuration(minutes: number) {
+  const hrs = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+function resolveRange(frequency: string, explicitStart?: string, explicitEnd?: string) {
+  let end = explicitEnd ? new Date(explicitEnd) : new Date();
+  let start = explicitStart ? new Date(explicitStart) : new Date();
+  const now = new Date();
+  if (!explicitStart || !explicitEnd) {
+    end = now;
+    start = new Date(now);
+    switch (frequency) {
+      case 'daily':
+        start.setDate(now.getDate() - 1);
+        break;
+      case 'weekly':
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'payperiod':
+        start.setDate(now.getDate() - 14);
+        break;
+      case 'monthly':
+        start.setDate(now.getDate() - 30);
+        break;
+      default:
+        start.setDate(now.getDate() - 7);
+        break;
+    }
+  }
+  return { startDate: start, endDate: end };
+}
+
+async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]> {
+  const rawRows = await buildReportRows(startDate, endDate);
+  const rows: ReportRow[] = [];
+  const lastOdometer = new Map<number, number>();
+  for (const row of rawRows) {
+    if (!row.tech_id || !row.tech_name) continue;
+    const payload = row.payload || {};
+    const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
+    const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;
+    const inDate = checkInTs ? new Date(checkInTs) : null;
+    const outDate = checkOutTs ? new Date(checkOutTs) : null;
+    const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
+    const durationFormatted = formatDuration(durationMinutes);
+    const onSiteContact = payload.onSiteContact || null;
+    const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
+    let mileageDelta = 0;
+    if (odometerReading !== null && Number.isFinite(odometerReading)) {
+      const prev = lastOdometer.get(row.tech_id);
+      if (typeof prev === 'number' && odometerReading >= prev) {
+        mileageDelta = odometerReading - prev;
+      }
+      lastOdometer.set(row.tech_id, odometerReading);
+    }
+    const rawLoc = payload.checkOutLoc || payload.checkInLoc;
+    let distanceFeet: number | null = null;
+    let geoValidated = false;
+    if (rawLoc && typeof rawLoc.lat === 'number' && typeof rawLoc.lng === 'number') {
+      const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
+      if (distMiles !== null) {
+        distanceFeet = distMiles * 5280;
+        geoValidated = distanceFeet <= 100;
+      }
+    }
+    rows.push({
+      techId: row.tech_id,
+      techName: row.tech_name,
+      routeName: row.route_name,
+      clientName: row.client_name,
+      address: row.address,
+      checkInTs,
+      checkOutTs,
+      durationMinutes,
+      durationFormatted,
+      onSiteContact,
+      odometerReading,
+      mileageDelta,
+      distanceFromClientFeet: distanceFeet,
+      geoValidated,
+    });
+  }
+  return rows;
+}
+
+function buildCsv(rows: ReportRow[]) {
+  const header = [
+    'Technician',
+    'Route',
+    'Client Location',
+    'Address',
+    'Check-In',
+    'Check-Out',
+    'Duration',
+    'Mileage Delta',
+    'On-site Contact',
+    'Geo Distance (ft)',
+    'Geo Validated',
+  ];
+  const lines = [header.join(',')];
+  rows.forEach(row => {
+    lines.push([
+      row.techName,
+      row.routeName || '',
+      row.clientName,
+      row.address.replace(/,/g, ' '),
+      row.checkInTs || '',
+      row.checkOutTs || '',
+      row.durationFormatted,
+      row.mileageDelta.toFixed(2),
+      row.onSiteContact || '',
+      row.distanceFromClientFeet !== null && row.distanceFromClientFeet !== undefined ? row.distanceFromClientFeet.toFixed(0) : '',
+      row.geoValidated ? 'Yes' : 'No',
+    ].join(','));
+  });
+  return lines.join('\n');
+}
+
+function buildHtml(rows: ReportRow[], start: Date, end: Date) {
+  const rowsHtml = rows.map(row => `
+    <tr>
+      <td>${row.techName}</td>
+      <td>${row.routeName || ''}</td>
+      <td>${row.clientName}</td>
+      <td>${row.address}</td>
+      <td>${row.checkInTs || ''}</td>
+      <td>${row.checkOutTs || ''}</td>
+      <td>${row.durationFormatted}</td>
+      <td>${row.mileageDelta.toFixed(2)}</td>
+      <td>${row.onSiteContact || ''}</td>
+      <td>${row.distanceFromClientFeet !== null && row.distanceFromClientFeet !== undefined ? row.distanceFromClientFeet.toFixed(0) : ''}</td>
+      <td>${row.geoValidated ? 'Yes' : 'No'}</td>
+    </tr>
+  `).join('');
+  return `
+    <h2>Field Tech Summary</h2>
+    <p>Period: ${start.toISOString()} - ${end.toISOString()}</p>
+    <table border="1" cellpadding="6" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Technician</th>
+          <th>Route</th>
+          <th>Client</th>
+          <th>Address</th>
+          <th>Check-In</th>
+          <th>Check-Out</th>
+          <th>Duration</th>
+          <th>Mileage Delta</th>
+          <th>On-site Contact</th>
+          <th>Geo Distance (ft)</th>
+          <th>Geo Valid</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+    </table>
+  `;
+}
+
+async function sendReportEmail(to: string[], subject: string, html: string, csv: string) {
+  if (!mailTransport) {
+    throw new Error('SMTP_URL not configured for report emails.');
+  }
+  await mailTransport.sendMail({
+    to,
+    subject,
+    html,
+    text: 'Attached is your Field Technician summary report.',
+    attachments: [
+      {
+        filename: 'field-tech-summary.csv',
+        content: csv,
+      },
+    ],
+  });
+}
+
 // In-memory visit state (Sprint 5 Phase A)
 // Keyed by day + visit id + user id. Example: 2025-09-09:101:1
 type VisitState = { completed?: boolean; inProgress?: boolean; updatedAt: string };
 const stateMap = new Map<string, VisitState>();
+
+if (hasDb()) {
+  dbQuery('alter table users add column if not exists managed_password text').catch(() => {});
+}
 function dayKey(d = new Date()) {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
@@ -379,6 +608,8 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
       contact_phone: string | null;
       service_route_id: number | null;
       service_route_name: string | null;
+      latitude: number | null;
+      longitude: number | null;
     }>(
       `select
          c.id,
@@ -387,7 +618,9 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
          c.contact_name,
          c.contact_phone,
          sr.id as service_route_id,
-         sr.name as service_route_name
+         sr.name as service_route_name,
+         c.latitude,
+         c.longitude
        from clients c
        left join service_routes sr on sr.id = c.service_route_id
        order by c.name asc`
@@ -516,23 +749,27 @@ app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, async (req,
 
 app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
   if (!ensureDatabase(res)) return;
-  const { name, address, contactName, contactPhone } = req.body ?? {};
+  const { name, address, contactName, contactPhone, latitude, longitude } = req.body ?? {};
   const trimmedName = typeof name === 'string' ? name.trim() : '';
   const trimmedAddress = typeof address === 'string' ? address.trim() : '';
   if (!trimmedName || !trimmedAddress) {
     return res.status(400).json({ ok: false, error: 'name and address required' });
   }
+  const latValue = latitude !== undefined && latitude !== null ? Number(latitude) : null;
+  const lngValue = longitude !== undefined && longitude !== null ? Number(longitude) : null;
   const result = await dbQuery<{
     id: number;
     name: string;
     address: string;
     contact_name: string | null;
     contact_phone: string | null;
+    latitude: number | null;
+    longitude: number | null;
   }>(
-    `insert into clients (name, address, contact_name, contact_phone)
-     values ($1, $2, nullif($3, ''), nullif($4, ''))
-     returning id, name, address, contact_name, contact_phone`,
-    [trimmedName, trimmedAddress, contactName || null, contactPhone || null]
+    `insert into clients (name, address, contact_name, contact_phone, latitude, longitude)
+     values ($1, $2, nullif($3, ''), nullif($4, ''), $5, $6)
+     returning id, name, address, contact_name, contact_phone, latitude, longitude`,
+    [trimmedName, trimmedAddress, contactName || null, contactPhone || null, latValue, lngValue]
   ).catch((e: any) => {
     const message = String(e?.message ?? '');
     if (/duplicate key value violates unique constraint/i.test(message)) {
@@ -703,6 +940,52 @@ app.post('/api/admin/timely-notes', requireAuth, requireAdmin, async (req, res) 
   } catch (e: any) {
     console.error('[admin/timely-notes] create error', e);
     return res.status(500).json({ ok: false, error: 'failed to save note' });
+  }
+});
+
+app.post('/api/admin/reports/summary', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const { frequency = 'weekly', startDate, endDate } = req.body ?? {};
+  const range = resolveRange(frequency, startDate, endDate);
+  try {
+    const rows = await buildSummary(range.startDate, range.endDate);
+    res.json({
+      ok: true,
+      range: { start: range.startDate.toISOString(), end: range.endDate.toISOString(), frequency },
+      rows,
+    });
+  } catch (err: any) {
+    console.error('[reports/summary] error', err);
+    res.status(500).json({ ok: false, error: err?.message ?? 'failed to build summary' });
+  }
+});
+
+app.post('/api/admin/reports/email', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const { emails, frequency = 'weekly', startDate, endDate } = req.body ?? {};
+  let targets: string[] = [];
+  if (Array.isArray(emails)) {
+    targets = emails.filter(Boolean);
+  } else if (typeof emails === 'string') {
+    targets = emails.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  if (!targets.length) {
+    return res.status(400).json({ ok: false, error: 'recipient emails required' });
+  }
+  const range = resolveRange(frequency, startDate, endDate);
+  try {
+    const rows = await buildSummary(range.startDate, range.endDate);
+    const csv = buildCsv(rows);
+    const html = buildHtml(rows, range.startDate, range.endDate);
+    await sendReportEmail(targets, `Field Tech Summary (${frequency})`, html, csv);
+    res.json({
+      ok: true,
+      sentTo: targets,
+      range: { start: range.startDate.toISOString(), end: range.endDate.toISOString(), frequency },
+    });
+  } catch (err: any) {
+    console.error('[reports/email] error', err);
+    res.status(500).json({ ok: false, error: err?.message ?? 'failed to send report' });
   }
 });
 

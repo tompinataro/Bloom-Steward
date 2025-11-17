@@ -9,5 +9,8 @@ export type RootStackParamList = {
   Account: undefined;
   FieldTechnicians: { mode?: 'all' } | undefined;
   ClientLocations: { mode?: 'all' } | undefined;
-  ServiceRoutes: { mode?: 'all' } | undefined;
+  ServiceRoutes: { mode?: 'all'; focusRouteId?: number } | undefined;
+  AllServiceRoutes: undefined;
+  AllFieldTechnicians: undefined;
+  Reports: undefined;
 };

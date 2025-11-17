@@ -1,33 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import {
   adminFetchClients,
   adminFetchServiceRoutes,
-  adminFetchUsers,
-  adminAssignServiceRoute,
-  adminSetClientRoute,
   adminCreateServiceRoute,
   AdminClient,
-  AdminUser,
   ServiceRoute,
 } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
+import { truncateText } from '../utils/text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ServiceRoutes'>;
 
 export default function ServiceRoutesScreen({ route, navigation }: Props) {
   const { token } = useAuth();
   const showAll = route.params?.mode === 'all';
+  const focusRouteId = route.params?.focusRouteId;
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
   const [clients, setClients] = useState<AdminClient[]>([]);
-  const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
-  const [pickerRoute, setPickerRoute] = useState<ServiceRoute | null>(null);
-  const [clientPicker, setClientPicker] = useState<AdminClient | null>(null);
   const [routeName, setRouteName] = useState('');
   const [creatingRoute, setCreatingRoute] = useState(false);
   const unassignedRoutes = serviceRoutes.filter(route => !route.user_id);
@@ -35,14 +30,12 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
   const load = async () => {
     if (!token) return;
     try {
-      const [routeRes, clientRes, usersRes] = await Promise.all([
+      const [routeRes, clientRes] = await Promise.all([
         adminFetchServiceRoutes(token),
         adminFetchClients(token),
-        adminFetchUsers(token),
       ]);
-      setServiceRoutes(routeRes?.routes || []);
+      setServiceRoutes(reorderRoutes(routeRes?.routes || []));
       setClients(clientRes?.clients || []);
-      setTechUsers((usersRes?.users || []).filter(u => u.role === 'tech'));
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load service routes.' });
     }
@@ -55,6 +48,15 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
   useEffect(() => {
     navigation.setOptions({ title: showAll ? 'All Service Routes' : 'Service Routes' });
   }, [navigation, showAll]);
+
+  const reorderRoutes = (list: ServiceRoute[]) => {
+    if (!focusRouteId) return [...list].sort((a, b) => a.name.localeCompare(b.name));
+    return [...list].sort((a, b) => {
+      if (a.id === focusRouteId) return -1;
+      if (b.id === focusRouteId) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  };
 
   const clientsByRoute = useMemo(() => {
     const map = new Map<number, AdminClient[]>();
@@ -72,29 +74,11 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
 
   const unassignedClients = clientsByRoute.get(0) || [];
 
-  const assignTech = async (userId: number | null) => {
-    if (!token || !pickerRoute) return;
-    try {
-      await adminAssignServiceRoute(token, { routeId: pickerRoute.id, userId });
-      await load();
-    } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Unable to assign technician.' });
-    } finally {
-      setPickerRoute(null);
+  useEffect(() => {
+    if (focusRouteId) {
+      setServiceRoutes(prev => reorderRoutes(prev));
     }
-  };
-
-  const updateClientRoute = async (client: AdminClient, routeId: number | null) => {
-    if (!token) return;
-    try {
-      await adminSetClientRoute(token, { clientId: client.id, serviceRouteId: routeId });
-      await load();
-    } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Unable to update client route.' });
-    } finally {
-      setClientPicker(null);
-    }
-  };
+  }, [focusRouteId]);
 
   const createRoute = async () => {
     if (!token) return;
@@ -107,10 +91,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
     try {
       const res = await adminCreateServiceRoute(token, { name: trimmed });
       if (res?.route) {
-        setServiceRoutes(prev => {
-          const next = [...prev, res.route];
-          return next.sort((a, b) => a.name.localeCompare(b.name));
-        });
+        setServiceRoutes(prev => reorderRoutes([...prev, res.route]));
       }
       setRouteName('');
       showBanner({ type: 'success', message: `${trimmed} created.` });
@@ -143,7 +124,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
                   ) : (
                     assignedClients.map(client => (
                       <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
-                        • {client.name} — {client.address}
+                        • {truncateText(client.name)} — {truncateText(client.address, 36)}
                       </Text>
                     ))
                   )}
@@ -157,7 +138,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
             <Text style={styles.subTitle}>Unassigned Client Locations</Text>
             {unassignedClients.map(client => (
               <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
-                • {client.name} — {client.address}
+                • {truncateText(client.name)} — {truncateText(client.address, 36)}
               </Text>
             ))}
           </View>
@@ -199,109 +180,19 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
               nestedScrollEnabled
             >
               {unassignedRoutes.map(route => (
-                <View key={route.id} style={styles.routeListRow}>
-                  <Text style={styles.routeListText}>{route.name}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.title}>Assign Technicians</Text>
-          {serviceRoutes.length === 0 ? (
-            <Text style={styles.emptyCopy}>No un-assigned service routes at this time.</Text>
-          ) : (
-            <ScrollView
-              style={styles.listScroll}
-              contentContainerStyle={styles.listScrollContent}
-              nestedScrollEnabled
-            >
-            {serviceRoutes.map(route => {
-              const assignedClients = clientsByRoute.get(route.id) || [];
-              return (
-                <View key={route.id} style={styles.routeCard}>
-                  <View style={styles.routeHeader}>
-                    <Text style={styles.routeName}>{route.name}</Text>
-                    <Pressable style={styles.dropdown} onPress={() => setPickerRoute(route)}>
-                      <Text style={styles.dropdownText}>{route.user_name || 'Assign tech'}</Text>
-                    </Pressable>
-                  </View>
-                  {assignedClients.length === 0 ? (
-                    <Text style={styles.emptyCopy}>No client locations assigned.</Text>
-                  ) : (
-                    assignedClients.map(client => (
-                      <Pressable key={client.id} onPress={() => setClientPicker(client)}>
-                        <Text style={styles.clientItem}>{client.name}</Text>
-                      </Pressable>
-                    ))
-                  )}
-                </View>
-              );
-            })}
-            </ScrollView>
-          )}
-        </View>
-      </ScrollView>
-
-      <Modal
-        visible={!!pickerRoute}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPickerRoute(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              Assign tech to {pickerRoute?.name ?? 'route'}
-            </Text>
-            <ScrollView style={{ maxHeight: 280 }}>
-              {techUsers.length === 0 ? (
-                <Text style={styles.emptyCopy}>No field techs yet.</Text>
-              ) : (
-                techUsers.map(tech => (
-                  <Pressable key={tech.id} style={styles.modalOption} onPress={() => assignTech(tech.id)}>
-                    <Text style={styles.modalOptionText}>{tech.name}</Text>
-                    <Text style={styles.modalOptionSub}>{tech.email}</Text>
-                  </Pressable>
-                ))
-              )}
-              <Pressable style={styles.modalOption} onPress={() => assignTech(null)}>
-                <Text style={styles.modalOptionText}>Clear assignment</Text>
-              </Pressable>
-            </ScrollView>
-            <ThemedButton title="Cancel" variant="outline" onPress={() => setPickerRoute(null)} />
-          </View>
-        </View>
-      </Modal>
-      <Modal
-        visible={!!clientPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setClientPicker(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Move {clientPicker?.name ?? 'client'} to route</Text>
-            <ScrollView style={{ maxHeight: 280 }}>
-              {serviceRoutes.map(route => (
                 <Pressable
                   key={route.id}
-                  style={styles.modalOption}
-                  onPress={() => updateClientRoute(clientPicker!, route.id)}
+                  style={styles.routeListRow}
+                  onPress={() => navigation.navigate('ServiceRoutes', { focusRouteId: route.id })}
                 >
-                  <Text style={styles.modalOptionText}>{route.name}</Text>
-                  <Text style={styles.modalOptionSub}>{route.user_name ? `Tech: ${route.user_name}` : 'Unassigned'}</Text>
+                  <Text style={styles.routeListText}>{route.name}</Text>
                 </Pressable>
               ))}
-              <Pressable style={styles.modalOption} onPress={() => updateClientRoute(clientPicker!, null)}>
-                <Text style={styles.modalOptionText}>Clear assignment</Text>
-              </Pressable>
             </ScrollView>
-            <ThemedButton title="Cancel" variant="outline" onPress={() => setClientPicker(null)} />
-          </View>
+          )}
         </View>
-      </Modal>
+
+      </ScrollView>
     </View>
   );
 }

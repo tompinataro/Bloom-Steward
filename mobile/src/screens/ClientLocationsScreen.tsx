@@ -14,11 +14,9 @@ import {
 } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
+import { truncateText } from '../utils/text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ClientLocations'>;
-
-const NAME_MAX = 40;
-const ADDRESS_MAX = 80;
 
 export default function ClientLocationsScreen({ route, navigation }: Props) {
   const { token } = useAuth();
@@ -27,6 +25,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const [address, setAddress] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [creating, setCreating] = useState(false);
 
   const [clients, setClients] = useState<AdminClient[]>([]);
@@ -57,8 +57,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
 
   const addClient = async () => {
     if (!token) return;
-    const trimmedName = name.trim().slice(0, NAME_MAX);
-    const trimmedAddress = address.trim().slice(0, ADDRESS_MAX);
+    const trimmedName = name.trim();
+    const trimmedAddress = address.trim();
     if (!trimmedName || !trimmedAddress) {
       showBanner({ type: 'error', message: 'Name and address are required.' });
       return;
@@ -70,12 +70,16 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         address: trimmedAddress,
         contactName: contactName.trim() || undefined,
         contactPhone: contactPhone.trim() || undefined,
+        latitude: latitude ? Number(latitude) : undefined,
+        longitude: longitude ? Number(longitude) : undefined,
       });
       showBanner({ type: 'success', message: `Added ${trimmedName}.` });
       setName('');
       setAddress('');
       setContactName('');
       setContactPhone('');
+      setLatitude('');
+      setLongitude('');
       await load();
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to add client.' });
@@ -103,6 +107,20 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const uniqueClients = useUniqueClients(clients);
   const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
   const listToRender = showAll ? uniqueClients : unassignedClients;
+  const unassignClient = async (client: UniqueClient) => {
+    if (!token) return;
+    try {
+      await Promise.all(
+        client.duplicateIds.map(id =>
+          adminSetClientRoute(token, { clientId: id, serviceRouteId: null })
+        )
+      );
+      showBanner({ type: 'success', message: `${client.name} unassigned.` });
+      await load();
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to unassign client.' });
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -113,17 +131,15 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholder="Client name"
-            placeholderTextColor={colors.muted}
-            maxLength={NAME_MAX}
-          />
+          placeholder="Client name"
+          placeholderTextColor={colors.muted}
+        />
         <TextInput
           style={styles.input}
           value={address}
           onChangeText={setAddress}
           placeholder="Service address"
           placeholderTextColor={colors.muted}
-          maxLength={ADDRESS_MAX}
         />
         <TextInput
           style={styles.input}
@@ -140,8 +156,24 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
           placeholderTextColor={colors.muted}
           keyboardType="phone-pad"
         />
-          <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
-        </View>
+        <TextInput
+          style={styles.input}
+          value={latitude}
+          onChangeText={setLatitude}
+          placeholder="Latitude (optional)"
+          placeholderTextColor={colors.muted}
+          keyboardType="numeric"
+        />
+        <TextInput
+          style={styles.input}
+          value={longitude}
+          onChangeText={setLongitude}
+          placeholder="Longitude (optional)"
+          placeholderTextColor={colors.muted}
+          keyboardType="numeric"
+        />
+        <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
+      </View>
       )}
       <View style={styles.card}>
         <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Client Locations Awaiting Assignment'}</Text>
@@ -158,11 +190,34 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             {listToRender.map(client => (
               <View key={`${client.id}-${client.name}`} style={styles.listRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.listName}>{client.name}</Text>
-                  <Text style={styles.listMeta}>{client.address}</Text>
+                  <Text style={styles.listName}>{truncateText(client.name)}</Text>
+                  <Text style={styles.listMeta}>{truncateText(client.address, 42)}</Text>
                   <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
                 </View>
-                {!showAll && (
+                {showAll ? (
+                  <View style={styles.routeActions}>
+                    <Pressable
+                      style={styles.routePill}
+                      onPress={() => {
+                        if (client.service_route_id) {
+                          navigation.navigate('ServiceRoutes', { focusRouteId: client.service_route_id });
+                        } else {
+                          showBanner({ type: 'info', message: 'Assign this client from the card below.' });
+                        }
+                      }}
+                    >
+                      <Text style={styles.routePillText}>{client.service_route_name || 'Unassigned'}</Text>
+                    </Pressable>
+                    {client.service_route_id ? (
+                      <ThemedButton
+                        title="Unassign"
+                        variant="outline"
+                        onPress={() => unassignClient(client)}
+                        style={styles.smallBtn}
+                      />
+                    ) : null}
+                  </View>
+                ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
                     <Text style={styles.dropdownText}>
                       {client.service_route_name || 'Assign route'}
@@ -260,6 +315,10 @@ const styles = StyleSheet.create({
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  routeActions: { alignItems: 'flex-end', gap: spacing(1) },
+  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
+  routePillText: { color: colors.primary, fontWeight: '600' },
+  smallBtn: { paddingHorizontal: spacing(2), alignSelf: 'flex-end' },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
 });

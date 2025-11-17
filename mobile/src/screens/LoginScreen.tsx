@@ -49,6 +49,9 @@ export default function LoginScreen(_props: Props) {
           placeholder="Email"
           placeholderTextColor={colors.muted}
           returnKeyType="next"
+          autoComplete="email"
+          textContentType="username"
+          autoCorrect={false}
         />
         <TextInput
           style={styles.input}
@@ -59,6 +62,9 @@ export default function LoginScreen(_props: Props) {
           placeholderTextColor={colors.muted}
           returnKeyType="go"
           onSubmitEditing={onSubmit}
+          textContentType="oneTimeCode"
+          autoComplete="off"
+          autoCorrect={false}
         />
         {loading ? (
           <ActivityIndicator />

@@ -137,7 +137,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                   <Text style={styles.listEmail}>{user.email}</Text>
                 </View>
                 <Pressable style={styles.pwChip} onPress={() => setPwModal({ id: user.id, name: user.name })}>
-                  <Text style={styles.pwChipText}>Set password</Text>
+                  <Text style={styles.pwChipText}>Reset password</Text>
                 </Pressable>
               </View>
             ))}

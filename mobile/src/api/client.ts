@@ -140,6 +140,8 @@ export async function submitVisit(
     checkOutLoc?: { lat: number; lng: number };
     noteToOffice?: string;
     techNotes?: string;
+    onSiteContact?: string;
+    odometerReading?: number | string;
   },
   token: string
 ): Promise<{ ok: boolean; id: number } & any> {
@@ -177,6 +179,8 @@ export type AdminClient = {
   assigned_user_email?: string | null;
   scheduled_time?: string | null;
   timely_note?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 export async function adminFetchClients(token: string): Promise<{ ok: boolean; clients: AdminClient[] }> {
   return fetchJson(withBase('/api/admin/clients'), {
@@ -197,7 +201,7 @@ export async function adminCreateUser(
 
 export async function adminCreateClient(
   token: string,
-  data: { name: string; address: string; contactName?: string; contactPhone?: string }
+  data: { name: string; address: string; contactName?: string; contactPhone?: string; latitude?: number; longitude?: number }
 ): Promise<{ ok: boolean; client: AdminClient }> {
   return fetchJson(withBase('/api/admin/clients'), {
     method: 'POST',
@@ -238,6 +242,51 @@ export async function adminSetClientRoute(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ serviceRouteId: data.serviceRouteId }),
+  });
+}
+
+export type ReportSummaryRow = {
+  techId: number;
+  techName: string;
+  routeName: string | null;
+  clientName: string;
+  address: string;
+  checkInTs: string | null;
+  checkOutTs: string | null;
+  durationFormatted: string;
+  durationMinutes?: number;
+  mileageDelta: number;
+  onSiteContact?: string | null;
+  odometerReading?: number | null;
+  geoValidated: boolean;
+  distanceFromClientFeet?: number | null;
+};
+
+export type ReportSummaryResponse = {
+  ok: boolean;
+  range: { start: string; end: string; frequency: string };
+  rows: ReportSummaryRow[];
+};
+
+export async function adminFetchReportSummary(
+  token: string,
+  data: { frequency: string; startDate?: string; endDate?: string }
+): Promise<ReportSummaryResponse> {
+  return fetchJson(withBase('/api/admin/reports/summary'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function adminSendReport(
+  token: string,
+  data: { frequency: string; emails: string[]; startDate?: string; endDate?: string }
+): Promise<{ ok: boolean }> {
+  return fetchJson(withBase('/api/admin/reports/email'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
   });
 }
 

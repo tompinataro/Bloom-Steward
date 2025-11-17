@@ -80,55 +80,29 @@ async function routesFromServiceAssignments(userId: number): Promise<TodayRoute[
     client_id: number;
     client_name: string;
     address: string;
-    visit_id: number | null;
-    visit_time: string | null;
-    route_time: string | null;
-    route_order: number;
+    created_at: string;
+    row_order: number;
   }>(
     `select
        c.id as client_id,
        c.name as client_name,
        c.address,
-       v.id as visit_id,
-       v.scheduled_time as visit_time,
-       rt.scheduled_time as route_time,
-       row_number() over (order by coalesce(v.scheduled_time, rt.scheduled_time, c.created_at)::text, c.id) as route_order
+       c.created_at,
+       row_number() over (order by c.created_at asc, c.id asc) as row_order
      from service_routes sr
      join clients c on c.service_route_id = sr.id
-     left join routes_today rt on rt.client_id = c.id and rt.user_id = sr.user_id
-     left join lateral (
-       select id, scheduled_time
-       from visits
-       where client_id = c.id
-       order by id desc
-       limit 1
-     ) v on true
      where sr.user_id = $1
-     order by route_order asc`,
+     order by c.created_at asc, c.id asc`,
     [userId]
   );
   const rows = res?.rows ?? [];
   if (!rows.length) return [];
-  const mapped: TodayRoute[] = [];
-  for (const row of rows) {
-    const fallbackTime = row.visit_time || row.route_time || fallbackTimeFor(row.route_order);
-    let visitId = row.visit_id;
-    let scheduledTime = fallbackTime;
-    if (!visitId) {
-      const ensured = await ensureVisitForClient(row.client_id, fallbackTime);
-      visitId = ensured.id;
-      scheduledTime = ensured.scheduled_time || fallbackTime;
-    } else {
-      scheduledTime = row.visit_time || fallbackTime;
-    }
-    mapped.push({
-      id: visitId,
-      clientName: row.client_name,
-      address: row.address,
-      scheduledTime,
-    });
-  }
-  return ensureMinimumRoutes(dedupeByKey(dedupeById(mapped)));
+  return rows.map(row => ({
+    id: row.client_id,
+    clientName: row.client_name,
+    address: row.address,
+    scheduledTime: fallbackTimeFor(row.row_order),
+  }));
 }
 
 export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
@@ -247,4 +221,43 @@ export async function saveVisit(id: number, data: any) {
     return { ok: true } as any;
   }
   return { ok: true } as any;
+}
+
+export async function buildReportRows(startDate: Date, endDate: Date) {
+  if (!hasDb()) return [];
+  const res = await dbQuery<{
+    submission_id: number;
+    created_at: string;
+    visit_id: number;
+    client_name: string;
+    address: string;
+    latitude: number | null;
+    longitude: number | null;
+    route_name: string | null;
+    tech_id: number | null;
+    tech_name: string | null;
+    payload: any;
+  }>(
+    `select
+       vs.id as submission_id,
+       vs.created_at,
+       v.id as visit_id,
+       c.name as client_name,
+       c.address,
+       c.latitude,
+       c.longitude,
+       sr.name as route_name,
+       u.id as tech_id,
+       u.name as tech_name,
+       vs.payload
+     from visit_submissions vs
+     join visits v on v.id = vs.visit_id
+     join clients c on c.id = v.client_id
+     left join service_routes sr on sr.id = c.service_route_id
+     left join users u on u.id = sr.user_id
+     where vs.created_at between $1 and $2
+     order by u.id nulls last, vs.created_at asc`,
+    [startDate.toISOString(), endDate.toISOString()]
+  );
+  return res?.rows ?? [];
 }
