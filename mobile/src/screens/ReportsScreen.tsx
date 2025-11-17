@@ -125,7 +125,7 @@ export default function ReportsScreen(_props: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.heading}>Reports</Text>
+        <Text style={styles.heading}>Report Generator</Text>
         <Text style={styles.label}>Recipients</Text>
         <View style={styles.recipientStack}>
           {recipients.map(rec => (

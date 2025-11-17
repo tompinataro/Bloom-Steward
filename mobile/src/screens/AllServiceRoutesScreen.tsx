@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -7,6 +7,7 @@ import { adminFetchClients, adminFetchServiceRoutes, AdminClient, ServiceRoute }
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { truncateText } from '../utils/text';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllServiceRoutes'>;
 
@@ -16,7 +17,7 @@ export default function AllServiceRoutesScreen(_props: Props) {
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
@@ -31,11 +32,13 @@ export default function AllServiceRoutesScreen(_props: Props) {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
   }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const clientsByRoute = routes.reduce<Record<number, AdminClient[]>>((acc, route) => {
     const list = clients.filter(c => c.service_route_id === route.id);

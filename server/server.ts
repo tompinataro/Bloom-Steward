@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -138,6 +140,44 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       mileageDelta,
       distanceFromClientFeet: distanceFeet,
       geoValidated,
+    });
+  }
+  if (!rows.length && hasDb()) {
+    const fallback = await dbQuery<{
+      tech_id: number | null;
+      tech_name: string | null;
+      route_name: string | null;
+      client_name: string;
+      address: string;
+    }>(
+      `select
+         u.id as tech_id,
+         u.name as tech_name,
+         sr.name as route_name,
+         c.name as client_name,
+         c.address
+       from clients c
+       join service_routes sr on sr.id = c.service_route_id
+       left join users u on u.id = sr.user_id
+       order by coalesce(u.name,'Unassigned') asc, c.name asc`
+    );
+    (fallback?.rows || []).forEach(row => {
+      rows.push({
+        techId: row.tech_id || 0,
+        techName: row.tech_name || 'Unassigned',
+        routeName: row.route_name,
+        clientName: row.client_name,
+        address: row.address,
+        checkInTs: null,
+        checkOutTs: null,
+        durationMinutes: 0,
+        durationFormatted: '00:00',
+        onSiteContact: null,
+        odometerReading: null,
+        mileageDelta: 0,
+        distanceFromClientFeet: null,
+        geoValidated: false,
+      });
     });
   }
   return rows;

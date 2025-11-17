@@ -12,7 +12,6 @@ import { colors, spacing } from '../theme';
 import { enqueueSubmission } from '../offlineQueue';
 import { addCompleted, addInProgress, removeInProgress } from '../completed';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Location from 'expo-location';
 import { isSubmitDisabled } from '../logic/gates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -105,24 +104,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   };
 
   async function getLocation(): Promise<{ lat: number; lng: number } | undefined> {
-    try {
-      let perm = await Location.getForegroundPermissionsAsync();
-      if (!perm.granted) {
-        const req = await Location.requestForegroundPermissionsAsync();
-        perm = req;
-      }
-      if (!perm.granted) return undefined;
-      try {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        return { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      } catch {
-        const last = await Location.getLastKnownPositionAsync({ requiredAccuracy: 1000 });
-        if (last) return { lat: last.coords.latitude, lng: last.coords.longitude };
-      }
-      return undefined;
-    } catch {
-      return undefined;
-    }
+    // Location prompts are temporarily suppressed until admins opt back in.
+    return undefined;
   }
 
   function formatTime(ts: string): string {

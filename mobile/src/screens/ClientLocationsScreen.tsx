@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   adminCreateClient,
   adminFetchClients,
@@ -33,7 +34,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
   const [pickerClient, setPickerClient] = useState<UniqueClient | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!token) return;
     try {
       const [clientRes, routeRes] = await Promise.all([
@@ -45,11 +46,13 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load clients.' });
     }
-  };
-
-  useEffect(() => {
-    load();
   }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   useEffect(() => {
     navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
