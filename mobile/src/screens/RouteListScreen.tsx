@@ -392,7 +392,7 @@ type ItemProps = {
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
         <View style={styles.accountRow}>
           {isAdmin ? (
-            <ThemedButton title="Accounts" onPress={() => navigation.navigate('Account')} style={styles.secondaryBtn} />
+            <ThemedButton title="Admin" onPress={() => navigation.navigate('Account')} style={styles.secondaryBtn} />
           ) : null}
           <ThemedButton title="Log Out" onPress={signOut} style={styles.secondaryBtn} />
         </View>

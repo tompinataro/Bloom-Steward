@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable } from 'react-native';
+import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -53,6 +53,10 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       load();
     }, [load])
   );
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   useEffect(() => {
     navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
@@ -110,6 +114,23 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const uniqueClients = useUniqueClients(clients);
   const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
   const listToRender = showAll ? uniqueClients : unassignedClients;
+
+  const shareClients = async () => {
+    if (!uniqueClients.length) {
+      showBanner({ type: 'info', message: 'No client locations to share yet.' });
+      return;
+    }
+    const lines = uniqueClients.map(client => {
+      const routeName = client.service_route_name || 'Unassigned';
+      return `${client.name} — ${routeName}`;
+    });
+    try {
+      await Share.share({
+        title: 'Client Locations',
+        message: `Client Locations:\n${lines.join('\n')}`,
+      });
+    } catch {}
+  };
   const unassignClient = async (client: UniqueClient) => {
     if (!token) return;
     try {
@@ -179,7 +200,14 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       </View>
       )}
       <View style={styles.card}>
-        <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Client Locations Awaiting Assignment'}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Client Locations Awaiting Assignment'}</Text>
+          {showAll && uniqueClients.length ? (
+            <Pressable style={styles.shareChip} onPress={shareClients}>
+              <Text style={styles.shareChipText}>Email this list</Text>
+            </Pressable>
+          ) : null}
+        </View>
           {listToRender.length === 0 ? (
             <Text style={styles.emptyCopy}>
               {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
@@ -324,4 +352,6 @@ const styles = StyleSheet.create({
   smallBtn: { paddingHorizontal: spacing(2), alignSelf: 'flex-end' },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
+  shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
+  shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
 });

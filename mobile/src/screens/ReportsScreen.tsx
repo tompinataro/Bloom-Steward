@@ -168,17 +168,20 @@ export default function ReportsScreen(_props: Props) {
           ))}
         </View>
         <Text style={styles.rangeText}>Range: {rangeText}</Text>
-        <ThemedButton
-          title={loadingSummary ? 'Loading…' : 'Refresh Preview'}
-          onPress={fetchSummary}
-          disabled={loadingSummary}
-        />
-        <ThemedButton
-          title={sending ? 'Sending…' : 'Email Report'}
-          onPress={sendReport}
-          disabled={sending}
-          style={styles.sendBtn}
-        />
+        <View style={styles.actionRow}>
+          <ThemedButton
+            title={loadingSummary ? 'Loading…' : 'Refresh Preview'}
+            onPress={fetchSummary}
+            disabled={loadingSummary}
+            style={styles.actionButton}
+          />
+          <ThemedButton
+            title={sending ? 'Sending…' : 'Email Report'}
+            onPress={sendReport}
+            disabled={sending}
+            style={[styles.actionButton, styles.sendBtn]}
+          />
+        </View>
       </View>
       <View style={styles.card}>
         <Text style={styles.heading}>Summary Preview</Text>
@@ -192,14 +195,22 @@ export default function ReportsScreen(_props: Props) {
                   <Text key={header} style={[styles.cell, styles.headerCell]}>{header}</Text>
                 ))}
               </View>
-              {summary.map((item, index) => (
-                <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
-                  <Text style={styles.cell}>{item.techName}</Text>
-                  <Text style={styles.cell}>{item.routeName || '—'}</Text>
-                  <Text style={styles.cell}>{truncateText(item.clientName, 22)}</Text>
-                  <Text style={styles.cell}>{truncateText(item.address, 28)}</Text>
-                  <Text style={styles.cell}>{formatDate(item.checkInTs)}</Text>
-                  <Text style={styles.cell}>{formatDate(item.checkOutTs)}</Text>
+                {summary.map((item, index) => (
+                  <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
+                    <Text style={styles.cell}>{item.techName}</Text>
+                    <Text style={styles.cell}>{item.routeName || '—'}</Text>
+                    <View style={[styles.cell, styles.clientCell]}>
+                      <View
+                        style={[
+                          styles.geoDot,
+                          item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
+                        ]}
+                      />
+                      <Text style={styles.clientText}>{truncateText(item.clientName, 22)}</Text>
+                    </View>
+                    <Text style={styles.cell}>{truncateText(item.address, 28)}</Text>
+                    <Text style={styles.cell}>{formatDate(item.checkInTs)}</Text>
+                    <Text style={styles.cell}>{formatDate(item.checkOutTs)}</Text>
                   <Text style={styles.cell}>{item.durationFormatted}</Text>
                   <Text style={styles.cell}>{item.mileageDelta.toFixed(2)}</Text>
                   <Text style={styles.cell}>{item.onSiteContact || '—'}</Text>
@@ -208,7 +219,7 @@ export default function ReportsScreen(_props: Props) {
                       ? item.distanceFromClientFeet.toFixed(0)
                       : '—'}
                   </Text>
-                  <Text style={styles.cell}>{item.geoValidated ? 'Matched' : 'Check'}</Text>
+                  <Text style={styles.cell}>{item.geoValidated ? 'Matched' : 'Needs check'}</Text>
                 </View>
               ))}
             </View>
@@ -307,6 +318,12 @@ const styles = StyleSheet.create({
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tableHeaderRow: { backgroundColor: '#f4f4f5' },
   cell: { minWidth: 120, paddingVertical: spacing(1), paddingHorizontal: spacing(1), color: colors.text },
+  clientCell: { flexDirection: 'row', alignItems: 'center', minWidth: 140 },
+  clientText: { color: colors.text },
+  geoDot: { width: 12, height: 12, borderRadius: 6, marginRight: spacing(1) },
+  geoDotOk: { backgroundColor: '#22c55e' },
+  geoDotWarn: { backgroundColor: '#ef4444' },
+  geoDotUnknown: { backgroundColor: '#d4d4d8' },
   headerCell: { fontWeight: '700' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },

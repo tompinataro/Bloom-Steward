@@ -16,7 +16,7 @@ export default function AccountScreen({ navigation }: Props) {
     { title: 'Client Locations', viewRoute: 'ClientLocations' as const, addRoute: 'ClientLocations' as const },
     { title: 'Service Routes', viewRoute: 'AllServiceRoutes' as const, addRoute: 'ServiceRoutes' as const },
     { title: 'Field Technicians', viewRoute: 'AllFieldTechnicians' as const, addRoute: 'FieldTechnicians' as const },
-    { title: 'Reports', viewRoute: 'Reports' as const, addRoute: 'Reports' as const },
+    { title: 'Report Generator', viewRoute: 'Reports' as const, addRoute: 'Reports' as const },
   ];
 
   return (
@@ -34,7 +34,7 @@ export default function AccountScreen({ navigation }: Props) {
             <Text style={styles.sectionHeading}>{section.title}</Text>
             <View style={styles.sectionButtons}>
               <ThemedButton
-                title="View All"
+                title={section.viewRoute === 'Reports' ? 'Field Work Summary' : 'View All'}
                 onPress={() => {
                   if (section.viewRoute === 'ClientLocations') {
                     navigation.navigate(section.viewRoute, { mode: 'all' });
@@ -42,7 +42,10 @@ export default function AccountScreen({ navigation }: Props) {
                     navigation.navigate(section.viewRoute);
                   }
                 }}
-                style={styles.sectionButton}
+                style={[
+                  styles.sectionButton,
+                  section.viewRoute === 'Reports' ? styles.reportButton : null,
+                ]}
               />
               {section.addRoute !== 'Reports' && (
                 <ThemedButton
@@ -98,4 +101,5 @@ const styles = StyleSheet.create({
     rowGap: spacing(1.25),
   },
   sectionButton: { width: '46%', minWidth: 140, paddingVertical: spacing(1.5) },
+  reportButton: { width: '100%' },
 });

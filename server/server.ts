@@ -640,6 +640,28 @@ app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
 app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
   if (!ensureDatabase(res)) return;
   try {
+    const columns = await dbQuery<{ column_name: string }>(
+      `select column_name
+         from information_schema.columns
+        where table_name = 'clients'
+          and column_name in ('latitude','longitude')`
+    );
+    const hasLatitude = (columns?.rows || []).some(col => col.column_name === 'latitude');
+    const hasLongitude = (columns?.rows || []).some(col => col.column_name === 'longitude');
+    const select = `
+       select
+         c.id,
+         c.name,
+         c.address,
+         c.contact_name,
+         c.contact_phone,
+         sr.id as service_route_id,
+         sr.name as service_route_name,
+         ${hasLatitude ? 'c.latitude' : 'null as latitude'},
+         ${hasLongitude ? 'c.longitude' : 'null as longitude'}
+       from clients c
+       left join service_routes sr on sr.id = c.service_route_id
+       order by c.name asc`;
     const q = await dbQuery<{
       id: number;
       name: string;
@@ -650,23 +672,10 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
       service_route_name: string | null;
       latitude: number | null;
       longitude: number | null;
-    }>(
-      `select
-         c.id,
-         c.name,
-         c.address,
-         c.contact_name,
-         c.contact_phone,
-         sr.id as service_route_id,
-         sr.name as service_route_name,
-         c.latitude,
-         c.longitude
-       from clients c
-       left join service_routes sr on sr.id = c.service_route_id
-       order by c.name asc`
-    );
+    }>(select);
     res.json({ ok: true, clients: q?.rows ?? [] });
   } catch (e: any) {
+    console.error('[admin/clients] error', e);
     res.status(500).json({ ok: false, error: e?.message ?? 'clients error' });
   }
 });

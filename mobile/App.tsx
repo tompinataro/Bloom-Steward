@@ -26,7 +26,7 @@ import ReportsScreen from './src/screens/ReportsScreen';
 const Stack = createStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  const { token, loading } = useAuth();
+  const { token, loading, user } = useAuth();
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#e7bfbf', alignItems: 'center', justifyContent: 'center' }}>
@@ -35,7 +35,11 @@ function RootNavigator() {
     );
   }
   return token ? (
-    <Stack.Navigator initialRouteName="RouteList" screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
+    <Stack.Navigator
+      initialRouteName={user?.role === 'admin' ? 'Account' : 'RouteList'}
+      screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}
+      key={user?.role === 'admin' ? 'admin-stack' : 'tech-stack'}
+    >
       <Stack.Screen
         name="RouteList"
         component={RouteListScreen}
@@ -83,7 +87,7 @@ function RootNavigator() {
         })}
       />
       <Stack.Screen name="About" component={AboutScreen} />
-      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Account' }} />
+      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Admin' }} />
       <Stack.Screen name="FieldTechnicians" component={FieldTechniciansScreen} options={{ title: 'Field Technicians' }} />
       <Stack.Screen name="ClientLocations" component={ClientLocationsScreen} options={{ title: 'Client Locations' }} />
       <Stack.Screen name="ServiceRoutes" component={ServiceRoutesScreen} options={{ title: 'Service Routes' }} />

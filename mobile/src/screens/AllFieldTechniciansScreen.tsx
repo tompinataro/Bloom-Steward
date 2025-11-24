@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { adminFetchUsers, adminFetchServiceRoutes, AdminUser, ServiceRoute } from '../api/client';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
+import ThemedButton from '../components/Button';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllFieldTechnicians'>;
 
@@ -38,10 +39,35 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
 
   const getRouteForTech = (techId: number) => routes.find(route => route.user_id === techId);
 
+  const shareTechs = async () => {
+    if (!techs.length) {
+      showBanner({ type: 'info', message: 'No field techs to share yet.' });
+      return;
+    }
+    const lines = techs.map(user => {
+      const assignedRoute = getRouteForTech(user.id);
+      return `${user.name} (${user.email}) — ${assignedRoute ? assignedRoute.name : 'Unassigned'}`;
+    });
+    try {
+      await Share.share({
+        title: 'Field Technicians',
+        message: `Field Technicians:\n${lines.join('\n')}`,
+      });
+    } catch {}
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>All Field Technicians</Text>
+        {techs.length > 0 ? (
+          <ThemedButton
+            title="Email this list"
+            variant="outline"
+            onPress={shareTechs}
+            style={{ alignSelf: 'flex-start' }}
+          />
+        ) : null}
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : techs.length === 0 ? (

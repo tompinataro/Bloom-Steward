@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, View, Text, StyleSheet, Share } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -8,6 +8,7 @@ import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { truncateText } from '../utils/text';
 import { useFocusEffect } from '@react-navigation/native';
+import ThemedButton from '../components/Button';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllServiceRoutes'>;
 
@@ -40,6 +41,10 @@ export default function AllServiceRoutesScreen(_props: Props) {
     }, [load])
   );
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
   const clientsByRoute = routes.reduce<Record<number, AdminClient[]>>((acc, route) => {
     const list = clients.filter(c => c.service_route_id === route.id);
     const dedup = Array.from(
@@ -49,10 +54,36 @@ export default function AllServiceRoutesScreen(_props: Props) {
     return acc;
   }, {});
 
+  const shareRoutes = async () => {
+    if (!routes.length) {
+      showBanner({ type: 'info', message: 'No service routes to share yet.' });
+      return;
+    }
+    const lines = routes.map(route => {
+      const assignedClients = (clientsByRoute[route.id] || []).map(client => client.name).join(', ');
+      const tech = route.user_name || 'Unassigned';
+      return `${route.name} — Tech: ${tech}${assignedClients ? ` — Clients: ${assignedClients}` : ''}`;
+    });
+    try {
+      await Share.share({
+        title: 'Service Routes',
+        message: `Service Routes:\n${lines.join('\n')}`,
+      });
+    } catch {}
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>All Service Routes</Text>
+        {routes.length > 0 ? (
+          <ThemedButton
+            title="Email this list"
+            variant="outline"
+            onPress={shareRoutes}
+            style={{ alignSelf: 'flex-start' }}
+          />
+        ) : null}
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : routes.length === 0 ? (
