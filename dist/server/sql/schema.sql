@@ -31,14 +31,18 @@ create table if not exists clients (
   contact_name text,
   contact_phone text,
   created_at timestamptz not null default now(),
-  service_route_id integer references service_routes(id) on delete set null
+  service_route_id integer references service_routes(id) on delete set null,
+  latitude double precision,
+  longitude double precision
 );
 
 alter table clients
   add column if not exists contact_name text,
   add column if not exists contact_phone text,
   add column if not exists created_at timestamptz not null default now(),
-  add column if not exists service_route_id integer references service_routes(id) on delete set null;
+  add column if not exists service_route_id integer references service_routes(id) on delete set null,
+  add column if not exists latitude double precision,
+  add column if not exists longitude double precision;
 
 -- Today's routes for a user (simple denormalized association for MVP)
 create table if not exists routes_today (

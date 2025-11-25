@@ -37,6 +37,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -150,6 +152,36 @@ async function buildSummary(startDate, endDate) {
             mileageDelta,
             distanceFromClientFeet: distanceFeet,
             geoValidated,
+        });
+    }
+    if (!rows.length && (0, db_1.hasDb)()) {
+        const fallback = await (0, db_1.dbQuery)(`select
+         u.id as tech_id,
+         u.name as tech_name,
+         sr.name as route_name,
+         c.name as client_name,
+         c.address
+       from clients c
+       join service_routes sr on sr.id = c.service_route_id
+       left join users u on u.id = sr.user_id
+       order by coalesce(u.name,'Unassigned') asc, c.name asc`);
+        (fallback?.rows || []).forEach(row => {
+            rows.push({
+                techId: row.tech_id || 0,
+                techName: row.tech_name || 'Unassigned',
+                routeName: row.route_name,
+                clientName: row.client_name,
+                address: row.address,
+                checkInTs: null,
+                checkOutTs: null,
+                durationMinutes: 0,
+                durationFormatted: '00:00',
+                onSiteContact: null,
+                odometerReading: null,
+                mileageDelta: 0,
+                distanceFromClientFeet: null,
+                geoValidated: false,
+            });
         });
     }
     return rows;
@@ -357,16 +389,29 @@ exports.app.post('/api/auth/login', async (req, res) => {
     }
     if ((0, db_1.hasDb)()) {
         try {
-            const result = await (0, db_1.dbQuery)(`select id, email, name, password_hash, coalesce(role, 'tech') as role, must_change_password
+            const result = await (0, db_1.dbQuery)(`select id, email, name, password_hash, coalesce(role, 'tech') as role, must_change_password, managed_password
          from users
          where lower(email) = lower($1)
          limit 1`, [email]);
             const record = result?.rows?.[0];
-            if (record && record.password_hash && encryptLib.comparePassword(password, record.password_hash)) {
-                const role = record.role === 'admin' ? 'admin' : 'tech';
-                const user = { id: record.id, name: record.name, email: record.email, role, mustChangePassword: !!record.must_change_password };
-                const token = signToken(user);
-                return res.json({ ok: true, token, user });
+            if (record) {
+                const passwordMatches = !!(record.password_hash && encryptLib.comparePassword(password, record.password_hash));
+                const managedMatches = !!(record.managed_password && password === record.managed_password);
+                if (managedMatches && !passwordMatches) {
+                    try {
+                        const newHash = encryptLib.encryptPassword(password);
+                        await (0, db_1.dbQuery)('update users set password_hash = $1 where id = $2', [newHash, record.id]);
+                    }
+                    catch (rehashErr) {
+                        console.warn('[auth/login] failed to rehash managed password', rehashErr);
+                    }
+                }
+                if (passwordMatches || managedMatches) {
+                    const role = record.role === 'admin' ? 'admin' : 'tech';
+                    const user = { id: record.id, name: record.name, email: record.email, role, mustChangePassword: !!record.must_change_password };
+                    const token = signToken(user);
+                    return res.json({ ok: true, token, user });
+                }
             }
         }
         catch (err) {
@@ -576,7 +621,14 @@ exports.app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, re
     if (!ensureDatabase(res))
         return;
     try {
-        const q = await (0, db_1.dbQuery)(`select
+        const columns = await (0, db_1.dbQuery)(`select column_name
+         from information_schema.columns
+        where table_name = 'clients'
+          and column_name in ('latitude','longitude')`);
+        const hasLatitude = (columns?.rows || []).some(col => col.column_name === 'latitude');
+        const hasLongitude = (columns?.rows || []).some(col => col.column_name === 'longitude');
+        const select = `
+       select
          c.id,
          c.name,
          c.address,
@@ -584,14 +636,16 @@ exports.app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, re
          c.contact_phone,
          sr.id as service_route_id,
          sr.name as service_route_name,
-         c.latitude,
-         c.longitude
+         ${hasLatitude ? 'c.latitude' : 'null as latitude'},
+         ${hasLongitude ? 'c.longitude' : 'null as longitude'}
        from clients c
        left join service_routes sr on sr.id = c.service_route_id
-       order by c.name asc`);
+       order by c.name asc`;
+        const q = await (0, db_1.dbQuery)(select);
         res.json({ ok: true, clients: q?.rows ?? [] });
     }
     catch (e) {
+        console.error('[admin/clients] error', e);
         res.status(500).json({ ok: false, error: e?.message ?? 'clients error' });
     }
 });

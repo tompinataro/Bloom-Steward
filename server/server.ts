@@ -419,19 +419,31 @@ app.post('/api/auth/login', async (req, res) => {
   }
   if (hasDb()) {
     try {
-      const result = await dbQuery<{ id: number; email: string; name: string; password_hash: string; role: string; must_change_password: boolean }>(
-        `select id, email, name, password_hash, coalesce(role, 'tech') as role, must_change_password
+      const result = await dbQuery<{ id: number; email: string; name: string; password_hash: string | null; role: string; must_change_password: boolean; managed_password: string | null }>(
+        `select id, email, name, password_hash, coalesce(role, 'tech') as role, must_change_password, managed_password
          from users
          where lower(email) = lower($1)
          limit 1`,
         [email]
       );
       const record = result?.rows?.[0];
-      if (record && record.password_hash && encryptLib.comparePassword(password, record.password_hash)) {
-        const role: UserRole = record.role === 'admin' ? 'admin' : 'tech';
-        const user: JwtUser = { id: record.id, name: record.name, email: record.email, role, mustChangePassword: !!record.must_change_password };
-        const token = signToken(user);
-        return res.json({ ok: true, token, user });
+      if (record) {
+        const passwordMatches = !!(record.password_hash && encryptLib.comparePassword(password, record.password_hash));
+        const managedMatches = !!(record.managed_password && password === record.managed_password);
+        if (managedMatches && !passwordMatches) {
+          try {
+            const newHash = encryptLib.encryptPassword(password);
+            await dbQuery('update users set password_hash = $1 where id = $2', [newHash, record.id]);
+          } catch (rehashErr) {
+            console.warn('[auth/login] failed to rehash managed password', rehashErr);
+          }
+        }
+        if (passwordMatches || managedMatches) {
+          const role: UserRole = record.role === 'admin' ? 'admin' : 'tech';
+          const user: JwtUser = { id: record.id, name: record.name, email: record.email, role, mustChangePassword: !!record.must_change_password };
+          const token = signToken(user);
+          return res.json({ ok: true, token, user });
+        }
       }
     } catch (err) {
       console.error('[auth/login] database error', err);
