@@ -12,7 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen(_props: Props) {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('marc@b.com');
+  const [email, setEmail] = useState('marc@bloomsteward.com');
   const [password, setPassword] = useState('Tom');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
