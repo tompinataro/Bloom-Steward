@@ -285,6 +285,8 @@ const styles = StyleSheet.create({
   frequencyText: { color: colors.text, fontWeight: '600' },
   frequencyTextActive: { color: '#fff' },
   rangeText: { color: colors.muted },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1.5), alignItems: 'center' },
+  actionButton: { flexGrow: 1, minWidth: '45%' },
   sendBtn: { alignSelf: 'flex-start' },
   muted: { color: colors.muted },
   recipientStack: { gap: spacing(1.5) },

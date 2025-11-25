@@ -94,9 +94,22 @@ function resolveRange(frequency: string, explicitStart?: string, explicitEnd?: s
 
 async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]> {
   const rawRows = await buildReportRows(startDate, endDate);
+  // Keep only the latest submission per visit to avoid duplicate summary rows.
+  const latestByVisit = new Map<number, typeof rawRows[number]>();
+  for (let i = rawRows.length - 1; i >= 0; i--) {
+    const row = rawRows[i];
+    if (row.visit_id && !latestByVisit.has(row.visit_id)) {
+      latestByVisit.set(row.visit_id, row);
+    }
+  }
+  const dedupedRows = Array.from(latestByVisit.values()).sort((a, b) => {
+    const aTs = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return aTs - bTs;
+  });
   const rows: ReportRow[] = [];
   const lastOdometer = new Map<number, number>();
-  for (const row of rawRows) {
+  for (const row of dedupedRows) {
     if (!row.tech_id || !row.tech_name) continue;
     const payload = row.payload || {};
     const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
