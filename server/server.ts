@@ -295,6 +295,7 @@ async function sendReportEmail(to: string[], subject: string, html: string, csv:
     throw new Error('SMTP_URL not configured for report emails.');
   }
   await mailTransport.sendMail({
+    from: SMTP_USER || undefined,
     to,
     subject,
     html,
