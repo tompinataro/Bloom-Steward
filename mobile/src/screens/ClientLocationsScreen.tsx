@@ -240,12 +240,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                       <Text style={styles.routePillText}>{client.service_route_name || 'Unassigned'}</Text>
                     </Pressable>
                     {client.service_route_id ? (
-                      <ThemedButton
-                        title="Unassign"
-                        variant="outline"
-                        onPress={() => unassignClient(client)}
-                        style={styles.smallBtn}
-                      />
+                      <Pressable style={styles.unassignBtn} onPress={() => unassignClient(client)}>
+                        <Text style={styles.unassignText}>Unassign</Text>
+                      </Pressable>
                     ) : null}
                   </View>
                 ) : (
@@ -346,10 +343,11 @@ const styles = StyleSheet.create({
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  routeActions: { alignItems: 'flex-end', gap: spacing(1) },
+  routeActions: { flexDirection: 'row', alignItems: 'center', gap: spacing(1) },
   routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   routePillText: { color: colors.primary, fontWeight: '600' },
-  smallBtn: { paddingHorizontal: spacing(2), alignSelf: 'flex-end' },
+  unassignBtn: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 10, backgroundColor: colors.text },
+  unassignText: { color: '#fff', fontWeight: '700' },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },

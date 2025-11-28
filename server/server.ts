@@ -15,7 +15,23 @@ const encryptLib = require('./modules/encryption') as {
 };
 
 const SMTP_URL = process.env.SMTP_URL || '';
-const mailTransport = SMTP_URL ? nodemailer.createTransport(SMTP_URL) : null;
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || (SMTP_PORT === 465);
+
+let mailTransport: nodemailer.Transporter | null = null;
+if (SMTP_URL) {
+  mailTransport = nodemailer.createTransport(SMTP_URL);
+} else if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  mailTransport = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT || 587,
+    secure: SMTP_SECURE,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+}
 
 type ReportRow = {
   techId: number;

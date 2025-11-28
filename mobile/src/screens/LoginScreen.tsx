@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -34,8 +34,8 @@ export default function LoginScreen(_props: Props) {
   // onPing removed
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.logoFrame}>
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
         </View>
@@ -73,8 +73,8 @@ export default function LoginScreen(_props: Props) {
         )}
         {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
         <LoadingOverlay visible={loading} />
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

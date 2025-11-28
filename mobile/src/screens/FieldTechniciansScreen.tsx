@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
-import { adminCreateUser, adminFetchUsers, adminSetUserPassword, AdminUser } from '../api/client';
+import { adminCreateUser, adminFetchUsers, adminFetchServiceRoutes, adminSetUserPassword, AdminUser, ServiceRoute } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 
@@ -18,14 +18,19 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
   const [creating, setCreating] = useState(false);
   const [lastTemp, setLastTemp] = useState<{ name: string; password: string } | null>(null);
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
+  const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
   const [pwModal, setPwModal] = useState<{ id: number; name: string } | null>(null);
   const [newPw, setNewPw] = useState('');
 
   const load = async () => {
     if (!token) return;
     try {
-      const res = await adminFetchUsers(token);
-      setTechUsers((res?.users || []).filter(u => u.role === 'tech'));
+      const [usersRes, routesRes] = await Promise.all([
+        adminFetchUsers(token),
+        adminFetchServiceRoutes(token),
+      ]);
+      setTechUsers((usersRes?.users || []).filter(u => u.role === 'tech'));
+      setServiceRoutes(routesRes?.routes || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load field techs.' });
     }
@@ -135,6 +140,16 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                     ) : null}
                   </Text>
                   <Text style={styles.listEmail}>{user.email}</Text>
+                  <View style={styles.routeChips}>
+                    {serviceRoutes.filter(r => r.user_id === user.id).map(route => (
+                      <View key={`${user.id}-route-${route.id}`} style={styles.routePill}>
+                        <Text style={styles.routePillText}>{route.name}</Text>
+                      </View>
+                    ))}
+                    {serviceRoutes.every(r => r.user_id !== user.id) ? (
+                      <Text style={styles.routeNone}>No routes assigned</Text>
+                    ) : null}
+                  </View>
                 </View>
                 <Pressable style={styles.pwChip} onPress={() => setPwModal({ id: user.id, name: user.name })}>
                   <Text style={styles.pwChipText}>Reset password</Text>
@@ -194,6 +209,10 @@ const styles = StyleSheet.create({
   listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5) },
   listName: { fontWeight: '600', color: colors.text },
   listEmail: { color: colors.muted },
+  routeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1), marginTop: spacing(0.5) },
+  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
+  routePillText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
+  routeNone: { color: colors.muted, fontSize: 12 },
   emptyCopy: { color: colors.muted },
   listScroll: { maxHeight: 320 },
   listScrollFull: { maxHeight: undefined },

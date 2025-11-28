@@ -33,7 +33,7 @@ const newRecipient = (): RecipientTarget => ({
 type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
 
 export default function ReportsScreen(_props: Props) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [recipients, setRecipients] = useState<RecipientTarget[]>([newRecipient()]);
   const [frequencyPicker, setFrequencyPicker] = useState<RecipientTarget | null>(null);
   const [previewFrequency, setPreviewFrequency] = useState<FrequencyValue>('weekly');
@@ -59,6 +59,20 @@ export default function ReportsScreen(_props: Props) {
   useEffect(() => {
     fetchSummary();
   }, [token, previewFrequency]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    setRecipients((prev) => {
+      const existing = prev.map((r) => r.email.toLowerCase());
+      if (existing.includes(user.email.toLowerCase())) return prev;
+      const next = [...prev];
+      if (next.length && next[0].email.trim() === '') {
+        next[0] = { ...next[0], email: user.email };
+        return next;
+      }
+      return [{ ...newRecipient(), email: user.email }, ...next];
+    });
+  }, [user?.email]);
 
   const updateRecipient = (id: string, patch: Partial<RecipientTarget>) => {
     setRecipients(prev => prev.map(rec => (rec.id === id ? { ...rec, ...patch } : rec)));
