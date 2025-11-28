@@ -21,7 +21,8 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || (SMTP_PORT === 465);
 
-let mailTransport: nodemailer.Transporter | null = null;
+type MailTransport = ReturnType<typeof nodemailer.createTransport>;
+let mailTransport: MailTransport | null = null;
 if (SMTP_URL) {
   mailTransport = nodemailer.createTransport(SMTP_URL);
 } else if (SMTP_HOST && SMTP_USER && SMTP_PASS) {

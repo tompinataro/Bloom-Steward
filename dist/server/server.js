@@ -50,7 +50,23 @@ const data_1 = require("./data");
 const db_1 = require("./db");
 const encryptLib = require('./modules/encryption');
 const SMTP_URL = process.env.SMTP_URL || '';
-const mailTransport = SMTP_URL ? nodemailer_1.default.createTransport(SMTP_URL) : null;
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || (SMTP_PORT === 465);
+let mailTransport = null;
+if (SMTP_URL) {
+    mailTransport = nodemailer_1.default.createTransport(SMTP_URL);
+}
+else if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+    mailTransport = nodemailer_1.default.createTransport({
+        host: SMTP_HOST,
+        port: SMTP_PORT || 587,
+        secure: SMTP_SECURE,
+        auth: { user: SMTP_USER, pass: SMTP_PASS },
+    });
+}
 function haversineMiles(lat1, lon1, lat2, lon2) {
     if (lat1 === undefined ||
         lon1 === undefined ||
@@ -105,9 +121,22 @@ function resolveRange(frequency, explicitStart, explicitEnd) {
 }
 async function buildSummary(startDate, endDate) {
     const rawRows = await (0, data_1.buildReportRows)(startDate, endDate);
+    // Keep only the latest submission per visit to avoid duplicate summary rows.
+    const latestByVisit = new Map();
+    for (let i = rawRows.length - 1; i >= 0; i--) {
+        const row = rawRows[i];
+        if (row.visit_id && !latestByVisit.has(row.visit_id)) {
+            latestByVisit.set(row.visit_id, row);
+        }
+    }
+    const dedupedRows = Array.from(latestByVisit.values()).sort((a, b) => {
+        const aTs = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return aTs - bTs;
+    });
     const rows = [];
     const lastOdometer = new Map();
-    for (const row of rawRows) {
+    for (const row of dedupedRows) {
         if (!row.tech_id || !row.tech_name)
             continue;
         const payload = row.payload || {};
