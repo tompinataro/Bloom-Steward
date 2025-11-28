@@ -3,7 +3,7 @@ import { ScrollView, View, Text, StyleSheet, Share } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
-import { adminFetchClients, adminFetchServiceRoutes, AdminClient, ServiceRoute } from '../api/client';
+import { adminAssignServiceRoute, adminFetchClients, adminFetchServiceRoutes, adminFetchUsers, AdminClient, AdminUser, ServiceRoute } from '../api/client';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import { truncateText } from '../utils/text';
@@ -17,17 +17,24 @@ export default function AllServiceRoutesScreen(_props: Props) {
   const [routes, setRoutes] = useState<ServiceRoute[]>([]);
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [techs, setTechs] = useState<AdminUser[]>([]);
+  const [assignRoute, setAssignRoute] = useState<ServiceRoute | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
-      const [routeRes, clientRes] = await Promise.all([
+      const [routeRes, clientRes, usersRes] = await Promise.all([
         adminFetchServiceRoutes(token),
         adminFetchClients(token),
+        adminFetchUsers(token),
       ]);
       setRoutes(routeRes?.routes || []);
       setClients(clientRes?.clients || []);
+      const filteredTechs = (usersRes?.users || []).filter(
+        u => u.role === 'tech' && u.email.toLowerCase() !== 'demo@example.com'
+      );
+      setTechs(filteredTechs);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load service routes.' });
     } finally {
@@ -97,6 +104,12 @@ export default function AllServiceRoutesScreen(_props: Props) {
                   {route.user_name ? `Tech: ${route.user_name}` : 'Unassigned'}
                 </Text>
               </View>
+              <ThemedButton
+                title="Assign Route"
+                variant="outline"
+                onPress={() => setAssignRoute(route)}
+                style={{ alignSelf: 'flex-start' }}
+              />
               {(clientsByRoute[route.id] || []).length === 0 ? (
                 <Text style={styles.empty}>No client locations assigned.</Text>
               ) : (
@@ -110,7 +123,59 @@ export default function AllServiceRoutesScreen(_props: Props) {
           ))
         )}
       </View>
+      <RouteAssignModal
+        visible={!!assignRoute}
+        route={assignRoute}
+        techs={techs}
+        onSelect={(techId) => {
+          if (!token || !assignRoute) return;
+          adminAssignServiceRoute(token, { routeId: assignRoute.id, userId: techId })
+            .then(() => {
+              showBanner({ type: 'success', message: 'Route assignment updated.' });
+              setAssignRoute(null);
+              load();
+            })
+            .catch((err: any) => showBanner({ type: 'error', message: err?.message || 'Unable to assign route.' }));
+        }}
+        onClose={() => setAssignRoute(null)}
+      />
     </ScrollView>
+  );
+}
+
+function RouteAssignModal({
+  visible,
+  route,
+  techs,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  route: ServiceRoute | null;
+  techs: AdminUser[];
+  onSelect: (techId: number | null) => void;
+  onClose: () => void;
+}) {
+  if (!visible || !route) return null;
+  return (
+    <View style={styles.modalBackdrop} pointerEvents="box-none">
+      <View style={styles.modalCard}>
+        <Text style={styles.modalTitle}>Assign {route.name}</Text>
+        <ScrollView style={{ maxHeight: 360 }}>
+          {techs.map(t => (
+            <ThemedButton
+              key={t.id}
+              title={t.name}
+              variant="outline"
+              onPress={() => onSelect(t.id)}
+              style={{ marginBottom: spacing(1) }}
+            />
+          ))}
+          <ThemedButton title="Clear assignment" variant="outline" onPress={() => onSelect(null)} />
+        </ScrollView>
+        <ThemedButton title="Cancel" variant="ghost" onPress={onClose} />
+      </View>
+    </View>
   );
 }
 
@@ -124,4 +189,7 @@ const styles = StyleSheet.create({
   routeName: { fontSize: 18, fontWeight: '700', color: colors.text },
   routeTech: { color: colors.muted },
   clientLine: { color: colors.text, paddingLeft: spacing(1) },
+  modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
+  modalCard: { width: '100%', maxWidth: 380, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
 });

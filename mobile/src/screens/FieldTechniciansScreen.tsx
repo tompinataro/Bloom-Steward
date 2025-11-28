@@ -29,7 +29,9 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
         adminFetchUsers(token),
         adminFetchServiceRoutes(token),
       ]);
-      const techs = (usersRes?.users || []).filter(u => u.role === 'tech' && u.email !== 'demo@example.com');
+      const techs = (usersRes?.users || []).filter(
+        u => u.role === 'tech' && u.email.toLowerCase() !== 'demo@example.com'
+      );
       if (!techs.length) {
         setTechUsers([
           { id: 9001, name: 'Jacob Daniels', email: 'jacob@bloomsteward.com', role: 'tech' },
@@ -156,7 +158,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                       </View>
                     ))}
                     {serviceRoutes.every(r => r.user_id !== user.id) ? (
-                      <Text style={styles.routeNone}>No routes assigned</Text>
+                      <Text style={styles.routeNone}>No route assigned yet.</Text>
                     ) : null}
                   </View>
                 </View>
