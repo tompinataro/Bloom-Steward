@@ -128,6 +128,8 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   const lastOdometer = new Map<number, number>();
   for (const row of dedupedRows) {
     if (!row.tech_id || !row.tech_name) continue;
+    const techName = row.tech_name.trim();
+    if (/^demo\b/i.test(techName)) continue; // suppress demo user rows
     const payload = row.payload || {};
     const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
     const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;
