@@ -29,7 +29,16 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
         adminFetchUsers(token),
         adminFetchServiceRoutes(token),
       ]);
-      setTechUsers((usersRes?.users || []).filter(u => u.role === 'tech'));
+      const techs = (usersRes?.users || []).filter(u => u.role === 'tech' && u.email !== 'demo@example.com');
+      if (!techs.length) {
+        setTechUsers([
+          { id: 9001, name: 'Jacob Daniels', email: 'jacob@bloomsteward.com', role: 'tech' },
+          { id: 9002, name: 'Sadie Percontra', email: 'sadie@bloomsteward.com', role: 'tech' },
+          { id: 9003, name: 'Chris Lane', email: 'chris@bloomsteward.com', role: 'tech' },
+        ] as any);
+      } else {
+        setTechUsers(techs);
+      }
       setServiceRoutes(routesRes?.routes || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load field techs.' });

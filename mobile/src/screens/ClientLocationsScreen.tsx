@@ -201,7 +201,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       )}
       <View style={styles.card}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Client Locations Awaiting Assignment'}</Text>
+          <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Locations Awaiting Assignment'}</Text>
           {showAll && uniqueClients.length ? (
             <Pressable style={styles.shareChip} onPress={shareClients}>
               <Text style={styles.shareChipText}>Email this list</Text>
@@ -233,11 +233,11 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                         if (client.service_route_id) {
                           navigation.navigate('ServiceRoutes', { focusRouteId: client.service_route_id });
                         } else {
-                          showBanner({ type: 'info', message: 'Assign this client from the card below.' });
+                          setPickerClient(client);
                         }
                       }}
                     >
-                      <Text style={styles.routePillText}>{client.service_route_name || 'Unassigned'}</Text>
+                      <Text style={styles.routePillText}>{client.service_route_name || 'Assign route'}</Text>
                     </Pressable>
                     {client.service_route_id ? (
                       <Pressable style={styles.unassignBtn} onPress={() => unassignClient(client)}>
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

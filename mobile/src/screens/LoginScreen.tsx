@@ -34,7 +34,7 @@ export default function LoginScreen(_props: Props) {
   // onPing removed
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.logoFrame}>
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
@@ -79,8 +79,8 @@ export default function LoginScreen(_props: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing(6), backgroundColor: colors.background },
-  content: { width: '100%', maxWidth: 360, alignItems: 'center', gap: spacing(2) },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), padding: spacing(6), justifyContent: 'center', alignSelf: 'center' },
   logoFrame: {
     width: '100%',
     aspectRatio: 1,
