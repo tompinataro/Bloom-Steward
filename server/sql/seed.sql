@@ -2,7 +2,11 @@
 insert into users (email, name, password_hash, role, must_change_password, managed_password)
 values
   ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, 'Tom'),
-  ('demo@example.com', 'Demo User', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
+  ('jacob@bloomsteward.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('sadie@bloomsteward.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('chris@bloomsteward.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('cameron@bloomsteward.com', 'Cameron Diaz', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('drek@bloomsteward.com', 'Drek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
 on conflict (email) do update set
   name = excluded.name,
   password_hash = excluded.password_hash,
@@ -11,42 +15,64 @@ on conflict (email) do update set
   managed_password = excluded.managed_password;
 
 insert into service_routes (name)
-values ('North'), ('South'), ('East'), ('West')
+values ('North'), ('South'), ('East'), ('West'), ('Central'), ('Coastal')
 on conflict (name) do nothing;
 
-insert into clients (name, address) values
-  ('Acme HQ', '123 Main St'),
-  ('Blue Sky Co', '456 Oak Ave'),
-  ('Sunset Mall', '789 Pine Rd'),
-  ('Harbor Plaza', '50 S 6th St'),
-  ('Palm Vista Resort', '1000 Nicollet Mall'),
-  ('Riverwalk Lofts', '225 3rd Ave S')
+-- Assign one route per field tech
+update service_routes set user_id = (select id from users where email = 'jacob@bloomsteward.com') where name = 'North';
+update service_routes set user_id = (select id from users where email = 'sadie@bloomsteward.com') where name = 'South';
+update service_routes set user_id = (select id from users where email = 'chris@bloomsteward.com') where name = 'East';
+update service_routes set user_id = (select id from users where email = 'cameron@bloomsteward.com') where name = 'West';
+update service_routes set user_id = (select id from users where email = 'drek@bloomsteward.com') where name = 'Central';
+
+-- Clients: 6 per route
+insert into clients (name, address, service_route_id) values
+  ('Acme HQ', '123 Main St', (select id from service_routes where name = 'North')),
+  ('Blue Sky Co', '456 Oak Ave', (select id from service_routes where name = 'North')),
+  ('Sunset Mall', '789 Pine Rd', (select id from service_routes where name = 'North')),
+  ('Harbor Plaza', '50 S 6th St', (select id from service_routes where name = 'North')),
+  ('Palm Vista Resort', '1000 Nicollet Mall', (select id from service_routes where name = 'North')),
+  ('Riverwalk Lofts', '225 3rd Ave S', (select id from service_routes where name = 'North')),
+  ('Cedar Ridge', '12 Cedar Ridge Rd', (select id from service_routes where name = 'South')),
+  ('Pine Grove', '88 Pine Grove Ln', (select id from service_routes where name = 'South')),
+  ('Maple Terrace', '14 Maple Terrace', (select id from service_routes where name = 'South')),
+  ('Lakeside Towers', '900 Lake St', (select id from service_routes where name = 'South')),
+  ('Summit Square', '210 Summit Ave', (select id from service_routes where name = 'South')),
+  ('Greenway Commons', '320 Greenway Blvd', (select id from service_routes where name = 'South')),
+  ('Bayview Center', '1400 Bayview Dr', (select id from service_routes where name = 'East')),
+  ('Harbor Point', '602 Harbor Point Rd', (select id from service_routes where name = 'East')),
+  ('Sunrise Lofts', '75 Sunrise Blvd', (select id from service_routes where name = 'East')),
+  ('Stonebridge', '480 Stonebridge Ln', (select id from service_routes where name = 'East')),
+  ('Oak Ridge', '815 Oak Ridge Ct', (select id from service_routes where name = 'East')),
+  ('Riverbend', '63 Riverbend Pkwy', (select id from service_routes where name = 'East')),
+  ('Cypress Court', '44 Cypress Ct', (select id from service_routes where name = 'West')),
+  ('Silver Lake Plaza', '990 Silver Lake Rd', (select id from service_routes where name = 'West')),
+  ('Forest Hills', '221 Forest Hills Dr', (select id from service_routes where name = 'West')),
+  ('Hillcrest', '300 Hillcrest Rd', (select id from service_routes where name = 'West')),
+  ('Grandview', '777 Grandview Ave', (select id from service_routes where name = 'West')),
+  ('Briarwood', '55 Briarwood Way', (select id from service_routes where name = 'West')),
+  ('Seaside Villas', '18 Seaside Blvd', (select id from service_routes where name = 'Central')),
+  ('Harborview', '901 Harborview Ln', (select id from service_routes where name = 'Central')),
+  ('Marina Point', '150 Marina Point Rd', (select id from service_routes where name = 'Central')),
+  ('Coral Springs', '402 Coral Springs Dr', (select id from service_routes where name = 'Central')),
+  ('Palm Grove', '260 Palm Grove Ct', (select id from service_routes where name = 'Central')),
+  ('Ocean Crest', '111 Ocean Crest Blvd', (select id from service_routes where name = 'Central'))
 on conflict do nothing;
 
--- Default assignments for demo data
-with demo_user as (
-  select id from users where email = 'demo@example.com' limit 1
-)
-update service_routes set user_id = demo_user.id
-from demo_user
-where name = 'North';
-
-update clients set service_route_id = sr.id
-from service_routes sr
-where clients.name = 'Acme HQ' and sr.name = 'North';
-
-update clients set service_route_id = sr.id
-from service_routes sr
-where clients.name = 'Blue Sky Co' and sr.name = 'North';
-
-update clients set service_route_id = sr.id
-from service_routes sr
-where clients.name = 'Sunset Mall' and sr.name = 'North';
-
--- Create visits
+-- Visits: one per client, time slots spread through the day
 insert into visits (client_id, scheduled_time)
 select c.id, t.scheduled_time
-from (values ('Acme HQ','09:00'),('Blue Sky Co','10:30'),('Sunset Mall','13:15')) as t(name, scheduled_time)
+from (
+  select name, unnest(array['08:00','09:00','10:00','11:00','12:00','13:00']) as scheduled_time from clients where service_route_id = (select id from service_routes where name = 'North')
+  union all
+  select name, unnest(array['08:15','09:15','10:15','11:15','12:15','13:15']) from clients where service_route_id = (select id from service_routes where name = 'South')
+  union all
+  select name, unnest(array['08:30','09:30','10:30','11:30','12:30','13:30']) from clients where service_route_id = (select id from service_routes where name = 'East')
+  union all
+  select name, unnest(array['08:45','09:45','10:45','11:45','12:45','13:45']) from clients where service_route_id = (select id from service_routes where name = 'West')
+  union all
+  select name, unnest(array['09:00','10:00','11:00','12:00','13:00','14:00']) from clients where service_route_id = (select id from service_routes where name = 'Central')
+) as t(name, scheduled_time)
 join clients c on c.name = t.name
 on conflict do nothing;
 
@@ -57,18 +83,11 @@ from visits v
 cross join (values ('watered','Watered Plants'),('pruned','Pruned and cleaned'),('replaced','Replaced unhealthy plants')) as x(key,label)
 on conflict do nothing;
 
-update visit_checklist set label = 'Watered Plants' where key = 'watered';
-update visit_checklist set label = 'Pruned and cleaned' where key = 'pruned';
-update visit_checklist set label = 'Replaced unhealthy plants' where key = 'replaced';
-
+-- Today's routes: align clients to assigned techs
 insert into routes_today (user_id, client_id, scheduled_time)
-select u.id, c.id, t.scheduled_time
-from users u
-join (values
-  ('Acme HQ','09:00'),
-  ('Blue Sky Co','10:30'),
-  ('Sunset Mall','13:15')
-) as t(name, scheduled_time) on true
-join clients c on c.name = t.name
-where u.email = 'demo@example.com'
+select u.id, c.id, v.scheduled_time
+from clients c
+join service_routes sr on sr.id = c.service_route_id
+join users u on u.id = sr.user_id
+join visits v on v.client_id = c.id
 on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time;

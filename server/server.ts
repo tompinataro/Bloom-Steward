@@ -124,6 +124,9 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     }
   }
   const dedupedRows = Array.from(latestByKey.values()).sort((a, b) => {
+    const aTech = (a.tech_name || '').toLowerCase();
+    const bTech = (b.tech_name || '').toLowerCase();
+    if (aTech !== bTech) return aTech < bTech ? -1 : 1;
     const aTs = a.created_at ? new Date(a.created_at).getTime() : 0;
     const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
     return aTs - bTs;
