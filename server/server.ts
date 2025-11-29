@@ -112,14 +112,18 @@ function resolveRange(frequency: string, explicitStart?: string, explicitEnd?: s
 async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]> {
   const rawRows = await buildReportRows(startDate, endDate);
   // Keep only the latest submission per visit to avoid duplicate summary rows.
-  const latestByVisit = new Map<number, typeof rawRows[number]>();
+  const latestByKey = new Map<string, typeof rawRows[number]>();
   for (let i = rawRows.length - 1; i >= 0; i--) {
     const row = rawRows[i];
-    if (row.visit_id && !latestByVisit.has(row.visit_id)) {
-      latestByVisit.set(row.visit_id, row);
+    const visitKey = row.visit_id ? `visit:${row.visit_id}` : null;
+    const ts = (row.payload && (row.payload.checkOutTs || row.payload.checkInTs)) || row.created_at || '';
+    const clientKey = `${row.tech_id || 'tech'}|${(row.client_name || '').trim().toLowerCase()}|${(row.address || '').trim().toLowerCase()}|${ts}`;
+    const key = visitKey || clientKey;
+    if (!latestByKey.has(key)) {
+      latestByKey.set(key, row);
     }
   }
-  const dedupedRows = Array.from(latestByVisit.values()).sort((a, b) => {
+  const dedupedRows = Array.from(latestByKey.values()).sort((a, b) => {
     const aTs = a.created_at ? new Date(a.created_at).getTime() : 0;
     const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
     return aTs - bTs;
