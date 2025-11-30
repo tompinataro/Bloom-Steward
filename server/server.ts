@@ -151,6 +151,15 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   
   const rows: ReportRow[] = [];
   const initialOdometers = new Map<number, number>(); // Store tech's initial odometer for the day
+  // Precompute each tech's minimum odometerReading across deduped rows so mileage is cumulative
+  for (const r of dedupedRows) {
+    const payload = r.payload || {};
+    const od = payload && payload.odometerReading ? Number(payload.odometerReading) : null;
+    if (od !== null && Number.isFinite(od) && r.tech_id) {
+      const prev = initialOdometers.get(r.tech_id);
+      if (typeof prev !== 'number' || od < prev) initialOdometers.set(r.tech_id, od);
+    }
+  }
   const seenTechClient = new Set<string>(); // Track tech+client combinations to prevent dupes
   
   for (const row of dedupedRows) {
@@ -164,8 +173,21 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     if (seenTechClient.has(techClientKey)) continue;
     seenTechClient.add(techClientKey);
     const payload = row.payload || {};
-    const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
-    const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;
+    // Normalize timestamps to ISO (T) format for client-side parsing
+    let checkInTs: string | null = null;
+    let checkOutTs: string | null = null;
+    try {
+      if (typeof payload.checkInTs === 'string') {
+        const d = new Date(payload.checkInTs);
+        if (!Number.isNaN(d.getTime())) checkInTs = d.toISOString();
+      }
+    } catch {}
+    try {
+      if (typeof payload.checkOutTs === 'string') {
+        const d = new Date(payload.checkOutTs);
+        if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
+      }
+    } catch {}
     const inDate = checkInTs ? new Date(checkInTs) : null;
     const outDate = checkOutTs ? new Date(checkOutTs) : null;
     const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
@@ -173,17 +195,11 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     const onSiteContact = payload.onSiteContact || null;
     const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
     
-    // Calculate mileage delta from start-of-day odometer
+    // Calculate mileage delta from start-of-day odometer (precomputed minimum per tech)
     let mileageDelta = 0;
-    if (odometerReading !== null && Number.isFinite(odometerReading)) {
-      // Initialize this tech's starting odometer on first visit
-      if (!initialOdometers.has(row.tech_id)) {
-        initialOdometers.set(row.tech_id, odometerReading);
-      }
-      const initialOdom = initialOdometers.get(row.tech_id) || 0;
-      if (odometerReading >= initialOdom) {
-        mileageDelta = odometerReading - initialOdom;
-      }
+    if (odometerReading !== null && Number.isFinite(odometerReading) && row.tech_id) {
+      const initialOdom = initialOdometers.get(row.tech_id) ?? odometerReading;
+      if (odometerReading >= initialOdom) mileageDelta = odometerReading - initialOdom;
     }
     const rawLoc = payload.checkOutLoc || payload.checkInLoc;
     let geoValidated = false;

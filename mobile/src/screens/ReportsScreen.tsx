@@ -233,7 +233,7 @@ export default function ReportsScreen(_props: Props) {
                     <Text style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
                     <Text style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
                     <Text style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
-                    <Text style={[styles.cell, styles.mileage]}>{item.mileageDelta.toFixed(1)}</Text>
+                    <Text style={[styles.cell, styles.mileage]}>{item.mileageDelta ? item.mileageDelta.toFixed(1) : '—'}</Text>
                     <Text style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
                     <Text style={[styles.cell, styles.geoValid]}>{item.geoValidated ? 'Yes' : 'No'}</Text>
                   </View>
@@ -288,7 +288,13 @@ function formatDate(value?: string | null) {
 function formatTime(value?: string | null) {
   if (!value) return '—';
   try {
-    const date = new Date(value);
+    // Some platforms (Safari) don't parse space-separated timestamps reliably.
+    // Ensure we have an ISO 'T' separator before parsing.
+    let v = value;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(v)) {
+      v = v.replace(' ', 'T');
+    }
+    const date = new Date(v);
     // Format as HH:MM AM/PM
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   } catch {
