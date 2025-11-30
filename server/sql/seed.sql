@@ -83,11 +83,11 @@ from visits v
 cross join (values ('watered','Watered Plants'),('pruned','Pruned and cleaned'),('replaced','Replaced unhealthy plants')) as x(key,label)
 on conflict do nothing;
 
--- Today's routes: align clients to assigned techs
+-- Today's routes: align clients to assigned techs (one per client)
 insert into routes_today (user_id, client_id, scheduled_time)
 select u.id, c.id, v.scheduled_time
 from clients c
 join service_routes sr on sr.id = c.service_route_id
 join users u on u.id = sr.user_id
-join visits v on v.client_id = c.id
+join lateral (select scheduled_time from visits where client_id = c.id limit 1) v on true
 on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time;
