@@ -15,7 +15,7 @@ on conflict (email) do update set
   managed_password = excluded.managed_password;
 
 insert into service_routes (name)
-values ('North'), ('South'), ('East'), ('West'), ('Central'), ('Coastal')
+values ('North'), ('South'), ('East'), ('West'), ('Central'), ('St. Paul')
 on conflict (name) do nothing;
 
 -- Assign one route per field tech
@@ -25,7 +25,7 @@ update service_routes set user_id = (select id from users where email = 'chris@b
 update service_routes set user_id = (select id from users where email = 'cameron@bloomsteward.com') where name = 'West';
 update service_routes set user_id = (select id from users where email = 'drek@bloomsteward.com') where name = 'Central';
 
--- Clients: 6 per route
+-- Clients: 6 per route for North through Central, 6 for St. Paul
 insert into clients (name, address, service_route_id) values
   ('Acme HQ', '123 Main St', (select id from service_routes where name = 'North')),
   ('Blue Sky Co', '456 Oak Ave', (select id from service_routes where name = 'North')),
@@ -38,7 +38,7 @@ insert into clients (name, address, service_route_id) values
   ('Maple Terrace', '14 Maple Terrace', (select id from service_routes where name = 'South')),
   ('Lakeside Towers', '900 Lake St', (select id from service_routes where name = 'South')),
   ('Summit Square', '210 Summit Ave', (select id from service_routes where name = 'South')),
-  ('Greenway Commons', '320 Greenway Blvd', (select id from service_routes where name = 'South')),
+  ('Greenway Commons', '320 Greenway', (select id from service_routes where name = 'South')),
   ('Bayview Center', '1400 Bayview Dr', (select id from service_routes where name = 'East')),
   ('Harbor Point', '602 Harbor Point Rd', (select id from service_routes where name = 'East')),
   ('Sunrise Lofts', '75 Sunrise Blvd', (select id from service_routes where name = 'East')),
@@ -46,7 +46,7 @@ insert into clients (name, address, service_route_id) values
   ('Oak Ridge', '815 Oak Ridge Ct', (select id from service_routes where name = 'East')),
   ('Riverbend', '63 Riverbend Pkwy', (select id from service_routes where name = 'East')),
   ('Cypress Court', '44 Cypress Ct', (select id from service_routes where name = 'West')),
-  ('Silver Lake Plaza', '990 Silver Lake Rd', (select id from service_routes where name = 'West')),
+  ('Silver Lake Plaza', '990 Silver Lake', (select id from service_routes where name = 'West')),
   ('Forest Hills', '221 Forest Hills Dr', (select id from service_routes where name = 'West')),
   ('Hillcrest', '300 Hillcrest Rd', (select id from service_routes where name = 'West')),
   ('Grandview', '777 Grandview Ave', (select id from service_routes where name = 'West')),
@@ -56,7 +56,13 @@ insert into clients (name, address, service_route_id) values
   ('Marina Point', '150 Marina Point Rd', (select id from service_routes where name = 'Central')),
   ('Coral Springs', '402 Coral Springs Dr', (select id from service_routes where name = 'Central')),
   ('Palm Grove', '260 Palm Grove Ct', (select id from service_routes where name = 'Central')),
-  ('Ocean Crest', '111 Ocean Crest Blvd', (select id from service_routes where name = 'Central'))
+  ('Ocean Crest', '111 Ocean Crest Blvd', (select id from service_routes where name = 'Central')),
+  ('Stone Gate', '88 Park Ave', (select id from service_routes where name = 'St. Paul')),
+  ('Verde Plaza', '445 Elm St', (select id from service_routes where name = 'St. Paul')),
+  ('Urban Roost', '67 Birch Ln', (select id from service_routes where name = 'St. Paul')),
+  ('Crown Point', '202 Ash Pl', (select id from service_routes where name = 'St. Paul')),
+  ('Royal Grove', '156 Willow Ave', (select id from service_routes where name = 'St. Paul')),
+  ('Haven House', '39 Oak Ter', (select id from service_routes where name = 'St. Paul'))
 on conflict do nothing;
 
 -- Visits: one per client, time slots spread through the day
@@ -72,6 +78,8 @@ from (
   select name, unnest(array['08:45','09:45','10:45','11:45','12:45','13:45']) from clients where service_route_id = (select id from service_routes where name = 'West')
   union all
   select name, unnest(array['09:00','10:00','11:00','12:00','13:00','14:00']) from clients where service_route_id = (select id from service_routes where name = 'Central')
+  union all
+  select name, unnest(array['09:00','10:00','11:00','12:00','13:00','14:00']) from clients where service_route_id = (select id from service_routes where name = 'St. Paul')
 ) as t(name, scheduled_time)
 join clients c on c.name = t.name
 on conflict do nothing;
