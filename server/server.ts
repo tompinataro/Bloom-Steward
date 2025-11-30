@@ -215,7 +215,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       client_name: string;
       address: string;
     }>(
-      `select
+      `select distinct on (sr.id, c.id)
          u.id as tech_id,
          u.name as tech_name,
          sr.name as route_name,
@@ -224,9 +224,13 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
        from clients c
        join service_routes sr on sr.id = c.service_route_id
        left join users u on u.id = sr.user_id
-       order by coalesce(u.name,'Unassigned') asc, c.name asc`
+       order by sr.id, c.id, c.name asc`
     );
+    const seenTechClient = new Set<string>();
     (fallback?.rows || []).forEach(row => {
+      const techClientKey = `${row.tech_id || 0}|${(row.client_name || '').trim().toLowerCase()}`;
+      if (seenTechClient.has(techClientKey)) return;
+      seenTechClient.add(techClientKey);
       rows.push({
         techId: row.tech_id || 0,
         techName: row.tech_name || 'Unassigned',
