@@ -47,7 +47,8 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
     }
     const lines = techs.map(user => {
       const assignedRoute = getRouteForTech(user.id);
-      return `${user.name} (${user.email}) — ${assignedRoute ? assignedRoute.name : 'Unassigned'}`;
+      const pw = user.managed_password ? ` (${user.managed_password})` : '';
+      return `${user.name} (${user.email}${pw}) — Assigned Route: ${assignedRoute ? assignedRoute.name : 'Unassigned'}`;
     });
     try {
       await Share.share({
@@ -89,9 +90,9 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                 }}
               >
                 <Text style={styles.name}>{truncateText(user.name, 40)}</Text>
-                <Text style={styles.email}>{truncateText(user.email, 42)}</Text>
+                <Text style={styles.email}>{truncateText(`${user.email}${user.managed_password ? ` (${user.managed_password})` : ''}`, 56)}</Text>
                 <Text style={styles.routeLabel}>
-                  {assignedRoute ? assignedRoute.name : 'Unassigned'}
+                  {assignedRoute ? `Assigned Route: ${assignedRoute.name}` : 'Unassigned'}
                 </Text>
               </Pressable>
             );

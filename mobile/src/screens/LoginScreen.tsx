@@ -23,7 +23,7 @@ export default function LoginScreen(_props: Props) {
     setLoading(true);
     setError(null);
     try {
-      await signIn(email, password);
+      await signIn(email, password, initialOdometer.trim() || undefined);
       // Store initial odometer for the day
       if (initialOdometer.trim()) {
         await AsyncStorage.setItem('dailyInitialOdometer', initialOdometer.trim());
@@ -40,8 +40,8 @@ export default function LoginScreen(_props: Props) {
   // onPing removed
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={true} bounces={false}>
         <View style={styles.logoFrame}>
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
         </View>

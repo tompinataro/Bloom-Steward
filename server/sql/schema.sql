@@ -96,3 +96,13 @@ create table if not exists visit_state (
   created_at timestamptz not null default now(),
   primary key (visit_id, date, user_id)
 );
+
+-- Daily start odometer per technician (for accurate mileage delta tracking)
+create table if not exists daily_start_odometer (
+  id serial primary key,
+  user_id integer not null references users(id) on delete cascade,
+  date date not null,
+  odometer_reading numeric(10, 2) not null,
+  created_at timestamptz not null default now(),
+  unique(user_id, date)
+);

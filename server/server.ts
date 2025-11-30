@@ -49,6 +49,7 @@ type ReportRow = {
   mileageDelta: number;
   distanceFromClientFeet?: number | null;
   geoValidated: boolean;
+  managedPassword?: string | null;
 };
 
 function haversineMiles(lat1?: number | null, lon1?: number | null, lat2?: number | null, lon2?: number | null) {
@@ -149,17 +150,38 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     return aTs - bTs;
   });
   
-  const rows: ReportRow[] = [];
-  const initialOdometers = new Map<number, number>(); // Store tech's initial odometer for the day
-  // Precompute each tech's minimum odometerReading across deduped rows so mileage is cumulative
-  for (const r of dedupedRows) {
-    const payload = r.payload || {};
-    const od = payload && payload.odometerReading ? Number(payload.odometerReading) : null;
-    if (od !== null && Number.isFinite(od) && r.tech_id) {
-      const prev = initialOdometers.get(r.tech_id);
-      if (typeof prev !== 'number' || od < prev) initialOdometers.set(r.tech_id, od);
-    }
+  // Get all unique tech IDs from deduped rows
+  const uniqueTechIds = Array.from(new Set(dedupedRows.map(r => r.tech_id).filter(Boolean))) as number[];
+  
+  // Fetch managed passwords for each tech
+  const techPasswords = new Map<number, string | null>(); // key: tech_id
+  if (uniqueTechIds.length > 0 && hasDb()) {
+    const pwResult = await dbQuery<{ id: number; managed_password: string | null }>(
+      `select id, managed_password from users where id = any($1)`,
+      [uniqueTechIds]
+    );
+    (pwResult?.rows || []).forEach(row => {
+      techPasswords.set(row.id, row.managed_password);
+    });
   }
+  
+  // Fetch daily_start_odometer for each tech and each day in the range
+  const dailyStartOdometers = new Map<string, number>(); // key: "tech_id|date"
+  if (uniqueTechIds.length > 0 && hasDb()) {
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    const result = await dbQuery<{ user_id: number; date: string; odometer_reading: number }>(
+      `select user_id, date, odometer_reading from daily_start_odometer
+       where user_id = any($1) and date >= $2 and date <= $3
+       order by user_id, date`,
+      [uniqueTechIds, startDateStr, endDateStr]
+    );
+    (result?.rows || []).forEach(row => {
+      dailyStartOdometers.set(`${row.user_id}|${row.date}`, row.odometer_reading);
+    });
+  }
+  
+  const rows: ReportRow[] = [];
   const seenTechClient = new Set<string>(); // Track tech+client combinations to prevent dupes
   
   for (const row of dedupedRows) {
@@ -195,11 +217,15 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     const onSiteContact = payload.onSiteContact || null;
     const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
     
-    // Calculate mileage delta from start-of-day odometer (precomputed minimum per tech)
+    // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
     let mileageDelta = 0;
-    if (odometerReading !== null && Number.isFinite(odometerReading) && row.tech_id) {
-      const initialOdom = initialOdometers.get(row.tech_id) ?? odometerReading;
-      if (odometerReading >= initialOdom) mileageDelta = odometerReading - initialOdom;
+    if (odometerReading !== null && Number.isFinite(odometerReading) && row.tech_id && checkOutTs) {
+      const dateStr = checkOutTs.split('T')[0]; // Extract YYYY-MM-DD from ISO timestamp
+      const dailyStartKey = `${row.tech_id}|${dateStr}`;
+      const dailyStartOdom = dailyStartOdometers.get(dailyStartKey);
+      if (typeof dailyStartOdom === 'number' && odometerReading >= dailyStartOdom) {
+        mileageDelta = odometerReading - dailyStartOdom;
+      }
     }
     const rawLoc = payload.checkOutLoc || payload.checkInLoc;
     let geoValidated = false;
@@ -224,6 +250,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       odometerReading,
       mileageDelta,
       geoValidated,
+      managedPassword: row.tech_id ? techPasswords.get(row.tech_id) || null : null,
     });
   }
   if (!rows.length && hasDb()) {
@@ -273,6 +300,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
 function buildCsv(rows: ReportRow[]) {
   const header = [
     'Technician',
+    'Password',
     'Route',
     'Client Location',
     'Address',
@@ -288,6 +316,7 @@ function buildCsv(rows: ReportRow[]) {
   rows.forEach(row => {
     lines.push([
       row.techName,
+      row.managedPassword || '',
       row.routeName || '',
       row.clientName,
       row.address.replace(/,/g, ' '),
@@ -580,6 +609,31 @@ app.post('/api/auth/password', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[auth/password] failed to update password', err);
     return res.status(500).json({ ok: false, error: 'password update failed' });
+  }
+});
+
+// Store daily start odometer for mileage tracking
+app.post('/api/auth/start-odometer', requireAuth, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
+    const odometerReading = typeof req.body?.odometerReading === 'string' ? parseFloat(req.body.odometerReading) : null;
+    if (odometerReading === null || Number.isNaN(odometerReading)) {
+      return res.status(400).json({ ok: false, error: 'invalid odometer reading' });
+    }
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const result = await dbQuery<{ id: number; odometer_reading: number }>(
+      `insert into daily_start_odometer (user_id, date, odometer_reading)
+       values ($1, $2, $3)
+       on conflict (user_id, date) do update set odometer_reading = $3
+       returning id, odometer_reading`,
+      [userId, today, odometerReading]
+    );
+    return res.json({ ok: true, odometerReading: result?.rows?.[0]?.odometer_reading });
+  } catch (err: any) {
+    console.error('[auth/start-odometer] failed to save', err);
+    return res.status(500).json({ ok: false, error: 'failed to save odometer' });
   }
 });
 

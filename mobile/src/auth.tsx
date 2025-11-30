@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { deleteAccount as apiDeleteAccount, login as apiLogin, LoginResponse, refresh as apiRefresh, setUnauthorizedHandler, setTokenRefreshedHandler } from './api/client';
+import { deleteAccount as apiDeleteAccount, login as apiLogin, LoginResponse, refresh as apiRefresh, postStartOdometer, setUnauthorizedHandler, setTokenRefreshedHandler } from './api/client';
 import { showBanner } from './components/globalBannerBus';
 
 type AuthState = {
   token: string | null;
   user: LoginResponse['user'] | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, odometerReading?: number | string) => Promise<void>;
   signOut: () => Promise<void>;
   deleteAccount: (options?: { reason?: string }) => Promise<{ ok: boolean; deleted?: boolean; requiresManualCleanup?: boolean }>;
 };
@@ -69,12 +69,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, odometerReading?: number | string) => {
     const res = await apiLogin(email, password);
     setToken(res.token);
     setUser(res.user);
     await AsyncStorage.setItem('auth_token', res.token);
     await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
+    
+    // POST the daily start odometer if provided
+    if (odometerReading && Number(odometerReading) >= 0) {
+      try {
+        await postStartOdometer(res.token, odometerReading);
+      } catch (e: any) {
+        console.error('[signIn] failed to post odometer', e);
+        // Non-fatal; continue
+      }
+    }
   };
 
   const performSignOut = async () => {

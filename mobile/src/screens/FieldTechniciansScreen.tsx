@@ -152,16 +152,13 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                     ) : null}
                   </Text>
                   <Text style={styles.listEmail}>{truncateText(user.email, 36)}</Text>
-                  <View style={styles.routeChips}>
-                    {serviceRoutes.filter(r => r.user_id === user.id).map(route => (
-                      <View key={`${user.id}-route-${route.id}`} style={styles.routePill}>
-                        <Text style={styles.routePillText}>{route.name}</Text>
-                      </View>
-                    ))}
-                    {serviceRoutes.every(r => r.user_id !== user.id) ? (
-                      <Text style={styles.routeNone}>No route assigned yet.</Text>
-                    ) : null}
-                  </View>
+                  {(() => {
+                    const assigned = serviceRoutes.filter(r => r.user_id === user.id).map(r => r.name);
+                    if (assigned.length) {
+                      return <Text style={styles.routeAssigned}>{`Assigned Route: ${assigned.join(', ')}`}</Text>;
+                    }
+                    return <Text style={styles.routeNone}>No route assigned yet.</Text>;
+                  })()}
                 </View>
                 <Pressable style={styles.pwChip} onPress={() => setPwModal({ id: user.id, name: user.name })}>
                   <Text style={styles.pwChipText}>Reset password</Text>
@@ -225,6 +222,7 @@ const styles = StyleSheet.create({
   routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   routePillText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
   routeNone: { color: colors.muted, fontSize: 12 },
+  routeAssigned: { color: colors.primary, fontWeight: '600', marginTop: spacing(0.5) },
   emptyCopy: { color: colors.muted },
   listScroll: { maxHeight: 320 },
   listScrollFull: { maxHeight: undefined },

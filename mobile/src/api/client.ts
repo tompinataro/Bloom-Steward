@@ -80,6 +80,14 @@ export async function refresh(token: string): Promise<LoginResponse> {
   });
 }
 
+export async function postStartOdometer(token: string, odometerReading: number | string): Promise<{ ok: boolean; odometerReading?: number }> {
+  return fetchJson(withBase('/api/auth/start-odometer'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ odometerReading: Number(odometerReading) })
+  });
+}
+
 export type DeleteAccountResponse = { ok: boolean; deleted?: boolean; requiresManualCleanup?: boolean };
 export async function deleteAccount(token: string, options?: { reason?: string }): Promise<DeleteAccountResponse> {
   return fetchJson(withBase('/api/auth/account'), {

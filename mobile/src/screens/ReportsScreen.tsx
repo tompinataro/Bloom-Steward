@@ -114,7 +114,7 @@ export default function ReportsScreen(_props: Props) {
         if (!emails.length) continue;
         await adminSendReport(token, { frequency: freq, emails });
       }
-      showBanner({ type: 'success', message: 'Report email(s) queued.' });
+      showBanner({ type: 'success', message: 'Report email(s) sent.' });
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to send report.' });
     } finally {
@@ -205,21 +205,21 @@ export default function ReportsScreen(_props: Props) {
           <ScrollView horizontal showsHorizontalScrollIndicator>
             <View>
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                <Text style={[styles.cell, styles.technician, styles.headerCell]}>Technician</Text>
-                <Text style={[styles.cell, styles.route, styles.headerCell]}>Route</Text>
-                <Text style={[styles.cell, styles.client, styles.headerCell]}>Client</Text>
-                <Text style={[styles.cell, styles.address, styles.headerCell]}>Address</Text>
-                <Text style={[styles.cell, styles.checkIn, styles.headerCell]}>Check-In</Text>
-                <Text style={[styles.cell, styles.checkOut, styles.headerCell]}>Check-Out</Text>
-                <Text style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
-                <Text style={[styles.cell, styles.mileage, styles.headerCell]}>Mileage</Text>
-                <Text style={[styles.cell, styles.contact, styles.headerCell]}>Contact</Text>
-                <Text style={[styles.cell, styles.geoValid, styles.headerCell]}>Geo Valid</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.technician, styles.headerCell]}>Technician</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.route, styles.headerCell]}>Route</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.client, styles.headerCell]}>Client</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.address, styles.headerCell]}>Address</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.checkIn, styles.headerCell]}>Check-In</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.checkOut, styles.headerCell]}>Check-Out</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.mileage, styles.headerCell]}>Mileage</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.contact, styles.headerCell]}>Contact</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.geoValid, styles.headerCell]}>Geo Valid</Text>
               </View>
                 {summary.map((item, index) => (
                   <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
-                    <Text style={[styles.cell, styles.technician]}>{truncateText(item.techName, 14)}</Text>
-                    <Text style={[styles.cell, styles.route]}>{item.routeName || '—'}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.technician]}>{truncateText(item.techName, 14)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.route]}>{item.routeName || '—'}</Text>
                     <View style={[styles.clientCell]}>
                       <View
                         style={[
@@ -227,15 +227,15 @@ export default function ReportsScreen(_props: Props) {
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
                       />
-                      <Text style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
+                      <Text numberOfLines={1} style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
                     </View>
-                    <Text style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
-                    <Text style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
-                    <Text style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
-                    <Text style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
-                    <Text style={[styles.cell, styles.mileage]}>{item.mileageDelta ? item.mileageDelta.toFixed(1) : '—'}</Text>
-                    <Text style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
-                    <Text style={[styles.cell, styles.geoValid]}>{item.geoValidated ? 'Yes' : 'No'}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.mileage]}>{item.mileageDelta ? item.mileageDelta.toFixed(1) : '—'}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.geoValid]}>{item.geoValidated ? 'Yes' : 'No'}</Text>
                   </View>
                 ))}
             </View>
