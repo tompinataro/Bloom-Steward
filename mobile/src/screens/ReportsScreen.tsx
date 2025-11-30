@@ -228,11 +228,11 @@ export default function ReportsScreen(_props: Props) {
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
                       />
-                      <Text style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 16)}</Text>
+                      <Text style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
                     </View>
                     <Text style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
-                    <Text style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{item.checkInTs ? formatDate(item.checkInTs).split(',')[1]?.trim() || formatDate(item.checkInTs) : '—'}</Text>
-                    <Text style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{item.checkOutTs ? formatDate(item.checkOutTs).split(',')[1]?.trim() || formatDate(item.checkOutTs) : '—'}</Text>
+                    <Text style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
+                    <Text style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
                     <Text style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
                     <Text style={[styles.cell, styles.mileage]}>{item.mileageDelta.toFixed(1)}</Text>
                     <Text style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
@@ -291,6 +291,17 @@ function formatDate(value?: string | null) {
   }
 }
 
+function formatTime(value?: string | null) {
+  if (!value) return '—';
+  try {
+    const date = new Date(value);
+    // Format as HH:MM AM/PM
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  } catch {
+    return '—';
+  }
+}
+
 function labelFor(value: FrequencyValue) {
   return FREQUENCIES.find(freq => freq.value === value)?.label ?? 'Weekly';
 }
@@ -342,20 +353,20 @@ const styles = StyleSheet.create({
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tableHeaderRow: { backgroundColor: '#f4f4f5' },
   cell: { width: 100, paddingVertical: spacing(1), paddingHorizontal: spacing(0.5), color: colors.text, fontSize: 12 },
-  technician: { width: 90 },
-  route: { width: 70 },
-  client: { width: 110 },
+  technician: { width: 100 },
+  route: { width: 55 },
+  client: { width: 95 },
   address: { width: 120 },
-  checkIn: { width: 110 },
-  checkOut: { width: 110 },
-  duration: { width: 90 },
-  mileage: { width: 75 },
-  contact: { width: 100 },
-  geoFt: { width: 70 },
-  geoValid: { width: 80 },
-  clientCell: { flexDirection: 'row', alignItems: 'center', width: 110 },
-  clientText: { color: colors.text },
-  geoDot: { width: 12, height: 12, borderRadius: 6, marginRight: spacing(1) },
+  checkIn: { width: 95 },
+  checkOut: { width: 95 },
+  duration: { width: 80 },
+  mileage: { width: 70 },
+  contact: { width: 85 },
+  geoFt: { width: 65 },
+  geoValid: { width: 75 },
+  clientCell: { flexDirection: 'row', alignItems: 'center', width: 95 },
+  clientText: { color: colors.text, flex: 1 },
+  geoDot: { width: 12, height: 12, borderRadius: 6, marginRight: spacing(0.5), flexShrink: 0 },
   geoDotOk: { backgroundColor: '#22c55e' },
   geoDotWarn: { backgroundColor: '#ef4444' },
   geoDotUnknown: { backgroundColor: '#d4d4d8' },
