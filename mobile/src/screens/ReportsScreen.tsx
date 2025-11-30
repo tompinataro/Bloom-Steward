@@ -214,7 +214,6 @@ export default function ReportsScreen(_props: Props) {
                 <Text style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
                 <Text style={[styles.cell, styles.mileage, styles.headerCell]}>Mileage</Text>
                 <Text style={[styles.cell, styles.contact, styles.headerCell]}>Contact</Text>
-                <Text style={[styles.cell, styles.geoFt, styles.headerCell]}>Geo (ft)</Text>
                 <Text style={[styles.cell, styles.geoValid, styles.headerCell]}>Geo Valid</Text>
               </View>
                 {summary.map((item, index) => (
@@ -236,11 +235,6 @@ export default function ReportsScreen(_props: Props) {
                     <Text style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
                     <Text style={[styles.cell, styles.mileage]}>{item.mileageDelta.toFixed(1)}</Text>
                     <Text style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
-                    <Text style={[styles.cell, styles.geoFt]}>
-                      {item.distanceFromClientFeet !== undefined && item.distanceFromClientFeet !== null
-                        ? item.distanceFromClientFeet.toFixed(0)
-                        : '—'}
-                    </Text>
                     <Text style={[styles.cell, styles.geoValid]}>{item.geoValidated ? 'Yes' : 'No'}</Text>
                   </View>
                 ))}
@@ -362,7 +356,6 @@ const styles = StyleSheet.create({
   duration: { width: 80 },
   mileage: { width: 70 },
   contact: { width: 85 },
-  geoFt: { width: 65 },
   geoValid: { width: 75 },
   clientCell: { flexDirection: 'row', alignItems: 'center', width: 95 },
   clientText: { color: colors.text, flex: 1 },

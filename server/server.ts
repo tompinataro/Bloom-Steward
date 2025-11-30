@@ -186,13 +186,12 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       }
     }
     const rawLoc = payload.checkOutLoc || payload.checkInLoc;
-    let distanceFeet: number | null = null;
     let geoValidated = false;
     if (rawLoc && typeof rawLoc.lat === 'number' && typeof rawLoc.lng === 'number') {
       const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
       if (distMiles !== null) {
-        distanceFeet = distMiles * 5280;
-        geoValidated = distanceFeet <= 100;
+        // keep only boolean validation (within 100 feet)
+        geoValidated = (distMiles * 5280) <= 100;
       }
     }
     rows.push({
@@ -208,7 +207,6 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       onSiteContact,
       odometerReading,
       mileageDelta,
-      distanceFromClientFeet: distanceFeet,
       geoValidated,
     });
   }
@@ -249,7 +247,6 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
         onSiteContact: null,
         odometerReading: null,
         mileageDelta: 0,
-        distanceFromClientFeet: null,
         geoValidated: false,
       });
     });
@@ -283,7 +280,6 @@ function buildCsv(rows: ReportRow[]) {
       row.durationFormatted,
       row.mileageDelta.toFixed(2),
       row.onSiteContact || '',
-      row.distanceFromClientFeet !== null && row.distanceFromClientFeet !== undefined ? row.distanceFromClientFeet.toFixed(0) : '',
       row.geoValidated ? 'Yes' : 'No',
     ].join(','));
   });
@@ -302,7 +298,6 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
       <td>${row.durationFormatted}</td>
       <td>${row.mileageDelta.toFixed(2)}</td>
       <td>${row.onSiteContact || ''}</td>
-      <td>${row.distanceFromClientFeet !== null && row.distanceFromClientFeet !== undefined ? row.distanceFromClientFeet.toFixed(0) : ''}</td>
       <td>${row.geoValidated ? 'Yes' : 'No'}</td>
     </tr>
   `).join('');
@@ -321,7 +316,6 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
           <th>Duration</th>
           <th>Mileage Delta</th>
           <th>On-site Contact</th>
-          <th>Geo Distance (ft)</th>
           <th>Geo Valid</th>
         </tr>
       </thead>
