@@ -31,13 +31,13 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
         adminFetchServiceRoutes(token),
       ]);
       const techs = (usersRes?.users || []).filter(
-        u => u.role === 'tech' && u.email.toLowerCase() !== 'demo@example.com'
+        u => u.role === 'tech'
       );
       if (!techs.length) {
         setTechUsers([
-          { id: 9001, name: 'Jacob Daniels', email: 'jacob@bloomsteward.com', role: 'tech' },
-          { id: 9002, name: 'Sadie Percontra', email: 'sadie@bloomsteward.com', role: 'tech' },
-          { id: 9003, name: 'Chris Lane', email: 'chris@bloomsteward.com', role: 'tech' },
+          { id: 9001, name: 'Jacob Daniels', email: 'jacob@b.com', role: 'tech' },
+          { id: 9002, name: 'Sadie Percontra', email: 'sadie@b.com', role: 'tech' },
+          { id: 9003, name: 'Chris Lane', email: 'chris@b.com', role: 'tech' },
         ] as any);
       } else {
         setTechUsers(techs);

@@ -32,7 +32,7 @@ export default function AllServiceRoutesScreen(_props: Props) {
       setRoutes(routeRes?.routes || []);
       setClients(clientRes?.clients || []);
       const filteredTechs = (usersRes?.users || []).filter(
-        u => u.role === 'tech' && u.email.toLowerCase() !== 'demo@example.com'
+        u => u.role === 'tech'
       );
       setTechs(filteredTechs);
     } catch (err: any) {

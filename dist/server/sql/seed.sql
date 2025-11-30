@@ -1,12 +1,12 @@
--- Seed demo admin and tech accounts
+-- Seed admin and tech accounts
 insert into users (email, name, password_hash, role, must_change_password, managed_password)
 values
   ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, 'Tom'),
-  ('jacob@bloomsteward.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
-  ('sadie@bloomsteward.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
-  ('chris@bloomsteward.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
-  ('cameron@bloomsteward.com', 'Cameron Diaz', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
-  ('drek@bloomsteward.com', 'Derek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
+  ('jacob@b.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('sadie@b.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('chris@b.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('cameron@b.com', 'Cameron Diaz', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
+  ('derek@b.com', 'Derek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
 on conflict (email) do update set
   name = excluded.name,
   password_hash = excluded.password_hash,
@@ -19,11 +19,11 @@ values ('North'), ('South'), ('East'), ('West'), ('Central'), ('St. Paul')
 on conflict (name) do nothing;
 
 -- Assign one route per field tech
-update service_routes set user_id = (select id from users where email = 'jacob@bloomsteward.com') where name = 'North';
-update service_routes set user_id = (select id from users where email = 'sadie@bloomsteward.com') where name = 'South';
-update service_routes set user_id = (select id from users where email = 'chris@bloomsteward.com') where name = 'East';
-update service_routes set user_id = (select id from users where email = 'cameron@bloomsteward.com') where name = 'West';
-update service_routes set user_id = (select id from users where email = 'drek@bloomsteward.com') where name = 'Central';
+update service_routes set user_id = (select id from users where email = 'jacob@b.com') where name = 'North';
+update service_routes set user_id = (select id from users where email = 'sadie@b.com') where name = 'South';
+update service_routes set user_id = (select id from users where email = 'chris@b.com') where name = 'East';
+update service_routes set user_id = (select id from users where email = 'cameron@b.com') where name = 'West';
+update service_routes set user_id = (select id from users where email = 'derek@b.com') where name = 'Central';
 
 -- Clients: 6 per route for North through Central, 6 for St. Paul
 insert into clients (name, address, service_route_id) values

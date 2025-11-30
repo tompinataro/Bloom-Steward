@@ -122,18 +122,30 @@ function resolveRange(frequency, explicitStart, explicitEnd) {
 async function buildSummary(startDate, endDate) {
     const rawRows = await (0, data_1.buildReportRows)(startDate, endDate);
     // Keep only the latest submission per visit to avoid duplicate summary rows.
-    const latestByKey = new Map();
+    // Use multiple dedup keys: visit_id first, then fallback to tech+client+address+timestamp.
+    const latestByVisit = new Map();
+    const latestByComposite = new Map();
     for (let i = rawRows.length - 1; i >= 0; i--) {
         const row = rawRows[i];
-        const visitKey = row.visit_id ? `visit:${row.visit_id}` : null;
+        // Primary dedup by visit_id (most reliable)
+        if (row.visit_id) {
+            if (!latestByVisit.has(row.visit_id)) {
+                latestByVisit.set(row.visit_id, row);
+            }
+            continue;
+        }
+        // Secondary dedup by tech+client+address+timestamp (for rows without visit_id)
         const ts = (row.payload && (row.payload.checkOutTs || row.payload.checkInTs)) || row.created_at || '';
-        const clientKey = `${row.tech_id || 'tech'}|${(row.client_name || '').trim().toLowerCase()}|${(row.address || '').trim().toLowerCase()}|${ts}`;
-        const key = visitKey || clientKey;
-        if (!latestByKey.has(key)) {
-            latestByKey.set(key, row);
+        const compositeKey = `${row.tech_id || 'tech'}|${(row.client_name || '').trim().toLowerCase()}|${(row.address || '').trim().toLowerCase()}|${ts}`;
+        if (!latestByComposite.has(compositeKey)) {
+            latestByComposite.set(compositeKey, row);
         }
     }
-    const dedupedRows = Array.from(latestByKey.values()).sort((a, b) => {
+    // Merge both maps, preferring visit-based entries
+    const allDeduped = new Map();
+    latestByVisit.forEach((row, visitId) => allDeduped.set(`visit:${visitId}`, row));
+    latestByComposite.forEach((row, key) => allDeduped.set(`composite:${key}`, row));
+    const dedupedRows = Array.from(allDeduped.values()).sort((a, b) => {
         const aTech = (a.tech_name || '').toLowerCase();
         const bTech = (b.tech_name || '').toLowerCase();
         if (aTech !== bTech)
@@ -148,8 +160,9 @@ async function buildSummary(startDate, endDate) {
         if (!row.tech_id || !row.tech_name)
             continue;
         const techName = row.tech_name.trim();
+        // Skip demo or test users
         if (/^demo\b/i.test(techName))
-            continue; // suppress demo user rows
+            continue;
         const payload = row.payload || {};
         const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
         const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;
