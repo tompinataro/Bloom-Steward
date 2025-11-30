@@ -156,6 +156,7 @@ async function buildSummary(startDate, endDate) {
     });
     const rows = [];
     const lastOdometer = new Map();
+    const seenTechClient = new Set(); // Track tech+client combinations to prevent dupes
     for (const row of dedupedRows) {
         if (!row.tech_id || !row.tech_name)
             continue;
@@ -163,6 +164,11 @@ async function buildSummary(startDate, endDate) {
         // Skip demo or test users
         if (/^demo\b/i.test(techName))
             continue;
+        // Skip duplicate tech+client combinations (only show first/latest per pair)
+        const techClientKey = `${row.tech_id}|${(row.client_name || '').trim().toLowerCase()}`;
+        if (seenTechClient.has(techClientKey))
+            continue;
+        seenTechClient.add(techClientKey);
         const payload = row.payload || {};
         const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
         const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;

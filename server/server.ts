@@ -151,11 +151,18 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   
   const rows: ReportRow[] = [];
   const lastOdometer = new Map<number, number>();
+  const seenTechClient = new Set<string>(); // Track tech+client combinations to prevent dupes
+  
   for (const row of dedupedRows) {
     if (!row.tech_id || !row.tech_name) continue;
     const techName = row.tech_name.trim();
     // Skip demo or test users
     if (/^demo\b/i.test(techName)) continue;
+    
+    // Skip duplicate tech+client combinations (only show first/latest per pair)
+    const techClientKey = `${row.tech_id}|${(row.client_name || '').trim().toLowerCase()}`;
+    if (seenTechClient.has(techClientKey)) continue;
+    seenTechClient.add(techClientKey);
     const payload = row.payload || {};
     const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
     const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;
