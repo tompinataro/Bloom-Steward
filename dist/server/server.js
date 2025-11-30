@@ -155,7 +155,7 @@ async function buildSummary(startDate, endDate) {
         return aTs - bTs;
     });
     const rows = [];
-    const lastOdometer = new Map();
+    const initialOdometers = new Map(); // Store tech's initial odometer for the day
     const seenTechClient = new Set(); // Track tech+client combinations to prevent dupes
     for (const row of dedupedRows) {
         if (!row.tech_id || !row.tech_name)
@@ -178,13 +178,17 @@ async function buildSummary(startDate, endDate) {
         const durationFormatted = formatDuration(durationMinutes);
         const onSiteContact = payload.onSiteContact || null;
         const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
+        // Calculate mileage delta from start-of-day odometer
         let mileageDelta = 0;
         if (odometerReading !== null && Number.isFinite(odometerReading)) {
-            const prev = lastOdometer.get(row.tech_id);
-            if (typeof prev === 'number' && odometerReading >= prev) {
-                mileageDelta = odometerReading - prev;
+            // Initialize this tech's starting odometer on first visit
+            if (!initialOdometers.has(row.tech_id)) {
+                initialOdometers.set(row.tech_id, odometerReading);
             }
-            lastOdometer.set(row.tech_id, odometerReading);
+            const initialOdom = initialOdometers.get(row.tech_id) || 0;
+            if (odometerReading >= initialOdom) {
+                mileageDelta = odometerReading - initialOdom;
+            }
         }
         const rawLoc = payload.checkOutLoc || payload.checkInLoc;
         let distanceFeet = null;

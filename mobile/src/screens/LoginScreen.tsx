@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, ActivityIndicator, Image, KeyboardAv
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // API helpers not shown on login screen
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
@@ -14,6 +15,7 @@ export default function LoginScreen(_props: Props) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('marc@bloomsteward.com');
   const [password, setPassword] = useState('Tom');
+  const [initialOdometer, setInitialOdometer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,6 +24,10 @@ export default function LoginScreen(_props: Props) {
     setError(null);
     try {
       await signIn(email, password);
+      // Store initial odometer for the day
+      if (initialOdometer.trim()) {
+        await AsyncStorage.setItem('dailyInitialOdometer', initialOdometer.trim());
+      }
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       setError(msg);
@@ -60,9 +66,20 @@ export default function LoginScreen(_props: Props) {
           onChangeText={setPassword}
           placeholder="Password"
           placeholderTextColor={colors.muted}
+          returnKeyType="next"
+          textContentType="oneTimeCode"
+          autoComplete="off"
+          autoCorrect={false}
+        />
+        <TextInput
+          style={styles.input}
+          keyboardType="decimal-pad"
+          value={initialOdometer}
+          onChangeText={setInitialOdometer}
+          placeholder="Starting Odometer (optional)"
+          placeholderTextColor={colors.muted}
           returnKeyType="go"
           onSubmitEditing={onSubmit}
-          textContentType="oneTimeCode"
           autoComplete="off"
           autoCorrect={false}
         />
