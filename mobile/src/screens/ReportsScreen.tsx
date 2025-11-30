@@ -205,37 +205,45 @@ export default function ReportsScreen(_props: Props) {
           <ScrollView horizontal showsHorizontalScrollIndicator>
             <View>
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
-                {summaryHeaders.map(header => (
-                  <Text key={header} style={[styles.cell, styles.headerCell]}>{header}</Text>
-                ))}
+                <Text style={[styles.cell, styles.technician, styles.headerCell]}>Technician</Text>
+                <Text style={[styles.cell, styles.route, styles.headerCell]}>Route</Text>
+                <Text style={[styles.cell, styles.client, styles.headerCell]}>Client</Text>
+                <Text style={[styles.cell, styles.address, styles.headerCell]}>Address</Text>
+                <Text style={[styles.cell, styles.checkIn, styles.headerCell]}>Check-In</Text>
+                <Text style={[styles.cell, styles.checkOut, styles.headerCell]}>Check-Out</Text>
+                <Text style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
+                <Text style={[styles.cell, styles.mileage, styles.headerCell]}>Mileage</Text>
+                <Text style={[styles.cell, styles.contact, styles.headerCell]}>Contact</Text>
+                <Text style={[styles.cell, styles.geoFt, styles.headerCell]}>Geo (ft)</Text>
+                <Text style={[styles.cell, styles.geoValid, styles.headerCell]}>Geo Valid</Text>
               </View>
                 {summary.map((item, index) => (
                   <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
-                    <Text style={styles.cell}>{item.techName}</Text>
-                    <Text style={styles.cell}>{item.routeName || '—'}</Text>
-                    <View style={[styles.cell, styles.clientCell]}>
+                    <Text style={[styles.cell, styles.technician]}>{truncateText(item.techName, 14)}</Text>
+                    <Text style={[styles.cell, styles.route]}>{item.routeName || '—'}</Text>
+                    <View style={[styles.clientCell]}>
                       <View
                         style={[
                           styles.geoDot,
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
                       />
-                      <Text style={styles.clientText}>{truncateText(item.clientName, 22)}</Text>
+                      <Text style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 16)}</Text>
                     </View>
-                    <Text style={styles.cell}>{truncateText(item.address, 28)}</Text>
-                    <Text style={styles.cell}>{formatDate(item.checkInTs)}</Text>
-                    <Text style={styles.cell}>{formatDate(item.checkOutTs)}</Text>
-                  <Text style={styles.cell}>{item.durationFormatted}</Text>
-                  <Text style={styles.cell}>{item.mileageDelta.toFixed(2)}</Text>
-                  <Text style={styles.cell}>{item.onSiteContact || '—'}</Text>
-                  <Text style={styles.cell}>
-                    {item.distanceFromClientFeet !== undefined && item.distanceFromClientFeet !== null
-                      ? item.distanceFromClientFeet.toFixed(0)
-                      : '—'}
-                  </Text>
-                  <Text style={styles.cell}>{item.geoValidated ? 'Matched' : 'Needs check'}</Text>
-                </View>
-              ))}
+                    <Text style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
+                    <Text style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{item.checkInTs ? formatDate(item.checkInTs).split(',')[1]?.trim() || formatDate(item.checkInTs) : '—'}</Text>
+                    <Text style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{item.checkOutTs ? formatDate(item.checkOutTs).split(',')[1]?.trim() || formatDate(item.checkOutTs) : '—'}</Text>
+                    <Text style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
+                    <Text style={[styles.cell, styles.mileage]}>{item.mileageDelta.toFixed(1)}</Text>
+                    <Text style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
+                    <Text style={[styles.cell, styles.geoFt]}>
+                      {item.distanceFromClientFeet !== undefined && item.distanceFromClientFeet !== null
+                        ? item.distanceFromClientFeet.toFixed(0)
+                        : '—'}
+                    </Text>
+                    <Text style={[styles.cell, styles.geoValid]}>{item.geoValidated ? 'Yes' : 'No'}</Text>
+                  </View>
+                ))}
             </View>
           </ScrollView>
         )}
@@ -333,8 +341,19 @@ const styles = StyleSheet.create({
   removeRecipientText: { color: '#b91c1c', fontWeight: '800', fontSize: 18, lineHeight: 18 },
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   tableHeaderRow: { backgroundColor: '#f4f4f5' },
-  cell: { minWidth: 120, paddingVertical: spacing(1), paddingHorizontal: spacing(1), color: colors.text },
-  clientCell: { flexDirection: 'row', alignItems: 'center', minWidth: 140 },
+  cell: { width: 100, paddingVertical: spacing(1), paddingHorizontal: spacing(0.5), color: colors.text, fontSize: 12 },
+  technician: { width: 90 },
+  route: { width: 70 },
+  client: { width: 110 },
+  address: { width: 120 },
+  checkIn: { width: 110 },
+  checkOut: { width: 110 },
+  duration: { width: 90 },
+  mileage: { width: 75 },
+  contact: { width: 100 },
+  geoFt: { width: 70 },
+  geoValid: { width: 80 },
+  clientCell: { flexDirection: 'row', alignItems: 'center', width: 110 },
   clientText: { color: colors.text },
   geoDot: { width: 12, height: 12, borderRadius: 6, marginRight: spacing(1) },
   geoDotOk: { backgroundColor: '#22c55e' },
