@@ -7,6 +7,7 @@ import { showBanner } from '../components/globalBannerBus';
 import { adminCreateUser, adminFetchUsers, adminFetchServiceRoutes, adminSetUserPassword, AdminUser, ServiceRoute } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
+import { truncateText } from '../utils/text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FieldTechnicians'>;
 
@@ -145,12 +146,12 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                 <View key={user.id} style={styles.listRow}>
                   <View style={{ flex: 1 }}>
                   <Text style={styles.listName}>
-                    {user.name}
+                    {truncateText(user.name, 32)}
                     {user.managed_password ? (
                       <Text style={styles.pwInline}> ({user.managed_password})</Text>
                     ) : null}
                   </Text>
-                  <Text style={styles.listEmail}>{user.email}</Text>
+                  <Text style={styles.listEmail}>{truncateText(user.email, 36)}</Text>
                   <View style={styles.routeChips}>
                     {serviceRoutes.filter(r => r.user_id === user.id).map(route => (
                       <View key={`${user.id}-route-${route.id}`} style={styles.routePill}>

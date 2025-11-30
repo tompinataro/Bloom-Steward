@@ -7,6 +7,7 @@ import { adminFetchUsers, adminFetchServiceRoutes, AdminUser, ServiceRoute } fro
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import ThemedButton from '../components/Button';
+import { truncateText } from '../utils/text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllFieldTechnicians'>;
 
@@ -87,8 +88,8 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                   }
                 }}
               >
-                <Text style={styles.name}>{user.name}</Text>
-                <Text style={styles.email}>{user.email}</Text>
+                <Text style={styles.name}>{truncateText(user.name, 40)}</Text>
+                <Text style={styles.email}>{truncateText(user.email, 42)}</Text>
                 <Text style={styles.routeLabel}>
                   {assignedRoute ? assignedRoute.name : 'Unassigned'}
                 </Text>

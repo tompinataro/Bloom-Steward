@@ -6,7 +6,7 @@ values
   ('sadie@bloomsteward.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
   ('chris@bloomsteward.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
   ('cameron@bloomsteward.com', 'Cameron Diaz', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password'),
-  ('drek@bloomsteward.com', 'Drek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
+  ('drek@bloomsteward.com', 'Derek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'password')
 on conflict (email) do update set
   name = excluded.name,
   password_hash = excluded.password_hash,
