@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   tableHeaderRow: { backgroundColor: '#f4f4f5' },
   cell: { width: 100, paddingVertical: spacing(1), paddingHorizontal: spacing(0.5), color: colors.text, fontSize: 12 },
   technician: { width: 100 },
-  route: { width: 55 },
+  route: { width: 70, paddingRight: spacing(2) },
   client: { width: 110 },
   address: { width: 155 },
   checkIn: { width: 100 },
