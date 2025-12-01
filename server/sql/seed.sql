@@ -67,21 +67,16 @@ on conflict do nothing;
 
 -- Visits: one per client, time slots spread through the day
 insert into visits (client_id, scheduled_time)
-select c.id, t.scheduled_time
-from (
-  select name, unnest(array['08:00','09:00','10:00','11:00','12:00','13:00']) as scheduled_time from clients where service_route_id = (select id from service_routes where name = 'North')
-  union all
-  select name, unnest(array['08:15','09:15','10:15','11:15','12:15','13:15']) from clients where service_route_id = (select id from service_routes where name = 'South')
-  union all
-  select name, unnest(array['08:30','09:30','10:30','11:30','12:30','13:30']) from clients where service_route_id = (select id from service_routes where name = 'East')
-  union all
-  select name, unnest(array['08:45','09:45','10:45','11:45','12:45','13:45']) from clients where service_route_id = (select id from service_routes where name = 'West')
-  union all
-  select name, unnest(array['09:00','10:00','11:00','12:00','13:00','14:00']) from clients where service_route_id = (select id from service_routes where name = 'Central')
-  union all
-  select name, unnest(array['09:00','10:00','11:00','12:00','13:00','14:00']) from clients where service_route_id = (select id from service_routes where name = 'St. Paul')
-) as t(name, scheduled_time)
-join clients c on c.name = t.name
+select c.id, 
+  case c.id % 6
+    when 0 then '13:00'
+    when 1 then '08:00'
+    when 2 then '09:00'
+    when 3 then '10:00'
+    when 4 then '11:00'
+    else '12:00'
+  end as scheduled_time
+from clients c
 on conflict do nothing;
 
 -- Checklist items for each visit

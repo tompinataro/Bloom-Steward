@@ -254,7 +254,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               returnKeyType="done"
             />
           </View>
-          <View style={{ height: spacing(14) }} />
+          <View style={{ height: spacing(28) }} />
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>

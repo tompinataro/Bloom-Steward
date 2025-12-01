@@ -279,7 +279,7 @@ type ItemProps = {
         <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }] }>
           <View style={styles.rowTop}>
             <View style={styles.leftWrap}>
-              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName)}</Text>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName, 14)}</Text>
               <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.address, 36)}</Text>
             </View>
             <View style={styles.centerWrap}>
