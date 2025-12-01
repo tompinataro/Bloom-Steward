@@ -1263,7 +1263,7 @@ app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, res) => {
     const raw = fs.readFileSync(seedPath, 'utf8');
     // Remove SQL comments that start with -- and split on semicolons followed by newline
     const cleaned = raw.replace(/--.*$/gm, '\n');
-    const parts = cleaned.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
+    const parts = cleaned.split(/;\s*\n/).map((s: string) => s.trim()).filter(Boolean);
     // Run in a transaction
     await dbQuery('BEGIN');
     for (const stmt of parts) {
