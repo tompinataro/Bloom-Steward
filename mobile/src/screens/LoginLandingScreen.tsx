@@ -52,8 +52,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logo: { width: '92%', height: '92%' },
-  heading: { fontSize: 28, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: colors.muted, textAlign: 'center' },
+  heading: { fontSize: 22, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  subtitle: { fontSize: 13, color: colors.muted, textAlign: 'center' },
   rightsText: { position: 'absolute', bottom: 8, left: 12, right: 12, textAlign: 'center', fontSize: 11, color: colors.muted },
   footer: {
     width: '100%',
