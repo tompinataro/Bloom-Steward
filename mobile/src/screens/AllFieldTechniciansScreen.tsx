@@ -238,10 +238,10 @@ const styles = StyleSheet.create({
   editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalScrollContent: { flexGrow: 1, justifyContent: 'center', padding: spacing(4) },
-  modalCard: { width: '100%', maxWidth: 520, backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },
+  modalCard: { width: '100%', maxWidth: 680, backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
   label: { fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 80, paddingTop: spacing(0.5) },
-  input: { flex: 1, minWidth: 320, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
+  input: { flex: 1, flexGrow: 1, flexShrink: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
   modalActions: { flexDirection: 'row', gap: spacing(2), marginTop: spacing(1) },
   modalBtn: { flex: 1, paddingVertical: spacing(1) },
 });
