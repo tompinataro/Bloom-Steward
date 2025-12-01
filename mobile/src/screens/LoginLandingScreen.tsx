@@ -13,8 +13,7 @@ export default function LoginLandingScreen() {
         <View style={styles.logoFrame}>
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
         </View>
-        <Text style={styles.heading}>FT Mobile Dashboard</Text>
-        <Text style={styles.subtitle}>Field Tech Management</Text>
+        <Text style={styles.subtitle}>Field Tech Dashboard</Text>
       </View>
       <View style={styles.footer}>
         <ThemedButton
