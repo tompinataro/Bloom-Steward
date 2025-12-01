@@ -1,18 +1,19 @@
 -- Seed admin and tech accounts
-insert into users (email, name, password_hash, role, must_change_password, managed_password)
+insert into users (email, name, password_hash, role, must_change_password, managed_password, phone)
 values
-  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, '83472618'),
-  ('jacob@b.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'Jacob123'),
-  ('sadie@b.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '50293847'),
-  ('chris@b.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '71920485'),
-  ('cameron@b.com', 'Cameron Diaz', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '12837465'),
-  ('derek@b.com', 'Derek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '90456123')
+  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, '83472618', '612-555-1001'),
+  ('jacob@b.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'Jacob123', '612-555-2002'),
+  ('sadie@b.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '50293847', '612-555-3003'),
+  ('chris@b.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '71920485', '612-555-4004'),
+  ('cameron@b.com', 'Cameron Diaz', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '12837465', '612-555-5005'),
+  ('derek@b.com', 'Derek Jeter', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '90456123', '612-555-6006')
 on conflict (email) do update set
   name = excluded.name,
   password_hash = excluded.password_hash,
   role = excluded.role,
   must_change_password = excluded.must_change_password,
-  managed_password = excluded.managed_password;
+  managed_password = excluded.managed_password,
+  phone = excluded.phone;
 
 insert into service_routes (name)
 values ('North'), ('South'), ('East'), ('West'), ('Central'), ('St. Paul')

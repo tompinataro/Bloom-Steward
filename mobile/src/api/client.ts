@@ -169,7 +169,7 @@ export async function adminResetVisitState(date: string | undefined, token: stri
   });
 }
 
-export type AdminUser = { id: number; name: string; email: string; role: 'admin' | 'tech'; managed_password?: string | null };
+export type AdminUser = { id: number; name: string; email: string; role: 'admin' | 'tech'; managed_password?: string | null; phone?: string | null };
 export async function adminFetchUsers(token: string): Promise<{ ok: boolean; users: AdminUser[] }> {
   return fetchJson(withBase('/api/admin/users'), {
     headers: { Authorization: `Bearer ${token}` },
@@ -202,6 +202,18 @@ export async function adminCreateUser(
 ): Promise<{ ok: boolean; user: AdminUser; tempPassword: string }> {
   return fetchJson(withBase('/api/admin/users'), {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function adminUpdateUser(
+  token: string,
+  userId: number,
+  data: { name?: string; email?: string; phone?: string; managed_password?: string }
+): Promise<{ ok: boolean; user: AdminUser }> {
+  return fetchJson(withBase(`/api/admin/users/${userId}`), {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
   });

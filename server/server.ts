@@ -971,6 +971,58 @@ app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, async (req,
   }
 });
 
+app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const userId = Number(req.params.id);
+  if (!userId || Number.isNaN(userId)) {
+    return res.status(400).json({ ok: false, error: 'invalid user id' });
+  }
+  const { name, email, phone, managed_password } = req.body ?? {};
+  const updates: string[] = [];
+  const values: any[] = [];
+  let idx = 1;
+
+  if (typeof name === 'string' && name.trim()) {
+    updates.push(`name = $${idx++}`);
+    values.push(name.trim());
+  }
+  if (typeof email === 'string' && email.trim()) {
+    updates.push(`email = $${idx++}`);
+    values.push(email.trim());
+  }
+  if (typeof phone === 'string') {
+    updates.push(`phone = $${idx++}`);
+    values.push(phone.trim() || null);
+  }
+  if (typeof managed_password === 'string' && managed_password.trim()) {
+    const hash = encryptLib.encryptPassword(managed_password.trim());
+    updates.push(`password_hash = $${idx++}`);
+    values.push(hash);
+    updates.push(`managed_password = $${idx++}`);
+    values.push(managed_password.trim());
+    updates.push(`must_change_password = false`);
+  }
+
+  if (!updates.length) {
+    return res.status(400).json({ ok: false, error: 'no fields to update' });
+  }
+
+  values.push(userId);
+  try {
+    const result = await dbQuery<{ id: number; name: string; email: string; role: string; managed_password: string | null; phone: string | null }>(
+      `update users set ${updates.join(', ')} where id = $${idx} returning id, name, email, role, managed_password, phone`,
+      values
+    );
+    if (!result?.rows?.length) {
+      return res.status(404).json({ ok: false, error: 'user not found' });
+    }
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (err: any) {
+    console.error('[admin/users/update] error', err);
+    res.status(500).json({ ok: false, error: 'failed to update user' });
+  }
+});
+
 app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
   if (!ensureDatabase(res)) return;
   const { name, address, contactName, contactPhone, latitude, longitude } = req.body ?? {};
