@@ -9,7 +9,8 @@ import type { RootStackParamList } from './src/navigationTypes';
 
 import HomeScreen from './src/screens/HomeScreen';
 import AboutScreen from './src/screens/AboutScreen';
-import LoginScreen from './src/screens/LoginScreen';
+import LoginLandingScreen from './src/screens/LoginLandingScreen';
+import LoginFormScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
 import { GlobalBannerProvider } from './src/components/GlobalBannerProvider';
@@ -98,8 +99,9 @@ function RootNavigator() {
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
   ) : (
-    <Stack.Navigator initialRouteName="Login">
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+    <Stack.Navigator initialRouteName="LoginLanding">
+      <Stack.Screen name="LoginLanding" component={LoginLandingScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="LoginForm" component={LoginFormScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

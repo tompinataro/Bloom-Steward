@@ -1,5 +1,6 @@
 export type RootStackParamList = {
-  Login: undefined;
+  LoginLanding: undefined;
+  LoginForm: undefined;
   RouteList: { saved?: boolean; savedOffline?: boolean } | undefined;
   VisitDetail: { id: number };
   Home: undefined;
