@@ -40,7 +40,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       try {
         const res = await fetchVisit(id, token);
         setVisit(res.visit);
-        navigation.setOptions({ title: res.visit.clientName });
+        navigation.setOptions({ title: `Today at ${res.visit.clientName}` });
         setTimelyInstruction(res.visit.timelyNote || '');
         setAck(false);
         setNoteToOffice('');
