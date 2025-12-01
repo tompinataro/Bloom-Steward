@@ -220,11 +220,29 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
     let mileageDelta = 0;
     if (odometerReading !== null && Number.isFinite(odometerReading) && row.tech_id && checkOutTs) {
-      const dateStr = checkOutTs.split('T')[0]; // Extract YYYY-MM-DD from ISO timestamp
-      const dailyStartKey = `${row.tech_id}|${dateStr}`;
-      const dailyStartOdom = dailyStartOdometers.get(dailyStartKey);
-      if (typeof dailyStartOdom === 'number' && odometerReading >= dailyStartOdom) {
-        mileageDelta = odometerReading - dailyStartOdom;
+      // Normalize checkOutTs to an ISO date string then extract YYYY-MM-DD.
+      // Some stored timestamps come as space-separated ("YYYY-MM-DD HH:MM:SS"),
+      // so replace the first space with 'T' before parsing to avoid mismatched keys.
+      let dateStr = '';
+      try {
+        const normalized = (checkOutTs || '').replace(' ', 'T');
+        const parsed = new Date(normalized);
+        if (!Number.isNaN(parsed.getTime())) {
+          dateStr = parsed.toISOString().split('T')[0];
+        } else {
+          // Fallback: if parsing fails, try splitting on 'T' or space and take first segment
+          dateStr = (checkOutTs.indexOf('T') >= 0 ? checkOutTs.split('T')[0] : checkOutTs.split(' ')[0]) || '';
+        }
+      } catch (err) {
+        dateStr = (checkOutTs.indexOf('T') >= 0 ? checkOutTs.split('T')[0] : checkOutTs.split(' ')[0]) || '';
+      }
+
+      if (dateStr) {
+        const dailyStartKey = `${row.tech_id}|${dateStr}`;
+        const dailyStartOdom = dailyStartOdometers.get(dailyStartKey);
+        if (typeof dailyStartOdom === 'number' && odometerReading >= dailyStartOdom) {
+          mileageDelta = odometerReading - dailyStartOdom;
+        }
       }
     }
     const rawLoc = payload.checkOutLoc || payload.checkInLoc;
