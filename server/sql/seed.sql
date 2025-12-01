@@ -26,6 +26,9 @@ update service_routes set user_id = (select id from users where email = 'cameron
 update service_routes set user_id = (select id from users where email = 'derek@b.com') where name = 'Central';
 
 -- Clients: 6 per route for North through Central, 6 for St. Paul (with geo coordinates)
+-- Clear existing clients to avoid duplicates from previous seeds
+delete from clients;
+
 insert into clients (name, address, service_route_id, latitude, longitude) values
   ('Acme HQ', '123 Main St', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
   ('Blue Sky Co', '456 Oak Ave', (select id from service_routes where name = 'North'), 44.9875, -93.2750),
