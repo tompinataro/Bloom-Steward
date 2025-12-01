@@ -266,7 +266,7 @@ export type ReportSummaryRow = {
   mileageDelta: number;
   onSiteContact?: string | null;
   odometerReading?: number | null;
-  geoValidated: boolean;
+  geoValidated?: boolean;
   distanceFromClientFeet?: number | null;
 };
 

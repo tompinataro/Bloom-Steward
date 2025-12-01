@@ -233,9 +233,15 @@ export default function ReportsScreen(_props: Props) {
                     <Text numberOfLines={1} style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.mileage]}>{item.mileageDelta ? item.mileageDelta.toFixed(1) : '—'}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.mileage]}>{
+                      item.mileageDelta !== undefined && item.mileageDelta !== null
+                        ? item.mileageDelta.toFixed(1)
+                        : '—'
+                    }</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.geoValid]}>{item.geoValidated ? 'Yes' : 'No'}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.geoValid]}>{
+                      item.geoValidated === true ? 'Yes' : item.geoValidated === false ? 'No' : '—'
+                    }</Text>
                   </View>
                 ))}
             </View>
