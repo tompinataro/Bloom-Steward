@@ -197,8 +197,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                   style={styles.input}
                   value={editPassword}
                   onChangeText={setEditPassword}
-                  placeholder="Managed password"
-                  placeholderTextColor={colors.muted}
+                  // Intentionally no placeholder so blank means truly blank
                 />
               </View>
 
