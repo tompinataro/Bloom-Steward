@@ -106,9 +106,9 @@ insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
   'checkInTs', ts_base - interval '1 minute' * (random() * 8 + 12)::int,
   'checkOutTs', ts_base,
-  'checkInLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
-  'checkOutLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
-  'odometerReading', 45000 + (c.id * 15) + (random() * 6)::int,
+  'checkInLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 45000 + (c.id % 6) * 3 + (random() * 2)::int,
   'onSiteContact', (array['J. Smith', 'J. Johnson', 'J. Williams', 'J. Brown', 'J. Davis', 'J. Miller'])[((c.id - 1) % 6) + 1]
 ), ts_base - interval '1 minute' * (random() * 8 + 12)::int
 from visits v
@@ -123,9 +123,9 @@ insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
   'checkInTs', ts_base - interval '1 minute' * (random() * 8 + 12)::int,
   'checkOutTs', ts_base,
-  'checkInLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
-  'checkOutLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
-  'odometerReading', 50000 + (c.id * 15) + (random() * 6)::int,
+  'checkInLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 50000 + (c.id % 6) * 3 + (random() * 2)::int,
   'onSiteContact', (array['S. Garcia', 'S. Rodriguez', 'S. Martinez', 'S. Lopez', 'S. Gonzalez', 'S. Hernandez'])[((c.id - 1) % 6) + 1]
 ), ts_base - interval '1 minute' * (random() * 8 + 12)::int
 from visits v
@@ -140,9 +140,9 @@ insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
   'checkInTs', ts_base - interval '1 minute' * (random() * 8 + 12)::int,
   'checkOutTs', ts_base,
-  'checkInLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
-  'checkOutLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
-  'odometerReading', 52000 + (c.id * 15) + (random() * 6)::int,
+  'checkInLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 52000 + (c.id % 6) * 3 + (random() * 2)::int,
   'onSiteContact', (array['C. Anderson', 'C. Taylor', 'C. Thomas', 'C. Moore', 'C. Jackson', 'C. Martin'])[((c.id - 1) % 6) + 1]
 ), ts_base - interval '1 minute' * (random() * 8 + 12)::int
 from visits v
@@ -157,9 +157,9 @@ insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
   'checkInTs', ts_base - interval '1 minute' * (random() * 8 + 12)::int,
   'checkOutTs', ts_base,
-  'checkInLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
-  'checkOutLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
-  'odometerReading', 48000 + (c.id * 15) + (random() * 6)::int,
+  'checkInLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 48000 + (c.id % 6) * 3 + (random() * 2)::int,
   'onSiteContact', (array['C. White', 'C. Harris', 'C. Martin', 'C. Thompson', 'C. Garcia', 'C. Martinez'])[((c.id - 1) % 6) + 1]
 ), ts_base - interval '1 minute' * (random() * 8 + 12)::int
 from visits v
@@ -176,11 +176,11 @@ select v.id, 'Completed', jsonb_build_object(
   'checkOutTs', ts_base,
   'checkInLoc', jsonb_build_object('lat', c.latitude, 'lng', c.longitude),
   'checkOutLoc', case 
-    when random() > 0.70 then null
+    when random() > 0.65 then null
     when v.id % 3 = 0 then jsonb_build_object('lat', c.latitude + 0.002, 'lng', c.longitude + 0.002)
     else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002)
   end,
-  'odometerReading', 55000 + (c.id * 15) + (random() * 6)::int,
+  'odometerReading', 55000 + (c.id % 6) * 3 + (random() * 2)::int,
   'onSiteContact', (array['D. Lee', 'D. Clark', 'D. Lewis', 'D. Walker', 'D. Hall', 'D. Allen'])[((c.id - 1) % 6) + 1]
 ), ts_base - interval '1 minute' * (random() * 8 + 12)::int
 from visits v
@@ -195,9 +195,9 @@ insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
   'checkInTs', ts_base - interval '1 minute' * (random() * 8 + 12)::int,
   'checkOutTs', ts_base,
-  'checkInLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
-  'checkOutLoc', case when random() > 0.70 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
-  'odometerReading', 51000 + (c.id * 15) + (random() * 6)::int,
+  'checkInLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.65 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 51000 + (c.id % 6) * 3 + (random() * 2)::int,
   'onSiteContact', (array['U. Young', 'U. Hernandez', 'U. Lopez', 'U. Gonzalez', 'U. Wilson', 'U. Anderson'])[((c.id - 1) % 6) + 1]
 ), ts_base - interval '1 minute' * (random() * 8 + 12)::int
 from visits v
