@@ -48,7 +48,7 @@ type ReportRow = {
   odometerReading?: number | null;
   mileageDelta: number;
   distanceFromClientFeet?: number | null;
-  geoValidated: boolean;
+  geoValidated?: boolean;
   managedPassword?: string | null;
 };
 
@@ -228,7 +228,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       }
     }
     const rawLoc = payload.checkOutLoc || payload.checkInLoc;
-    let geoValidated = false;
+    let geoValidated: boolean | undefined = undefined;
     if (rawLoc && typeof rawLoc.lat === 'number' && typeof rawLoc.lng === 'number') {
       const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
       if (distMiles !== null) {

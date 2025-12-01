@@ -217,3 +217,18 @@ join service_routes sr on sr.id = c.service_route_id
 where sr.name = 'St. Paul'
 on conflict do nothing;
 
+-- Populate daily_start_odometer for each tech (creates entries so mileage delta can be calculated)
+insert into daily_start_odometer (user_id, date, odometer_reading)
+select u.id, (now()::date), 
+  case 
+    when u.email = 'jacob@b.com' then 45000
+    when u.email = 'sadie@b.com' then 50000
+    when u.email = 'chris@b.com' then 52000
+    when u.email = 'cameron@b.com' then 48000
+    when u.email = 'derek@b.com' then 55000
+    else 51000
+  end
+from users u
+where u.role = 'tech'
+on conflict (user_id, date) do nothing;
+
