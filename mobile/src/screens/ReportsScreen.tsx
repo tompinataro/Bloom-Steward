@@ -221,12 +221,17 @@ export default function ReportsScreen(_props: Props) {
                     <Text numberOfLines={1} style={[styles.cell, styles.technician]}>{truncateText(item.techName, 14)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.route]}>{item.routeName || '—'}</Text>
                     <View style={[styles.clientCell]}>
-                      <View
+                      {/* GEO VALIDATION DOT DISABLED (Dec 2025)
+                          Commented out the colored circle indicator showing geo validation status
+                          (green=valid, red=invalid, grey=missing). Can be re-enabled by uncommenting
+                          the View below and adjusting clientCell width if needed.
+                      */}
+                      {/* <View
                         style={[
                           styles.geoDot,
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
-                      />
+                      /> */}
                       <Text numberOfLines={1} style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
                     </View>
                     <Text numberOfLines={1} style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
