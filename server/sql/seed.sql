@@ -65,6 +65,9 @@ insert into clients (name, address, service_route_id, latitude, longitude) value
   ('Haven House', '39 Oak Ter', (select id from service_routes where name = 'St. Paul'), 44.8645, -93.0910)
 on conflict do nothing;
 
+-- Clean up old visits before re-seeding (important for idempotent seed on Heroku)
+truncate visits cascade;
+
 -- Visits: one per client, time slots spread through the day
 insert into visits (client_id, scheduled_time)
 select c.id, 
