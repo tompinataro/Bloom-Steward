@@ -156,7 +156,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
               <Text style={styles.modalTitle}>Edit Field Tech</Text>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing(2) }}>
-                <Text style={styles.label}>Name</Text>
+                <Text style={styles.label}>Name:</Text>
                 <TextInput
                   style={styles.input}
                   value={editName}
@@ -167,7 +167,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing(2) }}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>Email:</Text>
                 <TextInput
                   style={styles.input}
                   value={editEmail}
@@ -180,7 +180,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing(2) }}>
-                <Text style={styles.label}>Phone</Text>
+                <Text style={styles.label}>Phone:</Text>
                 <TextInput
                   style={styles.input}
                   value={editPhone}
@@ -192,7 +192,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing(2) }}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>Password:</Text>
                 <TextInput
                   style={styles.input}
                   value={editPassword}
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   modalCard: { width: '100%', maxWidth: 520, backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
   label: { fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 80, paddingTop: spacing(0.5) },
-  input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
+  input: { flex: 1, minWidth: 320, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
   modalActions: { flexDirection: 'row', gap: spacing(2), marginTop: spacing(1) },
   modalBtn: { flex: 1, paddingVertical: spacing(1) },
 });
