@@ -100,84 +100,107 @@ join users u on u.id = sr.user_id
 join lateral (select scheduled_time from visits where client_id = c.id limit 1) v on true
 on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time;
 
--- Visit submissions with geo data (mostly green, some gray, one FT with mixed red/green)
--- Jacob (North route) - mostly green (accurate locations)
+-- Visit submissions with geo data (mostly green, some random gray, one FT with mixed red/green)
+-- Jacob (North route) - mostly green (accurate locations), some gray randomly
 insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
-  'checkInTs', now() - interval '2 hours',
-  'checkOutTs', now() - interval '1 hour',
-  'checkInLoc', jsonb_build_object('lat', c.latitude, 'lng', c.longitude),
-  'checkOutLoc', jsonb_build_object('lat', c.latitude + 0.0001, 'lng', c.longitude + 0.0001),
-  'odometerReading', 45000 + (c.id * 10)
-), now() - interval '1 hour'
+  'checkInTs', now() - interval '1 minute' * (random() * 240 + 60)::int,
+  'checkOutTs', now() - interval '1 minute' * (random() * 120 + 30)::int,
+  'checkInLoc', case when random() > 0.85 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.85 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 45000 + (c.id * 10) + (random() * 50)::int,
+  'onSiteContact', (array['J. Smith', 'J. Johnson', 'J. Williams', 'J. Brown', 'J. Davis', 'J. Miller'])[((c.id - 1) % 6) + 1]
+), now() - interval '1 minute' * (random() * 120 + 30)::int
 from visits v
 join clients c on c.id = v.client_id
 join service_routes sr on sr.id = c.service_route_id
 where sr.name = 'North'
 on conflict do nothing;
 
--- Sadie (South route) - mostly green
+-- Sadie (South route) - mostly green with some gray
 insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
-  'checkInTs', now() - interval '3 hours',
-  'checkOutTs', now() - interval '2 hours',
-  'checkInLoc', jsonb_build_object('lat', c.latitude, 'lng', c.longitude),
-  'checkOutLoc', jsonb_build_object('lat', c.latitude + 0.00005, 'lng', c.longitude + 0.00005),
-  'odometerReading', 50000 + (c.id * 10)
-), now() - interval '2 hours'
+  'checkInTs', now() - interval '1 minute' * (random() * 270 + 90)::int,
+  'checkOutTs', now() - interval '1 minute' * (random() * 135 + 45)::int,
+  'checkInLoc', case when random() > 0.80 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.80 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 50000 + (c.id * 10) + (random() * 50)::int,
+  'onSiteContact', (array['S. Garcia', 'S. Rodriguez', 'S. Martinez', 'S. Lopez', 'S. Gonzalez', 'S. Hernandez'])[((c.id - 1) % 6) + 1]
+), now() - interval '1 minute' * (random() * 135 + 45)::int
 from visits v
 join clients c on c.id = v.client_id
 join service_routes sr on sr.id = c.service_route_id
 where sr.name = 'South'
 on conflict do nothing;
 
--- Chris (East route) - mostly green with 2 gray (no geo data)
+-- Chris (East route) - mostly green with scattered gray (3-4 per route)
 insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
-  'checkInTs', now() - interval '4 hours',
-  'checkOutTs', now() - interval '3 hours',
-  'checkInLoc', case when v.id % 3 = 0 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
-  'checkOutLoc', case when v.id % 3 = 0 then null else jsonb_build_object('lat', c.latitude - 0.00008, 'lng', c.longitude - 0.00008) end,
-  'odometerReading', 52000 + (c.id * 10)
-), now() - interval '3 hours'
+  'checkInTs', now() - interval '1 minute' * (random() * 300 + 120)::int,
+  'checkOutTs', now() - interval '1 minute' * (random() * 150 + 60)::int,
+  'checkInLoc', case when random() > 0.82 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.82 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 52000 + (c.id * 10) + (random() * 50)::int,
+  'onSiteContact', (array['C. Anderson', 'C. Taylor', 'C. Thomas', 'C. Moore', 'C. Jackson', 'C. Martin'])[((c.id - 1) % 6) + 1]
+), now() - interval '1 minute' * (random() * 150 + 60)::int
 from visits v
 join clients c on c.id = v.client_id
 join service_routes sr on sr.id = c.service_route_id
 where sr.name = 'East'
 on conflict do nothing;
 
--- Cameron (West route) - mostly green
+-- Cameron (West route) - mostly green with some gray
 insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
-  'checkInTs', now() - interval '5 hours',
-  'checkOutTs', now() - interval '4 hours',
-  'checkInLoc', jsonb_build_object('lat', c.latitude, 'lng', c.longitude),
-  'checkOutLoc', jsonb_build_object('lat', c.latitude - 0.00003, 'lng', c.longitude - 0.00003),
-  'odometerReading', 48000 + (c.id * 10)
-), now() - interval '4 hours'
+  'checkInTs', now() - interval '1 minute' * (random() * 330 + 150)::int,
+  'checkOutTs', now() - interval '1 minute' * (random() * 165 + 75)::int,
+  'checkInLoc', case when random() > 0.81 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.81 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 48000 + (c.id * 10) + (random() * 50)::int,
+  'onSiteContact', (array['C. White', 'C. Harris', 'C. Martin', 'C. Thompson', 'C. Garcia', 'C. Martinez'])[((c.id - 1) % 6) + 1]
+), now() - interval '1 minute' * (random() * 165 + 75)::int
 from visits v
 join clients c on c.id = v.client_id
 join service_routes sr on sr.id = c.service_route_id
 where sr.name = 'West'
 on conflict do nothing;
 
--- Derek (Central route) - PROBLEMATIC: half red (far away), half green (accurate) - indicates potential issue
+-- Derek (Central route) - PROBLEMATIC: half red (far away), half green (accurate), plus gray - indicates potential issue
 insert into visit_submissions (visit_id, notes, payload, created_at)
 select v.id, 'Completed', jsonb_build_object(
-  'checkInTs', now() - interval '6 hours',
-  'checkOutTs', now() - interval '5 hours',
+  'checkInTs', now() - interval '1 minute' * (random() * 360 + 180)::int,
+  'checkOutTs', now() - interval '1 minute' * (random() * 180 + 90)::int,
   'checkInLoc', jsonb_build_object('lat', c.latitude, 'lng', c.longitude),
-  'checkOutLoc', jsonb_build_object(
-    'lat', c.latitude + (case when v.id % 2 = 0 then 0.002 else 0.00005 end),
-    'lng', c.longitude + (case when v.id % 2 = 0 then 0.002 else 0.00005 end)
-  ),
-  'odometerReading', 55000 + (c.id * 10)
-), now() - interval '5 hours'
+  'checkOutLoc', case 
+    when random() > 0.85 then null
+    when v.id % 2 = 0 then jsonb_build_object('lat', c.latitude + 0.002, 'lng', c.longitude + 0.002)
+    else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002)
+  end,
+  'odometerReading', 55000 + (c.id * 10) + (random() * 50)::int,
+  'onSiteContact', (array['D. Lee', 'D. Clark', 'D. Lewis', 'D. Walker', 'D. Hall', 'D. Allen'])[((c.id - 1) % 6) + 1]
+), now() - interval '1 minute' * (random() * 180 + 90)::int
 from visits v
 join clients c on c.id = v.client_id
 join service_routes sr on sr.id = c.service_route_id
 where sr.name = 'Central'
 on conflict do nothing;
+
+-- St. Paul route - mostly green with some gray
+insert into visit_submissions (visit_id, notes, payload, created_at)
+select v.id, 'Completed', jsonb_build_object(
+  'checkInTs', now() - interval '1 minute' * (random() * 390 + 210)::int,
+  'checkOutTs', now() - interval '1 minute' * (random() * 195 + 105)::int,
+  'checkInLoc', case when random() > 0.82 then null else jsonb_build_object('lat', c.latitude, 'lng', c.longitude) end,
+  'checkOutLoc', case when random() > 0.82 then null else jsonb_build_object('lat', c.latitude + (random() - 0.5) * 0.0002, 'lng', c.longitude + (random() - 0.5) * 0.0002) end,
+  'odometerReading', 51000 + (c.id * 10) + (random() * 50)::int,
+  'onSiteContact', (array['U. Young', 'U. Hernandez', 'U. Lopez', 'U. Gonzalez', 'U. Wilson', 'U. Anderson'])[((c.id - 1) % 6) + 1]
+), now() - interval '1 minute' * (random() * 195 + 105)::int
+from visits v
+join clients c on c.id = v.client_id
+join service_routes sr on sr.id = c.service_route_id
+where sr.name = 'St. Paul'
+on conflict do nothing;
+
 
 -- St. Paul route - mostly green
 insert into visit_submissions (visit_id, notes, payload, created_at)
