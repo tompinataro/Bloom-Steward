@@ -177,7 +177,11 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       [uniqueTechIds, startDateStr, endDateStr]
     );
     (result?.rows || []).forEach(row => {
-      dailyStartOdometers.set(`${row.user_id}|${row.date}`, row.odometer_reading);
+      // Ensure we store a numeric value (db driver may return numeric as string)
+      const val = typeof row.odometer_reading === 'number' ? row.odometer_reading : Number(row.odometer_reading);
+      if (!Number.isNaN(val)) {
+        dailyStartOdometers.set(`${row.user_id}|${row.date}`, val);
+      }
     });
   }
   
