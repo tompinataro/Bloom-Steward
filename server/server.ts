@@ -1252,6 +1252,34 @@ app.post('/api/admin/visit-state/reset', requireAuth, requireAdmin, async (req, 
   }
 });
 
+// Admin utility — run the SQL seed file on the configured database.
+// POST /api/admin/run-seed
+app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    const seedPath = path.join(__dirname, 'sql', 'seed.sql');
+    const raw = fs.readFileSync(seedPath, 'utf8');
+    // Remove SQL comments that start with -- and split on semicolons followed by newline
+    const cleaned = raw.replace(/--.*$/gm, '\n');
+    const parts = cleaned.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
+    // Run in a transaction
+    await dbQuery('BEGIN');
+    for (const stmt of parts) {
+      // Some parts may still be empty after cleaning
+      if (!stmt) continue;
+      await dbQuery(stmt);
+    }
+    await dbQuery('COMMIT');
+    res.json({ ok: true, appliedStatements: parts.length });
+  } catch (e: any) {
+    try { await dbQuery('ROLLBACK'); } catch {}
+    console.error('[admin/run-seed] error', e);
+    res.status(500).json({ ok: false, error: e?.message ?? 'failed to run seed' });
+  }
+});
+
 const port = Number(process.env.PORT) || 5100;
 const host = process.env.HOST || '0.0.0.0';
 if (process.env.NODE_ENV !== 'test') {
