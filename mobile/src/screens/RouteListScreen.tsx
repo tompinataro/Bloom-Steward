@@ -364,7 +364,7 @@ type ItemProps = {
       ) : null}
       <FlatList
         style={styles.list}
-        contentContainerStyle={[styles.listContent, { paddingBottom: spacing(16) }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: spacing(24) }]}
         data={routes}
         keyExtractor={keyExtractor}
         initialNumToRender={8}
@@ -388,15 +388,17 @@ type ItemProps = {
             </Text>
           </View>
         }
+        ListFooterComponent={
+          <SafeAreaView edges={['bottom']} style={styles.footerBar}>
+            <View style={styles.accountRow}>
+              {isAdmin ? (
+                <ThemedButton title="Admin" onPress={() => navigation.navigate('Account')} style={styles.secondaryBtn} />
+              ) : null}
+              <ThemedButton title="Log Out" onPress={signOut} style={styles.secondaryBtn} />
+            </View>
+          </SafeAreaView>
+        }
       />
-      <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
-        <View style={styles.accountRow}>
-          {isAdmin ? (
-            <ThemedButton title="Admin" onPress={() => navigation.navigate('Account')} style={styles.secondaryBtn} />
-          ) : null}
-          <ThemedButton title="Log Out" onPress={signOut} style={styles.secondaryBtn} />
-        </View>
-      </SafeAreaView>
       <LoadingOverlay visible={loading || refreshing} />
     </>
   );
@@ -446,7 +448,7 @@ const styles = StyleSheet.create({
   bannerText: { color: colors.successText, fontWeight: '600' },
   errorWrap: { paddingHorizontal: spacing(4), marginTop: spacing(2) },
   retryBtn: { alignSelf: 'flex-start', marginTop: spacing(2) },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(20), padding: spacing(3), paddingBottom: spacing(3), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  footerBar: { padding: spacing(3), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
   accountRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing(3) },
   secondaryBtn: { minWidth: 160 },
