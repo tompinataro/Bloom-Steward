@@ -12,8 +12,10 @@ export default function LoginLandingScreen() {
       <View style={styles.content}>
         <View style={styles.logoFrame}>
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.rightsText}>All Rights Reserved. ©️ 2024, 2025</Text>
         </View>
-        <Text style={styles.subtitle}>Field Tech Dashboard</Text>
+        <Text style={styles.heading}>The Field Tech&#39;s Favorite Dashboard</Text>
+        <Text style={styles.subtitle}>A Tixpy App</Text>
       </View>
       <View style={styles.footer}>
         <ThemedButton
@@ -52,6 +54,7 @@ const styles = StyleSheet.create({
   logo: { width: '92%', height: '92%' },
   heading: { fontSize: 28, fontWeight: '700', color: colors.text, textAlign: 'center' },
   subtitle: { fontSize: 16, color: colors.muted, textAlign: 'center' },
+  rightsText: { position: 'absolute', bottom: 8, left: 12, right: 12, textAlign: 'center', fontSize: 11, color: colors.muted },
   footer: {
     width: '100%',
     maxWidth: 420,
