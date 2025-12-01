@@ -78,23 +78,23 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
           techs.map(user => {
             const assignedRoute = getRouteForTech(user.id);
             return (
-              <Pressable
-                key={user.id}
-                style={styles.row}
-                onPress={() => {
-                  if (assignedRoute) {
-                    navigation.navigate('ServiceRoutes', { focusRouteId: assignedRoute.id });
-                  } else {
-                    showBanner({ type: 'info', message: `${user.name} has no assigned route yet.` });
-                  }
-                }}
-              >
-                <Text style={styles.name}>{truncateText(user.name, 40)}</Text>
-                <Text style={styles.email}>{truncateText(`${user.email}${user.managed_password ? ` (${user.managed_password})` : ''}`, 56)}</Text>
-                <Text style={styles.routeLabel}>
-                  {assignedRoute ? `Assigned Route: ${assignedRoute.name}` : 'Unassigned'}
-                </Text>
-              </Pressable>
+              <View key={user.id} style={styles.row}>
+                <View style={styles.infoColumn}>
+                  <Text style={styles.name}>{truncateText(user.name, 40)}</Text>
+                  <Text style={styles.email}>{truncateText(`${user.email}${user.managed_password ? ` (${user.managed_password})` : ''}`, 56)}</Text>
+                  <Text style={styles.routeLabel}>
+                    {assignedRoute ? `Assigned Route: ${assignedRoute.name}` : 'Unassigned'}
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.editBtn}
+                  onPress={() => {
+                    showBanner({ type: 'info', message: 'Edit functionality coming soon.' });
+                  }}
+                >
+                  <Text style={styles.editBtnText}>Edit</Text>
+                </Pressable>
+              </View>
             );
           })
         )}
@@ -108,8 +108,11 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   empty: { color: colors.muted },
-  row: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingVertical: spacing(1.5), gap: spacing(0.25) },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingVertical: spacing(1.5), gap: spacing(2) },
+  infoColumn: { flex: 1, gap: spacing(0.25) },
   name: { fontWeight: '700', color: colors.text },
   email: { color: colors.muted, fontSize: 13 },
   routeLabel: { color: colors.primary, fontWeight: '600' },
+  editBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
+  editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
 });
