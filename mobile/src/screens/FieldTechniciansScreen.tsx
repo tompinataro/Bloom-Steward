@@ -68,7 +68,14 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
     try {
       const res = await adminCreateUser(token, { name: trimmedName, email: trimmedEmail, role: 'tech' });
       if (res?.ok) {
-        setLastTemp({ name: res.user.name, password: res.tempPassword });
+        let temp = res.tempPassword;
+        if (!temp || temp.length < 8) {
+          temp = generateTempPassword(8);
+          try {
+            await adminSetUserPassword(token, { userId: res.user.id, newPassword: temp });
+          } catch {}
+        }
+        setLastTemp({ name: res.user.name, password: temp });
         setName('');
         setEmail('');
         showBanner({ type: 'success', message: `Added ${res.user.name}. Share their temp password.` });
@@ -194,6 +201,13 @@ function formatPossessive(name?: string | null) {
   const trimmed = name.trim();
   if (!trimmed) return '';
   return /s$/i.test(trimmed) ? `${trimmed}'` : `${trimmed}'s`;
+}
+
+function generateTempPassword(len: number): string {
+  const digits = '0123456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += digits[Math.floor(Math.random() * digits.length)];
+  return out;
 }
 
 const styles = StyleSheet.create({

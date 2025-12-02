@@ -19,17 +19,20 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
       navigation.goBack();
       return;
     }
+    if (password && password.trim().length > 0 && password.trim().length < 8) {
+      // Enforce minimum length of 8 for managed passwords
+      return;
+    }
     try {
       setSaving(true);
       await adminUpdateUser(token, user.id, {
         name,
         email,
         phone,
-        managed_password: password || undefined,
+        managed_password: password ? password.trim() : undefined,
       });
       navigation.goBack();
     } catch (e) {
-      // silently fail for now; could add banner later
     } finally {
       setSaving(false);
     }
