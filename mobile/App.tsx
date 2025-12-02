@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/auth';
 import { colors } from './src/theme';
 import type { RootStackParamList } from './src/navigationTypes';
+import * as Updates from 'expo-updates';
 
 import HomeScreen from './src/screens/HomeScreen';
 import AboutScreen from './src/screens/AboutScreen';
@@ -108,6 +109,22 @@ function RootNavigator() {
 
 export default function App() {
   useEffect(() => {
+    // Check for OTA updates on app startup
+    async function checkForUpdates() {
+      if (!__DEV__ && Platform.OS !== 'web') {
+        try {
+          const update = await Updates.checkForUpdateAsync();
+          if (update.isAvailable) {
+            await Updates.fetchUpdateAsync();
+            await Updates.reloadAsync();
+          }
+        } catch (e) {
+          console.log('Update check failed:', e);
+        }
+      }
+    }
+    checkForUpdates();
+
     // Only enable background tasks in standalone production builds.
     // In Expo Go or Dev Client (appOwnership 'expo' or 'guest'), these native modules
     // may not be linked and importing them will crash. Skip when __DEV__ is true.
