@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -37,7 +38,8 @@ export default function LoginFormScreen(_props: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 160 : 0}>
+      <SafeAreaView edges={["top"]} style={styles.safeTop}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={true} bounces={false}>
         <View style={styles.inputsSection}>
           <TextInput
@@ -88,6 +90,7 @@ export default function LoginFormScreen(_props: Props) {
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
         </View>
       </ScrollView>
+      </SafeAreaView>
       <LoadingOverlay visible={loading} />
     </KeyboardAvoidingView>
   );
@@ -97,7 +100,8 @@ import { Image } from 'react-native';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6), paddingBottom: spacing(10), paddingTop: spacing(10), justifyContent: 'space-between', alignSelf: 'center' },
+  safeTop: { flex: 1 },
+  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6), paddingBottom: spacing(10), paddingTop: spacing(12), justifyContent: 'space-between', alignSelf: 'center' },
   inputsSection: { width: '100%', gap: spacing(3) },
   logoFrame: {
     width: '100%',
