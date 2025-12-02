@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Share } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Share, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -84,12 +84,9 @@ export default function AllServiceRoutesScreen(_props: Props) {
       <View style={styles.card}>
         <Text style={styles.title}>All Service Routes</Text>
         {routes.length > 0 ? (
-          <ThemedButton
-            title="Email this list"
-            variant="outline"
-            onPress={shareRoutes}
-            style={{ alignSelf: 'flex-start' }}
-          />
+          <Pressable style={styles.shareChip} onPress={shareRoutes}>
+            <Text style={styles.shareChipText}>Email this list</Text>
+          </Pressable>
         ) : null}
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
@@ -192,4 +189,6 @@ const styles = StyleSheet.create({
   modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 380, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
+  shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
+  shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
 });

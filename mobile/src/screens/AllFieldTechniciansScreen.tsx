@@ -49,10 +49,30 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
     }, [token])
   );
 
+  const shareTechs = async () => {
+    if (!techs.length) {
+      showBanner({ type: 'info', message: 'No field technicians to share yet.' });
+      return;
+    }
+    const lines = techs.map(t => {
+      const assignedRoute = routes.find(r => r.assigned_user_id === t.id);
+      const routeName = assignedRoute ? assignedRoute.name : 'Unassigned';
+      return `${t.name}\nEmail: ${t.email}${t.phone ? `\nPhone: ${t.phone}` : ''}\nRoute: ${routeName}`;
+    });
+    try {
+      await Share.share({ title: 'Field Technicians', message: `Field Technicians:\n\n${lines.join('\n\n')}` });
+    } catch {}
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>All Field Technicians</Text>
+        {techs.length > 0 ? (
+          <Pressable style={styles.shareChip} onPress={shareTechs}>
+            <Text style={styles.shareChipText}>Email this list</Text>
+          </Pressable>
+        ) : null}
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : techs.length === 0 ? (
@@ -98,4 +118,6 @@ const styles = StyleSheet.create({
   editBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
   editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   phone: { color: colors.text },
+  shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
+  shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
 });
