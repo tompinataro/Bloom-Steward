@@ -27,6 +27,13 @@ export default function RouteListScreen({ navigation, route }: Props) {
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
   const isAdmin = user?.role === 'admin';
 
+  useEffect(() => {
+    if (user?.name) {
+      const firstName = user.name.split(/\s+/)[0];
+      navigation.setOptions({ title: `Today's Route for ${firstName}` });
+    }
+  }, [user?.name, navigation]);
+
   const dedupeRoutes = (items: TodayRoute[]) => {
     // Always collapse by visit id first (protects legitimate duplicates)
     const byId = Array.from(new Map(items.map(r => [r.id, r])).values());

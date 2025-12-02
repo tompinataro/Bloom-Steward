@@ -137,19 +137,8 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
       const deduped = dedupeByKey(dedupeById(mapped));
       return ensureMinimumRoutes(deduped);
     }
-    const res2 = await dbQuery<{
-      id: number; client_name: string; address: string; scheduled_time: string;
-    }>(
-      `select v.id, c.name as client_name, c.address, v.scheduled_time
-       from visits v join clients c on c.id = v.client_id
-       order by v.scheduled_time asc`
-    );
-    const rows2 = res2?.rows ?? [];
-    if (rows2.length > 0) {
-      const mapped = rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
-      const deduped = dedupeByKey(dedupeById(mapped));
-      return ensureMinimumRoutes(deduped);
-    }
+    // No routes assigned to this user; return empty array
+    return [];
   }
   return FALLBACK_ROUTES;
 }
