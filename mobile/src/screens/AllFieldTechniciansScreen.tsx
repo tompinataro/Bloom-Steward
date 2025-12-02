@@ -154,11 +154,11 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
           >
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>Edit Field Tech</Text>
-              
-              <View style={styles.inputRow}>
-                <Text style={styles.label}>Name:</Text>
+
+              <View style={styles.inputBlock}>
+                <Text style={styles.blockLabel}>Name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={styles.blockInput}
                   value={editName}
                   onChangeText={setEditName}
                   placeholder="Full name"
@@ -166,10 +166,10 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <Text style={styles.label}>Email:</Text>
+              <View style={styles.inputBlock}>
+                <Text style={styles.blockLabel}>Email</Text>
                 <TextInput
-                  style={styles.input}
+                  style={styles.blockInput}
                   value={editEmail}
                   onChangeText={setEditEmail}
                   placeholder="email@example.com"
@@ -179,10 +179,10 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <Text style={styles.label}>Phone:</Text>
+              <View style={styles.inputBlock}>
+                <Text style={styles.blockLabel}>Phone</Text>
                 <TextInput
-                  style={styles.input}
+                  style={styles.blockInput}
                   value={editPhone}
                   onChangeText={setEditPhone}
                   placeholder="612-555-1234"
@@ -191,13 +191,12 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <Text style={styles.label}>Password:</Text>
+              <View style={styles.inputBlock}>
+                <Text style={styles.blockLabel}>Password</Text>
                 <TextInput
-                  style={styles.input}
+                  style={styles.blockInput}
                   value={editPassword}
                   onChangeText={setEditPassword}
-                  // Intentionally no placeholder so blank means truly blank
                 />
               </View>
 
@@ -237,11 +236,11 @@ const styles = StyleSheet.create({
   editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalScrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing(1), paddingVertical: spacing(4) },
-  modalCard: { alignSelf: 'stretch', backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border },
+  modalCard: { alignSelf: 'stretch', width: '92%', backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(2) },
-  inputRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing(1.5) },
-  label: { fontSize: 13, fontWeight: '600', color: colors.text, width: 90, marginRight: spacing(2) },
-  input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
+  inputBlock: { marginBottom: spacing(1.5) },
+  blockLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing(0.5) },
+  blockInput: { width: '100%', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
   modalActions: { flexDirection: 'row', gap: spacing(2), marginTop: spacing(1) },
   modalBtn: { flex: 1, paddingVertical: spacing(1) },
 });
