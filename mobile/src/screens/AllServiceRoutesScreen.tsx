@@ -69,12 +69,12 @@ export default function AllServiceRoutesScreen(_props: Props) {
     const lines = routes.map(route => {
       const assignedClients = (clientsByRoute[route.id] || []).map(client => client.name).join(', ');
       const tech = route.user_name || 'Unassigned';
-      return `${route.name} — Tech: ${tech}${assignedClients ? ` — Clients: ${assignedClients}` : ''}`;
+      return `${route.name}\nTech: ${tech}${assignedClients ? `\nClients: ${assignedClients}` : ''}`;
     });
     try {
       await Share.share({
         title: 'Service Routes',
-        message: `Service Routes:\n${lines.join('\n')}`,
+        message: `Service Routes:\n\n${lines.join('\n\n')}`,
       });
     } catch {}
   };

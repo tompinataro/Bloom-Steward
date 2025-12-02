@@ -127,12 +127,12 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     }
     const lines = uniqueClients.map(client => {
       const routeName = client.service_route_name || 'Unassigned';
-      return `${client.name} — ${routeName}`;
+      return `${client.name}\nRoute: ${routeName}`;
     });
     try {
       await Share.share({
         title: 'Client Locations',
-        message: `Client Locations:\n${lines.join('\n')}`,
+        message: `Client Locations:\n\n${lines.join('\n\n')}`,
       });
     } catch {}
   };
