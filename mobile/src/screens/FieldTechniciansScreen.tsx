@@ -204,9 +204,9 @@ function formatPossessive(name?: string | null) {
 }
 
 function generateTempPassword(len: number): string {
-  const digits = '0123456789';
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let out = '';
-  for (let i = 0; i < len; i++) out += digits[Math.floor(Math.random() * digits.length)];
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return out;
 }
 
