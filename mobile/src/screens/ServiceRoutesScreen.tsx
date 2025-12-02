@@ -112,7 +112,12 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
             <Text style={styles.emptyCopy}>No service routes yet.</Text>
           ) : (
             serviceRoutes.map(routeItem => {
-              const assignedClients = clientsByRoute.get(routeItem.id) || [];
+              const assignedClients = (clientsByRoute.get(routeItem.id) || []).sort((a, b) => {
+                if (a.scheduled_time && b.scheduled_time) return a.scheduled_time.localeCompare(b.scheduled_time);
+                if (a.scheduled_time) return -1;
+                if (b.scheduled_time) return 1;
+                return a.name.localeCompare(b.name);
+              });
               return (
                 <View key={routeItem.id} style={styles.routeCard}>
                   <Text style={styles.routeName}>{routeItem.name}</Text>

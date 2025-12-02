@@ -833,10 +833,12 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
          sr.id as service_route_id,
          sr.name as service_route_name,
          ${hasLatitude ? 'c.latitude' : 'null as latitude'},
-         ${hasLongitude ? 'c.longitude' : 'null as longitude'}
+         ${hasLongitude ? 'c.longitude' : 'null as longitude'},
+         rt.scheduled_time
        from clients c
        left join service_routes sr on sr.id = c.service_route_id
-       order by c.name asc`;
+       left join routes_today rt on rt.client_id = c.id
+       order by c.service_route_id asc nulls last, rt.scheduled_time asc nulls last, c.name asc`;
     const q = await dbQuery<{
       id: number;
       name: string;
@@ -847,6 +849,7 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
       service_route_name: string | null;
       latitude: number | null;
       longitude: number | null;
+      scheduled_time: string | null;
     }>(select);
     res.json({ ok: true, clients: q?.rows ?? [] });
   } catch (e: any) {
