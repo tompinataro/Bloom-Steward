@@ -105,7 +105,7 @@ export default function AllServiceRoutesScreen(_props: Props) {
                 </Text>
               </View>
               <ThemedButton
-                title="Assign Route"
+                title="Change Route Assignment"
                 variant="outline"
                 onPress={() => setAssignRoute(route)}
                 style={{ alignSelf: 'flex-start' }}
