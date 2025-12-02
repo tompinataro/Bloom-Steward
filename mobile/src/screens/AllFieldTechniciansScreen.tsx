@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, Share, Modal, TextInput } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -16,12 +16,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
   const [techs, setTechs] = useState<AdminUser[]>([]);
   const [routes, setRoutes] = useState<ServiceRoute[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editPassword, setEditPassword] = useState('');
-  const [saving, setSaving] = useState(false);
+  
 
   const load = async () => {
     if (!token) return;
@@ -39,7 +34,18 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
       setLoading(false);
     }
   };
-      {/* Editing handled in dedicated screen now */}
+  const getRouteForTech = (userId: string) => routes.find(r => r.assigned_user_id === userId);
+
+  useEffect(() => {
+    load();
+  }, [token]);
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>All Field Technicians</Text>
+        {loading ? (
+          <Text style={styles.empty}>Loading…</Text>
         ) : techs.length === 0 ? (
           <Text style={styles.empty}>No field technicians yet.</Text>
         ) : (
@@ -66,84 +72,6 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
           })
         )}
       </View>
-
-      <Modal
-        visible={!!editingUser}
-        transparent
-        animationType="fade"
-        onRequestClose={closeEditModal}
-      >
-        <View style={styles.modalBackdrop}>
-          <ScrollView
-            contentContainerStyle={styles.modalScrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>Edit Field Tech</Text>
-
-              <View style={styles.inputBlock}>
-                <Text style={styles.blockLabel}>Name</Text>
-                <TextInput
-                  style={styles.blockInput}
-                  value={editName}
-                  onChangeText={setEditName}
-                  placeholder="Full name"
-                  placeholderTextColor={colors.muted}
-                />
-              </View>
-
-              <View style={styles.inputBlock}>
-                <Text style={styles.blockLabel}>Email</Text>
-                <TextInput
-                  style={styles.blockInput}
-                  value={editEmail}
-                  onChangeText={setEditEmail}
-                  placeholder="email@example.com"
-                  placeholderTextColor={colors.muted}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputBlock}>
-                <Text style={styles.blockLabel}>Phone</Text>
-                <TextInput
-                  style={styles.blockInput}
-                  value={editPhone}
-                  onChangeText={setEditPhone}
-                  placeholder="612-555-1234"
-                  placeholderTextColor={colors.muted}
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.inputBlock}>
-                <Text style={styles.blockLabel}>Password</Text>
-                <TextInput
-                  style={styles.blockInput}
-                  value={editPassword}
-                  onChangeText={setEditPassword}
-                />
-              </View>
-
-              <View style={styles.modalActions}>
-                <ThemedButton
-                  title="Cancel"
-                  variant="outline"
-                  onPress={closeEditModal}
-                  style={styles.modalBtn}
-                />
-                <ThemedButton
-                  title={saving ? 'Saving...' : 'Save'}
-                  onPress={saveEdit}
-                  disabled={saving}
-                  style={styles.modalBtn}
-                />
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -160,13 +88,5 @@ const styles = StyleSheet.create({
   routeLabel: { color: colors.primary, fontWeight: '600' },
   editBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
   editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalScrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing(1), paddingVertical: spacing(4) },
-  modalCard: { alignSelf: 'stretch', width: '92%', backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(2) },
-  inputBlock: { marginBottom: spacing(1.5) },
-  blockLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing(0.5) },
-  blockInput: { width: '100%', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: spacing(1), paddingHorizontal: spacing(2), color: colors.text, backgroundColor: colors.background, fontSize: 14 },
-  modalActions: { flexDirection: 'row', gap: spacing(2), marginTop: spacing(1) },
-  modalBtn: { flex: 1, paddingVertical: spacing(1) },
+  phone: { color: colors.text },
 });
