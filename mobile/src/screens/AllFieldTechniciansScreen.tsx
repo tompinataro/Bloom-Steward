@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   editBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
   editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalScrollContent: { flexGrow: 1, justifyContent: 'center', padding: spacing(4) },
+  modalScrollContent: { flexGrow: 1, justifyContent: 'center', padding: spacing(2) },
   modalCard: { width: '100%', maxWidth: 680, backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
   label: { fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 80, paddingTop: spacing(0.5) },
