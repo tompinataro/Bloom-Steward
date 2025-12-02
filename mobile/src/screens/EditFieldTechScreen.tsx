@@ -1,20 +1,38 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { colors, spacing } from '../theme';
+import { useAuth } from '../auth';
+import { adminUpdateUser } from '../api/client';
 import ThemedButton from '../components/Button';
 
 export default function EditFieldTechScreen({ route, navigation }: any) {
   const { user } = route.params || {};
+  const { token } = useAuth();
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [password, setPassword] = useState(user?.managed_password ?? '');
+  const [saving, setSaving] = useState(false);
 
   async function onSave() {
-    try {
-      // TODO: wire to server update; for now, navigate back
+    if (!token || !user?.id) {
       navigation.goBack();
-    } catch {}
+      return;
+    }
+    try {
+      setSaving(true);
+      await adminUpdateUser(token, user.id, {
+        name,
+        email,
+        phone,
+        managed_password: password || undefined,
+      });
+      navigation.goBack();
+    } catch (e) {
+      // silently fail for now; could add banner later
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -44,7 +62,7 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
 
         <View style={{ flexDirection: 'row', gap: spacing(2), marginTop: spacing(2) }}>
           <ThemedButton title="Cancel" variant="outline" style={{ flex: 1 }} onPress={() => navigation.goBack()} />
-          <ThemedButton title="Save" style={{ flex: 1 }} onPress={onSave} />
+          <ThemedButton title={saving ? 'Saving…' : 'Save'} style={{ flex: 1 }} onPress={onSave} disabled={saving} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

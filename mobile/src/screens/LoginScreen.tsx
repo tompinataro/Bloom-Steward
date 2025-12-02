@@ -37,7 +37,7 @@ export default function LoginFormScreen(_props: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={true} bounces={false}>
         <View style={styles.inputsSection}>
           <TextInput
@@ -97,7 +97,7 @@ import { Image } from 'react-native';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), padding: spacing(6), justifyContent: 'space-between', alignSelf: 'center' },
+  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6), paddingBottom: spacing(4), paddingTop: spacing(10), justifyContent: 'space-between', alignSelf: 'center' },
   inputsSection: { width: '100%', gap: spacing(3) },
   logoFrame: {
     width: '100%',
