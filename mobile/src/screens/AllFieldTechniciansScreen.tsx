@@ -39,81 +39,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    load();
-  }, [token]);
-
-  const getRouteForTech = (techId: number) => routes.find(route => route.user_id === techId);
-
-  const shareTechs = async () => {
-    if (!techs.length) {
-      showBanner({ type: 'info', message: 'No field techs to share yet.' });
-      return;
-    }
-    const lines = techs.map(user => {
-      const assignedRoute = getRouteForTech(user.id);
-      const pw = user.managed_password ? ` (${user.managed_password})` : '';
-      return `${user.name} (${user.email}${pw}) — Assigned Route: ${assignedRoute ? assignedRoute.name : 'Unassigned'}`;
-    });
-    try {
-      await Share.share({
-        title: 'Field Technicians',
-        message: `Field Technicians:\n${lines.join('\n')}`,
-      });
-    } catch {}
-  };
-
-  const openEditModal = (user: AdminUser) => {
-    setEditingUser(user);
-    setEditName(user.name);
-    setEditEmail(user.email);
-    setEditPhone(user.phone || '');
-    setEditPassword(user.managed_password || '');
-  };
-
-  const closeEditModal = () => {
-    setEditingUser(null);
-    setEditName('');
-    setEditEmail('');
-    setEditPhone('');
-    setEditPassword('');
-  };
-
-  const saveEdit = async () => {
-    if (!token || !editingUser) return;
-    setSaving(true);
-    try {
-      await adminUpdateUser(token, editingUser.id, {
-        name: editName,
-        email: editEmail,
-        phone: editPhone,
-        managed_password: editPassword,
-      });
-      showBanner({ type: 'success', message: 'Field tech updated successfully.' });
-      closeEditModal();
-      await load();
-    } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Failed to update user.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>All Field Technicians</Text>
-        {techs.length > 0 ? (
-          <ThemedButton
-            title="Email this list"
-            variant="outline"
-            onPress={shareTechs}
-            style={{ alignSelf: 'flex-start' }}
-          />
-        ) : null}
-        {loading ? (
-          <Text style={styles.empty}>Loading…</Text>
+      {/* Editing handled in dedicated screen now */}
         ) : techs.length === 0 ? (
           <Text style={styles.empty}>No field technicians yet.</Text>
         ) : (
@@ -131,7 +57,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                 </View>
                 <Pressable
                   style={styles.editBtn}
-                  onPress={() => openEditModal(user)}
+                  onPress={() => (navigation as any)?.navigate?.('EditFieldTech', { user })}
                 >
                   <Text style={styles.editBtnText}>Edit</Text>
                 </Pressable>

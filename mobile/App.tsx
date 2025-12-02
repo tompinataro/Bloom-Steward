@@ -23,6 +23,7 @@ import ClientLocationsScreen from './src/screens/ClientLocationsScreen';
 import ServiceRoutesScreen from './src/screens/ServiceRoutesScreen';
 import AllServiceRoutesScreen from './src/screens/AllServiceRoutesScreen';
 import AllFieldTechniciansScreen from './src/screens/AllFieldTechniciansScreen';
+import EditFieldTechScreen from './src/screens/EditFieldTechScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -95,6 +96,7 @@ function RootNavigator() {
       <Stack.Screen name="ServiceRoutes" component={ServiceRoutesScreen} options={{ title: 'Service Routes' }} />
       <Stack.Screen name="AllServiceRoutes" component={AllServiceRoutesScreen} options={{ title: 'All Service Routes' }} />
       <Stack.Screen name="AllFieldTechnicians" component={AllFieldTechniciansScreen} options={{ title: 'All Field Technicians' }} />
+      <Stack.Screen name="EditFieldTech" component={EditFieldTechScreen} options={{ title: 'Edit Field Tech' }} />
       <Stack.Screen name="Reports" component={ReportsScreen} options={{ title: 'Reports' }} />
       <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete Account' }} />
       <Stack.Screen name="Home" component={HomeScreen} />
