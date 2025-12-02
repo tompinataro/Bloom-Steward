@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { colors, spacing } from '../theme';
-import { ThemedButton } from '../components/ThemedButton';
+import ThemedButton from '../components/Button';
 
 export default function EditFieldTechScreen({ route, navigation }: any) {
   const { user } = route.params || {};
@@ -43,8 +43,8 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
         </View>
 
         <View style={{ flexDirection: 'row', gap: spacing(2), marginTop: spacing(2) }}>
-          <ThemedButton variant="outline" style={{ flex: 1 }} onPress={() => navigation.goBack()}>Cancel</ThemedButton>
-          <ThemedButton style={{ flex: 1 }} onPress={onSave}>Save</ThemedButton>
+          <ThemedButton title="Cancel" variant="outline" style={{ flex: 1 }} onPress={() => navigation.goBack()} />
+          <ThemedButton title="Save" style={{ flex: 1 }} onPress={onSave} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
