@@ -9,8 +9,10 @@ import {
   adminCreateClient,
   adminFetchClients,
   adminFetchServiceRoutes,
+  adminFetchUsers,
   adminSetClientRoute,
   AdminClient,
+  AdminUser,
   ServiceRoute
 } from '../api/client';
 import ThemedButton from '../components/Button';
@@ -32,17 +34,20 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
 
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [pickerClient, setPickerClient] = useState<UniqueClient | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
-      const [clientRes, routeRes] = await Promise.all([
+      const [clientRes, routeRes, userRes] = await Promise.all([
         adminFetchClients(token),
         adminFetchServiceRoutes(token),
+        adminFetchUsers(token),
       ]);
       setClients(clientRes?.clients || []);
       setServiceRoutes(routeRes?.routes || []);
+      setUsers(userRes?.users || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load clients.' });
     }
@@ -208,6 +213,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
         </View>
+        {showAll && <Text style={styles.instructionText}>(Click on the Tech's name to reassign a location.)</Text>}
           {listToRender.length === 0 ? (
             <Text style={styles.emptyCopy}>
               {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
@@ -241,7 +247,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                     </Pressable>
                     {client.service_route_id ? (
                       <Pressable style={styles.unassignBtn} onPress={() => unassignClient(client)}>
-                        <Text style={styles.unassignText}>Unassign</Text>
+                        <Text style={styles.unassignText}>{getTechFirstName(client, serviceRoutes, users)}</Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -288,6 +294,15 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
 }
 
 type UniqueClient = AdminClient & { duplicateIds: number[] };
+
+function getTechFirstName(client: UniqueClient, routes: ServiceRoute[], users: AdminUser[]): string {
+  const route = routes.find(r => r.id === client.service_route_id);
+  if (!route?.user_id) return 'Unassign';
+  const user = users.find(u => u.id === route.user_id);
+  if (!user) return 'Unassign';
+  const firstName = user.name.split(/\s+/)[0];
+  return firstName || 'Unassign';
+}
 
 export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
   return useMemo(() => {
@@ -352,4 +367,5 @@ const styles = StyleSheet.create({
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
+  instructionText: { fontSize: 13, color: colors.muted, fontStyle: 'italic', marginTop: spacing(0.5) },
 });
