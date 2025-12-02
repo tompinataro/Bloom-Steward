@@ -76,7 +76,15 @@ export async function flushQueue(token: string): Promise<{ sent: number; remaini
     } catch (e: any) {
       const attempts = (item.attempts ?? 0) + 1;
       const delay = backoff(attempts);
-      keep.push({ ...item, attempts, nextTryAt: new Date(now + delay).toISOString(), lastError: e?.message ?? String(e) });
+      const msg = String(e?.message || '');
+      // Permanent failures: 4xx (client errors) should not retry indefinitely
+      const isPermanent = /^4\d{2}\b/.test(msg);
+      if (isPermanent) {
+        // Drop from queue; retain lastError only for optional future telemetry (not stored)
+        // (Could surface a banner elsewhere if desired.)
+        continue;
+      }
+      keep.push({ ...item, attempts, nextTryAt: new Date(now + delay).toISOString(), lastError: msg });
     }
   }
   await writeQueue(keep);

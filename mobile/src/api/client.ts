@@ -243,6 +243,19 @@ export async function adminFetchServiceRoutes(token: string): Promise<{ ok: bool
   });
 }
 
+// Lightweight reachability probe used to distinguish server errors from connectivity loss
+export async function isApiReachable(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(withBase('/health'), { signal: controller.signal });
+    clearTimeout(t);
+    return !!res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function adminCreateServiceRoute(
   token: string,
   data: { name: string }
