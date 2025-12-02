@@ -109,6 +109,7 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
   if (hasDb()) {
     const serviceAssignments = await routesFromServiceAssignments(userId);
     if (serviceAssignments.length > 0) {
+      try { console.log(`[getTodayRoutes] serviceAssignments for user ${userId}: ${serviceAssignments.length}`); } catch {}
       return serviceAssignments;
     }
     const res = await dbQuery<{
@@ -135,9 +136,11 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
     if (rows.length > 0) {
       const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
       const deduped = dedupeByKey(dedupeById(mapped));
+      try { console.log(`[getTodayRoutes] routes_today for user ${userId}: ${deduped.length}`); } catch {}
       return ensureMinimumRoutes(deduped);
     }
     // No routes assigned to this user; return empty array
+    try { console.log(`[getTodayRoutes] no assignments for user ${userId} -> empty`); } catch {}
     return [];
   }
   return FALLBACK_ROUTES;

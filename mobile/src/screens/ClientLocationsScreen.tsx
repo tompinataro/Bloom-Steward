@@ -213,7 +213,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
         </View>
-        {showAll && <Text style={styles.instructionText}>(Click on the Tech's name to reassign a location.)</Text>}
+        {showAll && <Text style={styles.instructionText}>(Tap Tech name or Route to reassign either.)</Text>}
           {listToRender.length === 0 ? (
             <Text style={styles.emptyCopy}>
               {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}

@@ -93,6 +93,10 @@ async function getTodayRoutes(userId) {
     if ((0, db_1.hasDb)()) {
         const serviceAssignments = await routesFromServiceAssignments(userId);
         if (serviceAssignments.length > 0) {
+            try {
+                console.log(`[getTodayRoutes] serviceAssignments for user ${userId}: ${serviceAssignments.length}`);
+            }
+            catch { }
             return serviceAssignments;
         }
         const res = await (0, db_1.dbQuery)(`select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
@@ -111,17 +115,18 @@ async function getTodayRoutes(userId) {
         if (rows.length > 0) {
             const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
             const deduped = dedupeByKey(dedupeById(mapped));
+            try {
+                console.log(`[getTodayRoutes] routes_today for user ${userId}: ${deduped.length}`);
+            }
+            catch { }
             return ensureMinimumRoutes(deduped);
         }
-        const res2 = await (0, db_1.dbQuery)(`select v.id, c.name as client_name, c.address, v.scheduled_time
-       from visits v join clients c on c.id = v.client_id
-       order by v.scheduled_time asc`);
-        const rows2 = res2?.rows ?? [];
-        if (rows2.length > 0) {
-            const mapped = rows2.map(r => ({ id: r.id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
-            const deduped = dedupeByKey(dedupeById(mapped));
-            return ensureMinimumRoutes(deduped);
+        // No routes assigned to this user; return empty array
+        try {
+            console.log(`[getTodayRoutes] no assignments for user ${userId} -> empty`);
         }
+        catch { }
+        return [];
     }
     return FALLBACK_ROUTES;
 }

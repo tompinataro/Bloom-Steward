@@ -710,6 +710,9 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const routes = await getTodayRoutes(userId || 0);
+    try {
+      console.log(`[routes/today] userId=${userId} count=${routes.length}`);
+    } catch {}
     let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
     const day = dayKey();
     const wantDb = readMode === 'db' || readMode === 'shadow';

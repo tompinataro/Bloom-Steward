@@ -154,8 +154,35 @@ async function buildSummary(startDate, endDate) {
         const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
         return aTs - bTs;
     });
+    // Get all unique tech IDs from deduped rows
+    const uniqueTechIds = Array.from(new Set(dedupedRows.map(r => r.tech_id).filter(Boolean)));
+    // Fetch managed passwords for each tech
+    const techPasswords = new Map(); // key: tech_id
+    if (uniqueTechIds.length > 0 && (0, db_1.hasDb)()) {
+        const pwResult = await (0, db_1.dbQuery)(`select id, managed_password from users where id = any($1)`, [uniqueTechIds]);
+        (pwResult?.rows || []).forEach(row => {
+            techPasswords.set(row.id, row.managed_password);
+        });
+    }
+    // Fetch daily_start_odometer for each tech and each day in the range
+    const dailyStartOdometers = new Map(); // key: "tech_id|date"
+    if (uniqueTechIds.length > 0 && (0, db_1.hasDb)()) {
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        const result = await (0, db_1.dbQuery)(`select user_id, date, odometer_reading from daily_start_odometer
+       where user_id = any($1) and date >= $2 and date <= $3
+       order by user_id, date`, [uniqueTechIds, startDateStr, endDateStr]);
+        (result?.rows || []).forEach(row => {
+            // Ensure we store a numeric value (db driver may return numeric as string)
+            const val = typeof row.odometer_reading === 'number' ? row.odometer_reading : Number(row.odometer_reading);
+            if (!Number.isNaN(val)) {
+                // Normalize the date portion to YYYY-MM-DD in case the driver returned a Date object
+                const rowDateStr = typeof row.date === 'string' ? row.date : new Date(row.date).toISOString().split('T')[0];
+                dailyStartOdometers.set(`${row.user_id}|${rowDateStr}`, val);
+            }
+        });
+    }
     const rows = [];
-    const initialOdometers = new Map(); // Store tech's initial odometer for the day
     const seenTechClient = new Set(); // Track tech+client combinations to prevent dupes
     for (const row of dedupedRows) {
         if (!row.tech_id || !row.tech_name)
@@ -170,34 +197,67 @@ async function buildSummary(startDate, endDate) {
             continue;
         seenTechClient.add(techClientKey);
         const payload = row.payload || {};
-        const checkInTs = typeof payload.checkInTs === 'string' ? payload.checkInTs : null;
-        const checkOutTs = typeof payload.checkOutTs === 'string' ? payload.checkOutTs : null;
+        // Normalize timestamps to ISO (T) format for client-side parsing
+        let checkInTs = null;
+        let checkOutTs = null;
+        try {
+            if (typeof payload.checkInTs === 'string') {
+                const d = new Date(payload.checkInTs);
+                if (!Number.isNaN(d.getTime()))
+                    checkInTs = d.toISOString();
+            }
+        }
+        catch { }
+        try {
+            if (typeof payload.checkOutTs === 'string') {
+                const d = new Date(payload.checkOutTs);
+                if (!Number.isNaN(d.getTime()))
+                    checkOutTs = d.toISOString();
+            }
+        }
+        catch { }
         const inDate = checkInTs ? new Date(checkInTs) : null;
         const outDate = checkOutTs ? new Date(checkOutTs) : null;
         const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
         const durationFormatted = formatDuration(durationMinutes);
         const onSiteContact = payload.onSiteContact || null;
         const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
-        // Calculate mileage delta from start-of-day odometer
+        // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
         let mileageDelta = 0;
-        if (odometerReading !== null && Number.isFinite(odometerReading)) {
-            // Initialize this tech's starting odometer on first visit
-            if (!initialOdometers.has(row.tech_id)) {
-                initialOdometers.set(row.tech_id, odometerReading);
+        if (odometerReading !== null && Number.isFinite(odometerReading) && row.tech_id && checkOutTs) {
+            // Normalize checkOutTs to an ISO date string then extract YYYY-MM-DD.
+            // Some stored timestamps come as space-separated ("YYYY-MM-DD HH:MM:SS"),
+            // so replace the first space with 'T' before parsing to avoid mismatched keys.
+            let dateStr = '';
+            try {
+                const normalized = (checkOutTs || '').replace(' ', 'T');
+                const parsed = new Date(normalized);
+                if (!Number.isNaN(parsed.getTime())) {
+                    dateStr = parsed.toISOString().split('T')[0];
+                }
+                else {
+                    // Fallback: if parsing fails, try splitting on 'T' or space and take first segment
+                    dateStr = (checkOutTs.indexOf('T') >= 0 ? checkOutTs.split('T')[0] : checkOutTs.split(' ')[0]) || '';
+                }
             }
-            const initialOdom = initialOdometers.get(row.tech_id) || 0;
-            if (odometerReading >= initialOdom) {
-                mileageDelta = odometerReading - initialOdom;
+            catch (err) {
+                dateStr = (checkOutTs.indexOf('T') >= 0 ? checkOutTs.split('T')[0] : checkOutTs.split(' ')[0]) || '';
+            }
+            if (dateStr) {
+                const dailyStartKey = `${row.tech_id}|${dateStr}`;
+                const dailyStartOdom = dailyStartOdometers.get(dailyStartKey);
+                if (typeof dailyStartOdom === 'number' && odometerReading >= dailyStartOdom) {
+                    mileageDelta = odometerReading - dailyStartOdom;
+                }
             }
         }
         const rawLoc = payload.checkOutLoc || payload.checkInLoc;
-        let distanceFeet = null;
-        let geoValidated = false;
+        let geoValidated = undefined;
         if (rawLoc && typeof rawLoc.lat === 'number' && typeof rawLoc.lng === 'number') {
             const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
             if (distMiles !== null) {
-                distanceFeet = distMiles * 5280;
-                geoValidated = distanceFeet <= 100;
+                // keep only boolean validation (within 100 feet)
+                geoValidated = (distMiles * 5280) <= 100;
             }
         }
         rows.push({
@@ -213,8 +273,8 @@ async function buildSummary(startDate, endDate) {
             onSiteContact,
             odometerReading,
             mileageDelta,
-            distanceFromClientFeet: distanceFeet,
             geoValidated,
+            managedPassword: row.tech_id ? techPasswords.get(row.tech_id) || null : null,
         });
     }
     if (!rows.length && (0, db_1.hasDb)()) {
@@ -247,7 +307,6 @@ async function buildSummary(startDate, endDate) {
                 onSiteContact: null,
                 odometerReading: null,
                 mileageDelta: 0,
-                distanceFromClientFeet: null,
                 geoValidated: false,
             });
         });
@@ -257,6 +316,7 @@ async function buildSummary(startDate, endDate) {
 function buildCsv(rows) {
     const header = [
         'Technician',
+        'Password',
         'Route',
         'Client Location',
         'Address',
@@ -272,6 +332,7 @@ function buildCsv(rows) {
     rows.forEach(row => {
         lines.push([
             row.techName,
+            row.managedPassword || '',
             row.routeName || '',
             row.clientName,
             row.address.replace(/,/g, ' '),
@@ -280,7 +341,6 @@ function buildCsv(rows) {
             row.durationFormatted,
             row.mileageDelta.toFixed(2),
             row.onSiteContact || '',
-            row.distanceFromClientFeet !== null && row.distanceFromClientFeet !== undefined ? row.distanceFromClientFeet.toFixed(0) : '',
             row.geoValidated ? 'Yes' : 'No',
         ].join(','));
     });
@@ -298,7 +358,6 @@ function buildHtml(rows, start, end) {
       <td>${row.durationFormatted}</td>
       <td>${row.mileageDelta.toFixed(2)}</td>
       <td>${row.onSiteContact || ''}</td>
-      <td>${row.distanceFromClientFeet !== null && row.distanceFromClientFeet !== undefined ? row.distanceFromClientFeet.toFixed(0) : ''}</td>
       <td>${row.geoValidated ? 'Yes' : 'No'}</td>
     </tr>
   `).join('');
@@ -317,7 +376,6 @@ function buildHtml(rows, start, end) {
           <th>Duration</th>
           <th>Mileage Delta</th>
           <th>On-site Contact</th>
-          <th>Geo Distance (ft)</th>
           <th>Geo Valid</th>
         </tr>
       </thead>
@@ -536,6 +594,30 @@ exports.app.post('/api/auth/password', requireAuth, async (req, res) => {
         return res.status(500).json({ ok: false, error: 'password update failed' });
     }
 });
+// Store daily start odometer for mileage tracking
+exports.app.post('/api/auth/start-odometer', requireAuth, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    try {
+        const userId = req.user?.id;
+        if (!userId)
+            return res.status(401).json({ ok: false, error: 'unauthorized' });
+        const odometerReading = typeof req.body?.odometerReading === 'string' ? parseFloat(req.body.odometerReading) : null;
+        if (odometerReading === null || Number.isNaN(odometerReading)) {
+            return res.status(400).json({ ok: false, error: 'invalid odometer reading' });
+        }
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const result = await (0, db_1.dbQuery)(`insert into daily_start_odometer (user_id, date, odometer_reading)
+       values ($1, $2, $3)
+       on conflict (user_id, date) do update set odometer_reading = $3
+       returning id, odometer_reading`, [userId, today, odometerReading]);
+        return res.json({ ok: true, odometerReading: result?.rows?.[0]?.odometer_reading });
+    }
+    catch (err) {
+        console.error('[auth/start-odometer] failed to save', err);
+        return res.status(500).json({ ok: false, error: 'failed to save odometer' });
+    }
+});
 exports.app.delete('/api/auth/account', requireAuth, async (req, res) => {
     try {
         const userId = req.user?.id;
@@ -584,6 +666,10 @@ exports.app.get('/api/routes/today', requireAuth, async (req, res) => {
     try {
         const userId = req.user?.id;
         const routes = await (0, data_1.getTodayRoutes)(userId || 0);
+        try {
+            console.log(`[routes/today] userId=${userId} count=${routes.length}`);
+        }
+        catch { }
         let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
         const day = dayKey();
         const wantDb = readMode === 'db' || readMode === 'shadow';
@@ -706,10 +792,12 @@ exports.app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, re
          sr.id as service_route_id,
          sr.name as service_route_name,
          ${hasLatitude ? 'c.latitude' : 'null as latitude'},
-         ${hasLongitude ? 'c.longitude' : 'null as longitude'}
+         ${hasLongitude ? 'c.longitude' : 'null as longitude'},
+         rt.scheduled_time
        from clients c
        left join service_routes sr on sr.id = c.service_route_id
-       order by c.name asc`;
+       left join routes_today rt on rt.client_id = c.id
+       order by c.service_route_id asc nulls last, rt.scheduled_time asc nulls last, c.name asc`;
         const q = await (0, db_1.dbQuery)(select);
         res.json({ ok: true, clients: q?.rows ?? [] });
     }
@@ -821,6 +909,53 @@ exports.app.post('/api/admin/users/:id/password', requireAuth, requireAdmin, asy
     catch (err) {
         console.error('[admin/users/password] update error', err);
         res.status(500).json({ ok: false, error: 'failed to update password' });
+    }
+});
+exports.app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const userId = Number(req.params.id);
+    if (!userId || Number.isNaN(userId)) {
+        return res.status(400).json({ ok: false, error: 'invalid user id' });
+    }
+    const { name, email, phone, managed_password } = req.body ?? {};
+    const updates = [];
+    const values = [];
+    let idx = 1;
+    if (typeof name === 'string' && name.trim()) {
+        updates.push(`name = $${idx++}`);
+        values.push(name.trim());
+    }
+    if (typeof email === 'string' && email.trim()) {
+        updates.push(`email = $${idx++}`);
+        values.push(email.trim());
+    }
+    if (typeof phone === 'string') {
+        updates.push(`phone = $${idx++}`);
+        values.push(phone.trim() || null);
+    }
+    if (typeof managed_password === 'string' && managed_password.trim()) {
+        const hash = encryptLib.encryptPassword(managed_password.trim());
+        updates.push(`password_hash = $${idx++}`);
+        values.push(hash);
+        updates.push(`managed_password = $${idx++}`);
+        values.push(managed_password.trim());
+        updates.push(`must_change_password = false`);
+    }
+    if (!updates.length) {
+        return res.status(400).json({ ok: false, error: 'no fields to update' });
+    }
+    values.push(userId);
+    try {
+        const result = await (0, db_1.dbQuery)(`update users set ${updates.join(', ')} where id = $${idx} returning id, name, email, role, managed_password, phone`, values);
+        if (!result?.rows?.length) {
+            return res.status(404).json({ ok: false, error: 'user not found' });
+        }
+        res.json({ ok: true, user: result.rows[0] });
+    }
+    catch (err) {
+        console.error('[admin/users/update] error', err);
+        res.status(500).json({ ok: false, error: 'failed to update user' });
     }
 });
 exports.app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
@@ -1085,6 +1220,39 @@ exports.app.post('/api/admin/visit-state/reset', requireAuth, requireAdmin, asyn
     }
     catch (e) {
         res.status(500).json({ ok: false, error: e?.message ?? 'reset error' });
+    }
+});
+// Admin utility — run the SQL seed file on the configured database.
+// POST /api/admin/run-seed
+exports.app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const fs = require('fs');
+    const path = require('path');
+    try {
+        const seedPath = path.join(__dirname, 'sql', 'seed.sql');
+        const raw = fs.readFileSync(seedPath, 'utf8');
+        // Remove SQL comments that start with -- and split on semicolons followed by newline
+        const cleaned = raw.replace(/--.*$/gm, '\n');
+        const parts = cleaned.split(/;\s*\n/).map((s) => s.trim()).filter(Boolean);
+        // Run in a transaction
+        await (0, db_1.dbQuery)('BEGIN');
+        for (const stmt of parts) {
+            // Some parts may still be empty after cleaning
+            if (!stmt)
+                continue;
+            await (0, db_1.dbQuery)(stmt);
+        }
+        await (0, db_1.dbQuery)('COMMIT');
+        res.json({ ok: true, appliedStatements: parts.length });
+    }
+    catch (e) {
+        try {
+            await (0, db_1.dbQuery)('ROLLBACK');
+        }
+        catch { }
+        console.error('[admin/run-seed] error', e);
+        res.status(500).json({ ok: false, error: e?.message ?? 'failed to run seed' });
     }
 });
 const port = Number(process.env.PORT) || 5100;
