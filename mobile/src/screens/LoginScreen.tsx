@@ -97,7 +97,7 @@ import { Image } from 'react-native';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6), paddingBottom: spacing(4), paddingTop: spacing(10), justifyContent: 'space-between', alignSelf: 'center' },
+  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6), paddingBottom: spacing(10), paddingTop: spacing(10), justifyContent: 'space-between', alignSelf: 'center' },
   inputsSection: { width: '100%', gap: spacing(3) },
   logoFrame: {
     width: '100%',
