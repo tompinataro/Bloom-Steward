@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { adminFetchUsers, adminFetchServiceRoutes, adminUpdateUser, AdminUser, ServiceRoute } from '../api/client';
@@ -39,6 +40,14 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
   useEffect(() => {
     load();
   }, [token]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Refresh list whenever returning to this screen
+      load();
+      return () => {};
+    }, [token])
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
