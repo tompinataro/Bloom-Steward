@@ -1057,6 +1057,26 @@ exports.app.post('/api/admin/clients/:id/service-route', requireAuth, requireAdm
         res.status(500).json({ ok: false, error: 'failed to update client route' });
     }
 });
+// Admin utility — clear all routes_today assignments for a given tech
+// POST /api/admin/routes/clear-for-tech { userId: number }
+exports.app.post('/api/admin/routes/clear-for-tech', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const raw = req.body?.userId;
+    const userId = raw === null || raw === undefined ? null : Number(raw);
+    if (!userId || Number.isNaN(userId)) {
+        return res.status(400).json({ ok: false, error: 'invalid user id' });
+    }
+    try {
+        const result = await (0, db_1.dbQuery)(`delete from routes_today where user_id = $1`, [userId]);
+        // PG doesn't return affected rows by default in this helper; reply OK regardless
+        return res.json({ ok: true });
+    }
+    catch (e) {
+        console.error('[admin/routes] clear-for-tech error', e);
+        return res.status(500).json({ ok: false, error: 'failed to clear routes_today for tech' });
+    }
+});
 exports.app.post('/api/admin/service-routes/:id/tech', requireAuth, requireAdmin, async (req, res) => {
     if (!ensureDatabase(res))
         return;

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../theme';
 import { BannerMsg, setBannerHandler } from './globalBannerBus';
 
@@ -8,6 +9,7 @@ const C = createContext<Ctx | undefined>(undefined);
 
 export function GlobalBannerProvider({ children }: { children: React.ReactNode }) {
   const [msg, setMsg] = useState<BannerMsg | null>(null);
+  const [reachability, setReachability] = useState<{ base: string; ok: boolean } | null>(null);
   const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const translateY = useRef(new Animated.Value(-60)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -29,6 +31,21 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
     return () => setBannerHandler(null);
   }, [show]);
 
+  // Lightweight reachability probe at app start
+  useEffect(() => {
+    let cancelled = false;
+    import('../api/client').then(async m => {
+      try {
+        const base = m.API_BASE;
+        const ok = await m.isApiReachable();
+        if (!cancelled) setReachability({ base, ok });
+      } catch {
+        if (!cancelled) setReachability({ base: m.API_BASE, ok: false });
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const value = useMemo(() => ({ show, hide }), [show, hide]);
 
   // Animate in/out when msg changes
@@ -49,6 +66,14 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
   return (
     <C.Provider value={value}>
       {children}
+      <SafeAreaView edges={['top']} style={styles.safeTop}>
+      {reachability && !msg ? (
+        <View style={[styles.banner, reachability.ok ? styles.success : styles.error]} accessibilityRole="text">
+          <Text style={styles.text}>
+            {reachability.ok ? 'Connected' : 'No connection'} to {reachability.base}
+          </Text>
+        </View>
+      ) : null}
       <Animated.View
         pointerEvents={msg ? 'auto' : 'none'}
         style={[styles.banner,
@@ -60,6 +85,7 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
       >
         {msg ? <Text style={styles.text}>{msg.message}</Text> : null}
       </Animated.View>
+      </SafeAreaView>
     </C.Provider>
   );
 }
@@ -71,7 +97,8 @@ export function useGlobalBanner() {
 }
 
 const styles = StyleSheet.create({
-  banner: { position: 'absolute', top: 0, left: 0, right: 0, paddingVertical: spacing(2), paddingHorizontal: spacing(4), borderBottomWidth: 1, zIndex: 1000 },
+  safeTop: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000 },
+  banner: { left: 0, right: 0, paddingVertical: spacing(2), paddingHorizontal: spacing(4), borderBottomWidth: 1 },
   text: { textAlign: 'center', fontWeight: '600' },
   info: { backgroundColor: '#eef2ff', borderColor: '#c7d2fe' },
   success: { backgroundColor: colors.successBg, borderColor: '#86efac' },

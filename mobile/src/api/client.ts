@@ -344,3 +344,14 @@ export async function adminSetUserPassword(
     body: JSON.stringify({ newPassword: data.newPassword }),
   });
 }
+
+export async function adminClearRoutesForTech(
+  token: string,
+  userId: number
+): Promise<{ ok: boolean }> {
+  return fetchJson(withBase('/api/admin/routes/clear-for-tech'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ userId }),
+  });
+}

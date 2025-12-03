@@ -107,11 +107,6 @@ async function routesFromServiceAssignments(userId: number): Promise<TodayRoute[
 
 export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
   if (hasDb()) {
-    const serviceAssignments = await routesFromServiceAssignments(userId);
-    if (serviceAssignments.length > 0) {
-      try { console.log(`[getTodayRoutes] serviceAssignments for user ${userId}: ${serviceAssignments.length}`); } catch {}
-      return serviceAssignments;
-    }
     const res = await dbQuery<{
       visit_id: number;
       client_name: string;
@@ -139,8 +134,9 @@ export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
       try { console.log(`[getTodayRoutes] routes_today for user ${userId}: ${deduped.length}`); } catch {}
       return ensureMinimumRoutes(deduped);
     }
-    // No routes assigned to this user; return empty array
-    try { console.log(`[getTodayRoutes] no assignments for user ${userId} -> empty`); } catch {}
+    // No routes_today entries; do not fall back to service_routes ownership.
+    // Return empty to reflect "unassigned" state accurately.
+    try { console.log(`[getTodayRoutes] no routes_today entries for user ${userId} -> empty`); } catch {}
     return [];
   }
   return FALLBACK_ROUTES;

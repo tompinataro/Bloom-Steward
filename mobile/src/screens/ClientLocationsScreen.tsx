@@ -246,7 +246,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                       <Text style={styles.routePillText}>{client.service_route_name || 'Assign route'}</Text>
                     </Pressable>
                     <Pressable style={styles.unassignBtn} onPress={() => client.service_route_id ? unassignClient(client) : setPickerClient(client)}>
-                      <Text style={styles.unassignText}>{client.service_route_id ? getTechFirstName(client, serviceRoutes, users) : 'Assign'}</Text>
+                      <Text style={styles.unassignText}>{client.service_route_id ? getTechFirstName(client, serviceRoutes, users) : 'Unassigned'}</Text>
                     </Pressable>
                   </View>
                 ) : (
@@ -295,11 +295,11 @@ type UniqueClient = AdminClient & { duplicateIds: number[] };
 
 function getTechFirstName(client: UniqueClient, routes: ServiceRoute[], users: AdminUser[]): string {
   const route = routes.find(r => r.id === client.service_route_id);
-  if (!route?.user_id) return 'Unassign';
+  if (!route?.user_id) return 'Unassigned';
   const user = users.find(u => u.id === route.user_id);
-  if (!user) return 'Unassign';
+  if (!user) return 'Unassigned';
   const firstName = user.name.split(/\s+/)[0];
-  return firstName || 'Unassign';
+  return firstName || 'Unassigned';
 }
 
 export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  routeActions: { flexDirection: 'row', alignItems: 'center', gap: spacing(1.5) },
+  routeActions: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(1.5) },
   routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), minWidth: 90, alignItems: 'center' },
   routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center' },
   unassignBtn: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 10, backgroundColor: colors.text, minWidth: 80, alignItems: 'center' },

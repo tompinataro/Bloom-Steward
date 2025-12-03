@@ -91,14 +91,6 @@ async function routesFromServiceAssignments(userId) {
 }
 async function getTodayRoutes(userId) {
     if ((0, db_1.hasDb)()) {
-        const serviceAssignments = await routesFromServiceAssignments(userId);
-        if (serviceAssignments.length > 0) {
-            try {
-                console.log(`[getTodayRoutes] serviceAssignments for user ${userId}: ${serviceAssignments.length}`);
-            }
-            catch { }
-            return serviceAssignments;
-        }
         const res = await (0, db_1.dbQuery)(`select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
        from routes_today rt
        join clients c on c.id = rt.client_id
@@ -121,9 +113,10 @@ async function getTodayRoutes(userId) {
             catch { }
             return ensureMinimumRoutes(deduped);
         }
-        // No routes assigned to this user; return empty array
+        // No routes_today entries; do not fall back to service_routes ownership.
+        // Return empty to reflect "unassigned" state accurately.
         try {
-            console.log(`[getTodayRoutes] no assignments for user ${userId} -> empty`);
+            console.log(`[getTodayRoutes] no routes_today entries for user ${userId} -> empty`);
         }
         catch { }
         return [];

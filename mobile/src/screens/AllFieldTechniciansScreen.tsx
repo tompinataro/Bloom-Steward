@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
-import { adminFetchUsers, adminFetchServiceRoutes, adminUpdateUser, AdminUser, ServiceRoute } from '../api/client';
+import { adminFetchUsers, adminFetchServiceRoutes, adminUpdateUser, adminClearRoutesForTech, AdminUser, ServiceRoute } from '../api/client';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import ThemedButton from '../components/Button';
@@ -13,7 +13,7 @@ import { truncateText } from '../utils/text';
 type Props = NativeStackScreenProps<RootStackParamList, 'AllFieldTechnicians'>;
 
 export default function AllFieldTechniciansScreen({ navigation }: Props) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [techs, setTechs] = useState<AdminUser[]>([]);
   const [routes, setRoutes] = useState<ServiceRoute[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,12 +67,14 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>All Field Technicians</Text>
-        {techs.length > 0 ? (
-          <Pressable style={styles.shareChip} onPress={shareTechs}>
-            <Text style={styles.shareChipText}>Email this list</Text>
-          </Pressable>
-        ) : null}
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>All Field Technicians</Text>
+          {techs.length > 0 ? (
+            <Pressable style={styles.shareChip} onPress={shareTechs}>
+              <Text style={styles.shareChipText}>Email this list</Text>
+            </Pressable>
+          ) : null}
+        </View>
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : techs.length === 0 ? (
@@ -90,12 +92,30 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                     {assignedRoute ? `Assigned Route: ${assignedRoute.name}` : 'Unassigned'}
                   </Text>
                 </View>
-                <Pressable
-                  style={styles.editBtn}
-                  onPress={() => (navigation as any)?.navigate?.('EditFieldTech', { user })}
-                >
-                  <Text style={styles.editBtnText}>Edit</Text>
-                </Pressable>
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    style={styles.editBtn}
+                    onPress={() => (navigation as any)?.navigate?.('EditFieldTech', { user })}
+                  >
+                    <Text style={styles.editBtnText}>Edit</Text>
+                  </Pressable>
+                  {user?.role === 'admin' ? (
+                    <Pressable
+                      style={styles.clearBtn}
+                      onPress={async () => {
+                        if (!token) return;
+                        try {
+                          await adminClearRoutesForTech(token, Number(user.id));
+                          showBanner({ type: 'success', message: `Cleared today's route for ${user.name}.` });
+                        } catch (err: any) {
+                          showBanner({ type: 'error', message: err?.message || 'Unable to clear route.' });
+                        }
+                      }}
+                    >
+                      <Text style={styles.clearBtnText}>Clear Today’s Route</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
             );
           })
@@ -117,7 +137,11 @@ const styles = StyleSheet.create({
   routeLabel: { color: colors.primary, fontWeight: '600' },
   editBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
   editBtnText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+  actionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(1) },
+  clearBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: 'transparent' },
+  clearBtnText: { color: colors.text, fontWeight: '600', fontSize: 14 },
   phone: { color: colors.text },
   shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 });

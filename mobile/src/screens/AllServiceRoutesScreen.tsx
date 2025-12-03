@@ -57,6 +57,13 @@ export default function AllServiceRoutesScreen(_props: Props) {
     const dedup = Array.from(
       new Map(list.map(c => [`${c.name}|${c.address}`, c])).values()
     );
+    // Sort to match Today's Route ordering: by scheduled_time when present, else by name
+    dedup.sort((a, b) => {
+      const at = a.scheduled_time ?? '';
+      const bt = b.scheduled_time ?? '';
+      if (at && bt && at !== bt) return at.localeCompare(bt);
+      return (a.name || '').localeCompare(b.name || '');
+    });
     acc[route.id] = dedup;
     return acc;
   }, {});
@@ -82,12 +89,14 @@ export default function AllServiceRoutesScreen(_props: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>All Service Routes</Text>
-        {routes.length > 0 ? (
-          <Pressable style={styles.shareChip} onPress={shareRoutes}>
-            <Text style={styles.shareChipText}>Email this list</Text>
-          </Pressable>
-        ) : null}
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>All Service Routes</Text>
+          {routes.length > 0 ? (
+            <Pressable style={styles.shareChip} onPress={shareRoutes}>
+              <Text style={styles.shareChipText}>Email this list</Text>
+            </Pressable>
+          ) : null}
+        </View>
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : routes.length === 0 ? (
@@ -101,12 +110,9 @@ export default function AllServiceRoutesScreen(_props: Props) {
                   {route.user_name ? `Tech: ${route.user_name}` : 'Unassigned'}
                 </Text>
               </View>
-              <ThemedButton
-                title="Change Route Assignment"
-                variant="outline"
-                onPress={() => setAssignRoute(route)}
-                style={{ alignSelf: 'flex-start' }}
-              />
+              <Pressable onPress={() => setAssignRoute(route)} style={styles.secondaryChip}>
+                <Text style={styles.secondaryChipText}>Change Route Assignment</Text>
+              </Pressable>
               {(clientsByRoute[route.id] || []).length === 0 ? (
                 <Text style={styles.empty}>No client locations assigned.</Text>
               ) : (
@@ -191,4 +197,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
   shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  secondaryChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
+  secondaryChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
 });
