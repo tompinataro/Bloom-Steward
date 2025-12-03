@@ -9,7 +9,6 @@ const C = createContext<Ctx | undefined>(undefined);
 
 export function GlobalBannerProvider({ children }: { children: React.ReactNode }) {
   const [msg, setMsg] = useState<BannerMsg | null>(null);
-  const [reachability, setReachability] = useState<{ base: string; ok: boolean } | null>(null);
   const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const translateY = useRef(new Animated.Value(-60)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -30,21 +29,6 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
     setBannerHandler(show);
     return () => setBannerHandler(null);
   }, [show]);
-
-  // Lightweight reachability probe at app start
-  useEffect(() => {
-    let cancelled = false;
-    import('../api/client').then(async m => {
-      try {
-        const base = m.API_BASE;
-        const ok = await m.isApiReachable();
-        if (!cancelled) setReachability({ base, ok });
-      } catch {
-        if (!cancelled) setReachability({ base: m.API_BASE, ok: false });
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
 
   const value = useMemo(() => ({ show, hide }), [show, hide]);
 
@@ -67,13 +51,6 @@ export function GlobalBannerProvider({ children }: { children: React.ReactNode }
     <C.Provider value={value}>
       {children}
       <SafeAreaView edges={['top']} style={styles.safeTop}>
-      {reachability && !msg ? (
-        <View style={[styles.banner, reachability.ok ? styles.success : styles.error]} accessibilityRole="text">
-          <Text style={styles.text}>
-            {reachability.ok ? 'Connected' : 'No connection'} to {reachability.base}
-          </Text>
-        </View>
-      ) : null}
       <Animated.View
         pointerEvents={msg ? 'auto' : 'none'}
         style={[styles.banner,

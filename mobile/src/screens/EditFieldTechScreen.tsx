@@ -75,7 +75,6 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
             variant="outline"
             onPress={async () => {
               try {
-                const { token } = useAuth();
                 if (!token || !user?.id) return;
                 await adminClearRoutesForTech(token, Number(user.id));
                 showBanner({ type: 'success', message: `Assignments reset for ${user.name}.` });

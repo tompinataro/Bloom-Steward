@@ -10,10 +10,10 @@ import { adminFetchReportSummary, adminSendReport, ReportSummaryRow } from '../a
 import { truncateText } from '../utils/text';
 
 const FREQUENCIES = [
-  { label: 'Daily', value: 'daily' },
-  { label: 'Weekly', value: 'weekly' },
+  { label: 'Day', value: 'daily' },
+  { label: 'Week', value: 'weekly' },
   { label: 'Pay Period', value: 'payperiod' },
-  { label: 'Monthly', value: 'monthly' },
+  { label: 'Month', value: 'monthly' },
 ];
 
 type FrequencyValue = typeof FREQUENCIES[number]['value'];
@@ -139,7 +139,7 @@ export default function ReportsScreen(_props: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.heading}>Report Generator</Text>
+        <Text style={styles.heading}>Summary Report Generator</Text>
         <Text style={styles.label}>Recipients</Text>
         <View style={styles.recipientStack}>
           {recipients.map(rec => (
@@ -167,7 +167,7 @@ export default function ReportsScreen(_props: Props) {
         </View>
         <ThemedButton title="Add Recipient" variant="outline" onPress={addRecipient} />
 
-        <Text style={styles.label}>Preview Frequency</Text>
+        <Text style={styles.label}>Report Date Range</Text>
         <View style={styles.frequencyRow}>
           {FREQUENCIES.map(freq => (
             <Pressable
@@ -198,7 +198,7 @@ export default function ReportsScreen(_props: Props) {
         </View>
       </View>
       <View style={styles.card}>
-        <Text style={styles.heading}>Summary Preview</Text>
+        <Text style={styles.heading}>Summary Report Preview</Text>
         {summary.length === 0 ? (
           <Text style={styles.muted}>{loadingSummary ? 'Loading…' : 'No visits recorded for this range.'}</Text>
         ) : (

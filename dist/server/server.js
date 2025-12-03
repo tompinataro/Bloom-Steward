@@ -185,14 +185,13 @@ async function buildSummary(startDate, endDate) {
     const rows = [];
     const seenTechClient = new Set(); // Track tech+client combinations to prevent dupes
     for (const row of dedupedRows) {
-        if (!row.tech_id || !row.tech_name)
-            continue;
-        const techName = row.tech_name.trim();
+        // Allow unassigned clients (no tech_id/tech_name) to be included
+        const techName = row.tech_name ? row.tech_name.trim() : 'Unassigned';
         // Skip demo or test users
-        if (/^demo\b/i.test(techName))
+        if (row.tech_name && /^demo\b/i.test(techName))
             continue;
         // Skip duplicate tech+client combinations (only show first/latest per pair)
-        const techClientKey = `${row.tech_id}|${(row.client_name || '').trim().toLowerCase()}`;
+        const techClientKey = `${row.tech_id || 'unassigned'}|${(row.client_name || '').trim().toLowerCase()}`;
         if (seenTechClient.has(techClientKey))
             continue;
         seenTechClient.add(techClientKey);
@@ -262,7 +261,7 @@ async function buildSummary(startDate, endDate) {
         }
         rows.push({
             techId: row.tech_id,
-            techName: row.tech_name,
+            techName: techName,
             routeName: row.route_name,
             clientName: row.client_name,
             address: row.address,

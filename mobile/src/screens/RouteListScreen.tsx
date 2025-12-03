@@ -78,6 +78,8 @@ export default function RouteListScreen({ navigation, route }: Props) {
       const res = await fetchTodayRoutes(token);
       // Deduplicate repeated rows coming from some staging/prod data sets.
       const deduped = dedupeRoutes(res.routes);
+      // Sort alphabetically by client name
+      deduped.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
       setRoutes(deduped);
       try {
         await ensureToday();
