@@ -89,7 +89,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                   <Text style={styles.email}>{truncateText(`${user.email}${user.managed_password ? ` (${user.managed_password})` : ''}`, 56)}</Text>
                   {user.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
                   <Text style={styles.routeLabel}>
-                    {assignedRoute ? `Assigned Route: ${assignedRoute.name}` : 'Unassigned'}
+                    {assignedRoute ? `Assigned Route(s) = ${assignedRoute.name}` : 'Assigned Route(s) = Unassigned'}
                   </Text>
                 </View>
                 <View style={styles.actionsRow}>
@@ -128,7 +128,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { padding: spacing(4) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  title: { fontSize: 16, fontWeight: '700', color: colors.text },
   empty: { color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingVertical: spacing(1.5), gap: spacing(2) },
   infoColumn: { flex: 1, gap: spacing(0.25) },

@@ -226,9 +226,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
           >
             {listToRender.map(client => (
               <View key={`${client.id}-${client.name}`} style={styles.listRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.listName}>{truncateText(client.name, 50)}</Text>
-                  <Text style={styles.listMeta}>{truncateText(client.address, 60)}</Text>
+                <View style={{ flex: 1, maxWidth: '55%' }}>
+                  <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{client.name}</Text>
+                  <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{client.address}</Text>
                   <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
                 </View>
                 {showAll ? (

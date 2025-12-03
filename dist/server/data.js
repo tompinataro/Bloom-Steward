@@ -183,7 +183,8 @@ async function saveVisit(id, data) {
 async function buildReportRows(startDate, endDate) {
     if (!(0, db_1.hasDb)())
         return [];
-    const res = await (0, db_1.dbQuery)(`select
+    // Fetch submissions within date range
+    const submissionsRes = await (0, db_1.dbQuery)(`select
        vs.id as submission_id,
        vs.created_at,
        v.id as visit_id,
@@ -202,5 +203,24 @@ async function buildReportRows(startDate, endDate) {
      left join users u on u.id = sr.user_id
      where vs.created_at between $1 and $2
      order by u.id nulls last, vs.created_at asc`, [startDate.toISOString(), endDate.toISOString()]);
-    return res?.rows ?? [];
+    // Fetch unassigned clients (no service route assigned)
+    const unassignedRes = await (0, db_1.dbQuery)(`select
+       null as submission_id,
+       null as created_at,
+       null as visit_id,
+       c.name as client_name,
+       c.address,
+       c.latitude,
+       c.longitude,
+       null as route_name,
+       null as tech_id,
+       null as tech_name,
+       '{}'::jsonb as payload
+     from clients c
+     where c.service_route_id is null
+     order by c.name asc`);
+    // Combine: unassigned first, then submissions
+    const unassignedRows = unassignedRes?.rows ?? [];
+    const submissionRows = submissionsRes?.rows ?? [];
+    return [...unassignedRows, ...submissionRows];
 }
