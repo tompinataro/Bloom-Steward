@@ -89,7 +89,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                   <Text style={styles.email}>{truncateText(`${user.email}${user.managed_password ? ` (${user.managed_password})` : ''}`, 56)}</Text>
                   {user.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
                   <Text style={styles.routeLabel}>
-                    {assignedRoute ? `Assigned Route(s) = ${assignedRoute.name}` : 'Assigned Route(s) = Unassigned'}
+                    {assignedRoute ? `Assigned Route(s) = "${assignedRoute.name}"` : 'Assigned Route(s) = "Unassigned"'}
                   </Text>
                 </View>
                 <View style={styles.actionsRow}>

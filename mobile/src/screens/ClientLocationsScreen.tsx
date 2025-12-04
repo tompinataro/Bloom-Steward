@@ -9,10 +9,8 @@ import {
   adminCreateClient,
   adminFetchClients,
   adminFetchServiceRoutes,
-  adminFetchUsers,
   adminSetClientRoute,
   AdminClient,
-  AdminUser,
   ServiceRoute
 } from '../api/client';
 import ThemedButton from '../components/Button';
@@ -34,20 +32,17 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
 
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
   const [pickerClient, setPickerClient] = useState<UniqueClient | null>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
     try {
-      const [clientRes, routeRes, userRes] = await Promise.all([
+      const [clientRes, routeRes] = await Promise.all([
         adminFetchClients(token),
         adminFetchServiceRoutes(token),
-        adminFetchUsers(token),
       ]);
       setClients(clientRes?.clients || []);
       setServiceRoutes(routeRes?.routes || []);
-      setUsers(userRes?.users || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load clients.' });
     }
@@ -136,20 +131,6 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       });
     } catch {}
   };
-  const unassignClient = async (client: UniqueClient) => {
-    if (!token) return;
-    try {
-      await Promise.all(
-        client.duplicateIds.map(id =>
-          adminSetClientRoute(token, { clientId: id, serviceRouteId: null })
-        )
-      );
-      showBanner({ type: 'success', message: `${client.name} unassigned.` });
-      await load();
-    } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Unable to unassign client.' });
-    }
-  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -160,49 +141,49 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             style={styles.input}
             value={name}
             onChangeText={setName}
-          placeholder="Client name"
-          placeholderTextColor={colors.muted}
-        />
-        <TextInput
-          style={styles.input}
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Service address"
-          placeholderTextColor={colors.muted}
-        />
-        <TextInput
-          style={styles.input}
-          value={contactName}
-          onChangeText={setContactName}
-          placeholder="Primary contact (optional)"
-          placeholderTextColor={colors.muted}
-        />
-        <TextInput
-          style={styles.input}
-          value={contactPhone}
-          onChangeText={setContactPhone}
-          placeholder="Contact phone (optional)"
-          placeholderTextColor={colors.muted}
-          keyboardType="phone-pad"
-        />
-        <TextInput
-          style={styles.input}
-          value={latitude}
-          onChangeText={setLatitude}
-          placeholder="Latitude (optional)"
-          placeholderTextColor={colors.muted}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.input}
-          value={longitude}
-          onChangeText={setLongitude}
-          placeholder="Longitude (optional)"
-          placeholderTextColor={colors.muted}
-          keyboardType="numeric"
-        />
-        <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
-      </View>
+            placeholder="Client name"
+            placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Service address"
+            placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={contactName}
+            onChangeText={setContactName}
+            placeholder="Primary contact (optional)"
+            placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={contactPhone}
+            onChangeText={setContactPhone}
+            placeholder="Contact phone (optional)"
+            placeholderTextColor={colors.muted}
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            style={styles.input}
+            value={latitude}
+            onChangeText={setLatitude}
+            placeholder="Latitude (optional)"
+            placeholderTextColor={colors.muted}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            value={longitude}
+            onChangeText={setLongitude}
+            placeholder="Longitude (optional)"
+            placeholderTextColor={colors.muted}
+            keyboardType="numeric"
+          />
+          <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
+        </View>
       )}
       <View style={styles.card}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -213,12 +194,12 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
         </View>
-        {showAll && <Text style={styles.instructionText}>(Tap Tech name or Route to reassign either.)</Text>}
-          {listToRender.length === 0 ? (
-            <Text style={styles.emptyCopy}>
-              {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
-            </Text>
-          ) : (
+        {showAll && <Text style={styles.instructionText}>(Tap route to reassign.)</Text>}
+        {listToRender.length === 0 ? (
+          <Text style={styles.emptyCopy}>
+            {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
+          </Text>
+        ) : (
           <ScrollView
             style={showAll ? styles.listScrollFull : styles.listScroll}
             contentContainerStyle={styles.listScrollContent}
@@ -226,10 +207,12 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
           >
             {listToRender.map(client => (
               <View key={`${client.id}-${client.name}`} style={styles.listRow}>
-                <View style={{ flex: 1, maxWidth: '55%' }}>
-                  <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{client.name}</Text>
-                  <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{client.address}</Text>
-                  <Text style={styles.listMetaSmall}>{client.contact_name || ''}</Text>
+                <View style={styles.listMain}>
+                  <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.name, 30)}</Text>
+                  <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.address, 17)}</Text>
+                  {client.contact_name ? (
+                    <Text style={styles.listMetaSmall} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.contact_name, 32)}</Text>
+                  ) : null}
                 </View>
                 {showAll ? (
                   <View style={styles.routeActions}>
@@ -243,15 +226,12 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                         }
                       }}
                     >
-                      <Text style={styles.routePillText}>{client.service_route_name || 'Assign route'}</Text>
-                    </Pressable>
-                    <Pressable style={styles.unassignBtn} onPress={() => client.service_route_id ? unassignClient(client) : setPickerClient(client)}>
-                      <Text style={styles.unassignText}>{client.service_route_id ? getTechFirstName(client, serviceRoutes, users) : 'Unassigned'}</Text>
+                      <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Assign route'}</Text>
                     </Pressable>
                   </View>
                 ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
-                    <Text style={styles.dropdownText}>
+                    <Text style={styles.dropdownText} numberOfLines={1} ellipsizeMode="tail">
                       {client.service_route_name || 'Assign route'}
                     </Text>
                   </Pressable>
@@ -293,15 +273,6 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
 
 type UniqueClient = AdminClient & { duplicateIds: number[] };
 
-function getTechFirstName(client: UniqueClient, routes: ServiceRoute[], users: AdminUser[]): string {
-  const route = routes.find(r => r.id === client.service_route_id);
-  if (!route?.user_id) return 'Unassigned';
-  const user = users.find(u => u.id === route.user_id);
-  if (!user) return 'Unassigned';
-  const firstName = user.name.split(/\s+/)[0];
-  return firstName || 'Unassigned';
-}
-
 export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
   return useMemo(() => {
     const seen = new Map<string, UniqueClient>();
@@ -323,8 +294,8 @@ export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing(4), gap: spacing(3) },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
+  container: { padding: spacing(3), gap: spacing(2.5) },
+  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(2), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   input: {
@@ -336,7 +307,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.card,
   },
-  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.5), flexDirection: 'row', alignItems: 'center' },
+  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.75), flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' },
+  listMain: { flexGrow: 1, flexShrink: 1, minWidth: '55%', maxWidth: '100%', gap: spacing(0.25) },
   listName: { fontWeight: '600', color: colors.text },
   listMeta: { color: colors.text },
   listMetaSmall: { color: colors.muted },
@@ -347,20 +319,21 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: spacing(2),
     paddingVertical: spacing(1),
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    flexShrink: 1,
   },
-  listScroll: { maxHeight: 320 },
+  listScroll: { maxHeight: 320, width: '100%' },
   listScrollFull: { maxHeight: undefined },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
-  dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13, flexShrink: 1 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  routeActions: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(1.5) },
-  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), minWidth: 90, alignItems: 'center' },
-  routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center' },
-  unassignBtn: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 10, backgroundColor: colors.text, minWidth: 80, alignItems: 'center' },
-  unassignText: { color: '#fff', fontWeight: '700', textAlign: 'center' },
+  routeActions: { flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing(1), flexWrap: 'wrap', minWidth: '40%' },
+  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), minWidth: 120, alignItems: 'center', flexShrink: 1, maxWidth: '100%' },
+  routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center', flexShrink: 1 },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
