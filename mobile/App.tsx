@@ -47,7 +47,9 @@ function RootNavigator() {
         name="RouteList"
         component={RouteListScreen}
         options={({ navigation }) => ({
-          headerTitle: () => (
+          title: "Today's Route",
+          headerLeft: () => null,
+          headerRight: () => (
             <Pressable
               onPress={async () => {
                 const { clearAllProgress } = await import('./src/completed');
@@ -61,13 +63,12 @@ function RootNavigator() {
               }}
               hitSlop={12}
               accessibilityRole="button"
-              accessibilityLabel="Today's Route (Dev Reset)"
+              accessibilityLabel="Reset progress"
+              style={{ paddingHorizontal: 16, paddingVertical: 6 }}
             >
-              <Text style={{ fontWeight: '700', fontSize: 20 }}>Today{"'"}s Route</Text>
+              <Text style={{ fontWeight: '700', color: colors.primary }}>Reset</Text>
             </Pressable>
           ),
-          headerLeft: () => null,
-          headerRight: () => null,
         })}
       />
       <Stack.Screen

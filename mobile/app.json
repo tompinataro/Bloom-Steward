@@ -24,7 +24,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.pinataro.bloomsteward",
-      "buildNumber": "45"
+      "buildNumber": "46"
     },
     "extra": {
       "eas": {

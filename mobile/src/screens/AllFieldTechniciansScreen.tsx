@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
-import { adminFetchUsers, adminFetchServiceRoutes, adminUpdateUser, adminClearRoutesForTech, AdminUser, ServiceRoute } from '../api/client';
+import { adminFetchUsers, adminFetchServiceRoutes, adminClearRoutesForTech, AdminUser, ServiceRoute } from '../api/client';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
 import ThemedButton from '../components/Button';
@@ -35,8 +35,6 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
       setLoading(false);
     }
   };
-  const getRouteForTech = (userId: string) => routes.find(r => r.assigned_user_id === userId);
-
   useEffect(() => {
     load();
   }, [token]);
@@ -49,13 +47,16 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
     }, [token])
   );
 
+  const getRouteForTech = (userId: number) =>
+    routes.find(r => r.user_id === userId || (r as any)?.assigned_user_id === userId);
+
   const shareTechs = async () => {
     if (!techs.length) {
       showBanner({ type: 'info', message: 'No field technicians to share yet.' });
       return;
     }
     const lines = techs.map(t => {
-      const assignedRoute = routes.find(r => r.assigned_user_id === t.id);
+      const assignedRoute = getRouteForTech(t.id);
       const routeName = assignedRoute ? assignedRoute.name : 'Unassigned';
       return `${t.name}\nEmail: ${t.email}${t.phone ? `\nPhone: ${t.phone}` : ''}\nRoute: ${routeName}`;
     });

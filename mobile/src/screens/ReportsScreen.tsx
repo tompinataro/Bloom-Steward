@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -35,7 +35,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
 export default function ReportsScreen(_props: Props) {
   const { token, user } = useAuth();
   const [recipients, setRecipients] = useState<RecipientTarget[]>([newRecipient()]);
-  const [frequencyPicker, setFrequencyPicker] = useState<RecipientTarget | null>(null);
   const [previewFrequency, setPreviewFrequency] = useState<FrequencyValue>('weekly');
   const [summary, setSummary] = useState<ReportSummaryRow[]>([]);
   const [rangeText, setRangeText] = useState('—');
@@ -153,12 +152,6 @@ export default function ReportsScreen(_props: Props) {
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
-              <Pressable
-                style={styles.frequencyPicker}
-                onPress={() => setFrequencyPicker(rec)}
-              >
-                <Text style={styles.frequencyPickerText}>{labelFor(rec.frequency)}</Text>
-              </Pressable>
               <Pressable style={styles.removeRecipient} onPress={() => removeRecipient(rec.id)}>
                 <Text style={styles.removeRecipientText}>×</Text>
               </Pressable>
@@ -253,35 +246,6 @@ export default function ReportsScreen(_props: Props) {
           </ScrollView>
         )}
       </View>
-      <Modal
-        visible={!!frequencyPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setFrequencyPicker(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              Frequency for {frequencyPicker?.email || 'recipient'}
-            </Text>
-            {FREQUENCIES.map(freq => (
-              <Pressable
-                key={freq.value}
-                style={styles.modalOption}
-                onPress={() => {
-                  if (frequencyPicker) {
-                    updateRecipient(frequencyPicker.id, { frequency: freq.value as FrequencyValue });
-                  }
-                  setFrequencyPicker(null);
-                }}
-              >
-                <Text style={styles.modalOptionText}>{freq.label}</Text>
-              </Pressable>
-            ))}
-            <ThemedButton title="Cancel" variant="outline" onPress={() => setFrequencyPicker(null)} />
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -313,10 +277,6 @@ function formatTime(value?: string | null) {
   }
 }
 
-function labelFor(value: FrequencyValue) {
-  return FREQUENCIES.find(freq => freq.value === value)?.label ?? 'Weekly';
-}
-
 const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
@@ -344,14 +304,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing(1.5),
     color: colors.text,
   },
-  frequencyPicker: {
-    paddingHorizontal: spacing(2),
-    paddingVertical: spacing(1),
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  frequencyPickerText: { color: colors.primary, fontWeight: '600' },
   removeRecipient: {
     width: 32,
     height: 32,
