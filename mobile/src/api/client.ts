@@ -15,7 +15,7 @@ function withBase(path: string) {
 }
 
 async function fetchJson(input: RequestInfo | URL, init?: RequestInit & { timeoutMs?: number }, _allowRetry = true) {
-  const { timeoutMs = 10000, ...rest } = init || {};
+  const { timeoutMs = 30000, ...rest } = init || {};
   const ac = new AbortController();
   const timeout = setTimeout(() => ac.abort(), timeoutMs);
   try {

@@ -289,7 +289,8 @@ export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
         seen.set(key, { ...client, duplicateIds: [client.id] });
       }
     });
-    return Array.from(seen.values());
+    // Sort alphabetically by client name
+    return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [clients]);
 }
 
