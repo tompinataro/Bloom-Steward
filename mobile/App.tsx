@@ -49,26 +49,27 @@ function RootNavigator() {
         options={({ navigation }) => ({
           title: "Today's Route",
           headerLeft: () => null,
-          headerRight: () => (
-            <Pressable
-              onPress={async () => {
-                const { clearAllProgress } = await import('./src/completed');
-                try { await clearAllProgress(); } catch {}
-                try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
-              }}
-              onLongPress={async () => {
-                const { clearAllProgress } = await import('./src/completed');
-                try { await clearAllProgress(); } catch {}
-                try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
-              }}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Reset progress"
-              style={{ paddingHorizontal: 16, paddingVertical: 6 }}
-            >
-              <Text style={{ fontWeight: '700', color: colors.primary }}>Reset</Text>
-            </Pressable>
-          ),
+          // Commented out Reset button - no longer needed (kept for future reference)
+          // headerRight: () => (
+          //   <Pressable
+          //     onPress={async () => {
+          //       const { clearAllProgress } = await import('./src/completed');
+          //       try { await clearAllProgress(); } catch {}
+          //       try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
+          //     }}
+          //     onLongPress={async () => {
+          //       const { clearAllProgress } = await import('./src/completed');
+          //       try { await clearAllProgress(); } catch {}
+          //       try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
+          //     }}
+          //     hitSlop={12}
+          //     accessibilityRole="button"
+          //     accessibilityLabel="Reset progress"
+          //     style={{ paddingHorizontal: 16, paddingVertical: 6 }}
+          //   >
+          //     <Text style={{ fontWeight: '700', color: colors.primary }}>Reset</Text>
+          //   </Pressable>
+          // ),
         })}
       />
       <Stack.Screen
