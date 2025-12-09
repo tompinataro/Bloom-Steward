@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share } from 'react-native';
+import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -200,13 +200,15 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
           </Text>
         ) : (
-          <ScrollView
+          <FlatList
+            data={listToRender}
+            keyExtractor={(item) => `${item.id}-${item.name}`}
             style={showAll ? styles.listScrollFull : styles.listScroll}
             contentContainerStyle={styles.listScrollContent}
+            showsVerticalScrollIndicator={false}
             nestedScrollEnabled
-          >
-            {listToRender.map(client => (
-              <View key={`${client.id}-${client.name}`} style={styles.listRow}>
+            renderItem={({ item: client }) => (
+              <View style={styles.listRow}>
                 <View style={styles.listMain}>
                   <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.name, 30)}</Text>
                   <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.address, 17)}</Text>
@@ -237,8 +239,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                   </Pressable>
                 )}
               </View>
-            ))}
-          </ScrollView>
+            )}
+          />
         )}
       </View>
       <Modal
@@ -324,9 +326,9 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     flexShrink: 1,
   },
-  listScroll: { maxHeight: 320, width: '100%' },
-  listScrollFull: { maxHeight: undefined },
-  listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
+  listScroll: { maxHeight: 320, width: '100%', flexGrow: 0 },
+  listScrollFull: { maxHeight: 600, flexGrow: 1 },
+  listScrollContent: { paddingVertical: spacing(1), gap: spacing(1), flexGrow: 1 },
   dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13, flexShrink: 1 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },

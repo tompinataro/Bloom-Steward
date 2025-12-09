@@ -254,7 +254,7 @@ function formatDate(value?: string | null) {
   if (!value) return '—';
   try {
     const date = new Date(value);
-    return date.toLocaleString();
+    return date.toLocaleDateString();
   } catch {
     return value;
   }

@@ -16,8 +16,8 @@ echo "Current .env configuration:"
 cat .env
 echo ""
 
-# Publish to development channel
-npx expo publish --release-channel development
+# Publish to development channel using EAS Update
+eas update --branch development --message "Local development update"
 
 echo ""
 echo "✅ OTA update published!"
