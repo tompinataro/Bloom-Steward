@@ -391,9 +391,9 @@ type ItemProps = {
         )}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyTitle}>{isAdmin ? 'No assignments yet' : 'No visits today'}</Text>
+            <Text style={styles.emptyTitle}>{isAdmin ? 'No assignments yet' : 'No CLs on your route for today'}</Text>
             <Text style={styles.emptySub}>
-              {isAdmin ? 'Assign clients from the Account tab to build today\'s route.' : 'Pull down to refresh'}
+              {isAdmin ? 'Assign clients from the Account tab to build today\'s route.' : 'Please call the office if this is incorrect.'}
             </Text>
           </View>
         }

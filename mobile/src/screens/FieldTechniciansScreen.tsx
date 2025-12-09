@@ -56,6 +56,15 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
     navigation.setOptions({ title: showAll ? 'All Field Technicians' : 'Field Technicians' });
   }, [navigation, showAll]);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Clear temp password bubble and reload data when returning to this screen
+      setLastTemp(null);
+      load();
+    });
+    return unsubscribe;
+  }, [navigation, token]);
+
   const createTech = async () => {
     if (!token) return;
     const trimmedName = name.trim();
@@ -100,6 +109,9 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
       showBanner({ type: 'success', message: 'Password updated.' });
       setNewPw('');
       setPwModal(null);
+      // Clear temp password bubble and reload data to show new password
+      setLastTemp(null);
+      await load();
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to update password.' });
     }

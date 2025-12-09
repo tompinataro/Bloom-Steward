@@ -34,7 +34,7 @@ export default function AccountScreen({ navigation }: Props) {
             <Text style={styles.sectionHeading}>{section.title}</Text>
             <View style={styles.sectionButtons}>
               <ThemedButton
-                title={section.viewRoute === 'Reports' ? 'Field Work Summary' : 'View All'}
+                title={section.viewRoute === 'Reports' ? 'Field Work Summary Report' : 'View All'}
                 onPress={() => {
                   if (section.viewRoute === 'ClientLocations') {
                     navigation.navigate(section.viewRoute, { mode: 'all' });
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   inlineChip: { paddingHorizontal: spacing(2), paddingVertical: spacing(1), borderRadius: 999, backgroundColor: '#ede9fe' },
   inlineChipText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   sectionStack: { gap: spacing(3) },
-  sectionCard: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
+  sectionCard: { backgroundColor: colors.card, borderRadius: 12, paddingVertical: spacing(3), paddingHorizontal: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
   sectionHeading: { fontSize: 18, fontWeight: '700', color: colors.text },
   sectionButtons: {
     flexDirection: 'row',

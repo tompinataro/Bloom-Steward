@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'LoginForm'>;
 export default function LoginFormScreen(_props: Props) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('marc@bloomsteward.com');
-  const [password, setPassword] = useState('Tom');
+  const [password, setPassword] = useState('');
   const [initialOdometer, setInitialOdometer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +63,7 @@ export default function LoginFormScreen(_props: Props) {
             placeholder="Password"
             placeholderTextColor={colors.muted}
             returnKeyType="next"
+            onSubmitEditing={onSubmit}
             textContentType="oneTimeCode"
             autoComplete="off"
             autoCorrect={false}
@@ -78,6 +79,7 @@ export default function LoginFormScreen(_props: Props) {
             onSubmitEditing={onSubmit}
             autoComplete="off"
             autoCorrect={false}
+            blurOnSubmit={false}
           />
           {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
           {loading ? (

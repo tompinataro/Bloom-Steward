@@ -5,6 +5,7 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import nodemailer from 'nodemailer';
+import cron from 'node-cron';
 import healthRouter from './routes/health';
 import metricsRouter, { requestMetrics } from './routes/metrics';
 import { getTodayRoutes, getVisit, saveVisit, buildReportRows } from './data';
@@ -1356,6 +1357,47 @@ app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ ok: false, error: e?.message ?? 'failed to run seed' });
   }
 });
+
+// Automated report emails
+if (process.env.NODE_ENV !== 'test') {
+  // Weekly report to Marc - every Monday at 5am (previous 7 days)
+  cron.schedule('0 5 * * 1', async () => {
+    console.log('[CRON] Sending weekly report to Marc');
+    try {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - 7);
+      const rows = await buildSummary(startDate, endDate);
+      const csv = buildCsv(rows);
+      const html = buildHtml(rows, startDate, endDate);
+      await sendReportEmail(['marc@bloomsteward.com'], 'Field Work Summary Report (Weekly)', html, csv);
+      console.log('[CRON] Weekly report sent to Marc');
+    } catch (err: any) {
+      console.error('[CRON] Failed to send weekly report:', err?.message);
+    }
+  }, {
+    timezone: 'America/Chicago'
+  });
+
+  // Daily report to Piper - every day at 5am (previous day)
+  cron.schedule('0 5 * * *', async () => {
+    console.log('[CRON] Sending daily report to Piper');
+    try {
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - 1);
+      const rows = await buildSummary(startDate, endDate);
+      const csv = buildCsv(rows);
+      const html = buildHtml(rows, startDate, endDate);
+      await sendReportEmail(['piper@bloomsteward.com'], 'Field Work Summary Report (Daily)', html, csv);
+      console.log('[CRON] Daily report sent to Piper');
+    } catch (err: any) {
+      console.error('[CRON] Failed to send daily report:', err?.message);
+    }
+  }, {
+    timezone: 'America/Chicago'
+  });
+}
 
 const port = Number(process.env.PORT) || 5100;
 const host = process.env.HOST || '0.0.0.0';

@@ -124,7 +124,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
                     {routeItem.user_name ? `Technician: ${routeItem.user_name}` : 'No technician assigned'}
                   </Text>
                   {assignedClients.length === 0 ? (
-                    <Text style={styles.emptyCopy}>No client locations assigned.</Text>
+                    <Text style={styles.emptyCopy}>No client locations placed.</Text>
                   ) : (
                     assignedClients.map(client => (
                       <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
@@ -139,7 +139,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
         </View>
         {unassignedClients.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.subTitle}>Unassigned Client Locations</Text>
+            <Text style={styles.subTitle}>Unplaced Client Locations</Text>
             {unassignedClients.map(client => (
               <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
                 • {truncateText(client.name)} — {truncateText(client.address, 36)}

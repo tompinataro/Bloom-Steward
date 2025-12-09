@@ -114,7 +114,7 @@ export default function AllServiceRoutesScreen(_props: Props) {
                 <Text style={styles.secondaryChipText}>Change Route Assignment</Text>
               </Pressable>
               {(clientsByRoute[route.id] || []).length === 0 ? (
-                <Text style={styles.empty}>No client locations assigned.</Text>
+                <Text style={styles.empty}>No client locations placed.</Text>
               ) : (
                 clientsByRoute[route.id].map(client => (
                   <Text key={`${route.id}-${client.id}`} style={styles.clientLine}>

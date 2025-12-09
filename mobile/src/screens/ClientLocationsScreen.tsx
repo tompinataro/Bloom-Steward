@@ -105,7 +105,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       );
       await load();
     } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Unable to assign route.' });
+      showBanner({ type: 'error', message: err?.message || 'Unable to place client in route.' });
     } finally {
       setPickerClient(null);
     }
@@ -187,17 +187,17 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       )}
       <View style={styles.card}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={styles.subTitle}>{showAll ? 'All Client Locations' : 'Locations Awaiting Assignment'}</Text>
           {showAll && uniqueClients.length ? (
             <Pressable style={styles.shareChip} onPress={shareClients}>
               <Text style={styles.shareChipText}>Email this list</Text>
             </Pressable>
           ) : null}
+          {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}
+          {showAll && <Text style={styles.instructionText}>(Tap route to move.)</Text>}
         </View>
-        {showAll && <Text style={styles.instructionText}>(Tap route to reassign.)</Text>}
         {listToRender.length === 0 ? (
           <Text style={styles.emptyCopy}>
-            {showAll ? 'No client locations yet.' : 'No un-assigned client locations at this time.'}
+            {showAll ? 'No client locations yet.' : 'No unplaced client locations at this time.'}
           </Text>
         ) : (
           <FlatList
@@ -228,13 +228,13 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                         }
                       }}
                     >
-                      <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Assign route'}</Text>
+                      <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Place in route'}</Text>
                     </Pressable>
                   </View>
                 ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
                     <Text style={styles.dropdownText} numberOfLines={1} ellipsizeMode="tail">
-                      {client.service_route_name || 'Assign route'}
+                      {client.service_route_name || 'Place in route'}
                     </Text>
                   </Pressable>
                 )}
@@ -252,7 +252,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              Assign {pickerClient?.name ?? 'client'}
+              Place {pickerClient?.name ?? 'client'}
             </Text>
             <ScrollView style={{ maxHeight: 300 }}>
               {serviceRoutes.map(route => (
@@ -262,7 +262,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                 </Pressable>
               ))}
               <Pressable style={styles.modalOption} onPress={() => assignRoute(null)}>
-                <Text style={styles.modalOptionText}>Clear assignment</Text>
+                <Text style={styles.modalOptionText}>Remove from route</Text>
               </Pressable>
             </ScrollView>
             <ThemedButton title="Cancel" variant="outline" onPress={() => setPickerClient(null)} />
@@ -340,6 +340,6 @@ const styles = StyleSheet.create({
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
-  shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
-  instructionText: { fontSize: 13, color: colors.muted, fontStyle: 'italic', marginTop: spacing(0.5) },
+  shareChipText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  instructionText: { fontSize: 14, color: colors.muted, fontWeight: '700', marginTop: spacing(0.5) },
 });

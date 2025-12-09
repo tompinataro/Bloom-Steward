@@ -1,7 +1,7 @@
 -- Seed admin and tech accounts
 insert into users (email, name, password_hash, role, must_change_password, managed_password, phone)
 values
-  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, '83472618', '612-555-1001'),
+  ('marc@bloomsteward.com', 'Marc', '$2a$10$DyGw51hzsDpowxaXq.fUU.DaBvyIPMttE7zDqy0y/JHFVSIM7yXae', 'admin', false, 'Tom', '612-555-1001'),
   ('jacob@b.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'Jacob123', '612-555-2002'),
   ('sadie@b.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '50293847', '612-555-3003'),
   ('chris@b.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '71920485', '612-555-4004'),
