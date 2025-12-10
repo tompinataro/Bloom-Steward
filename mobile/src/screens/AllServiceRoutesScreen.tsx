@@ -19,6 +19,7 @@ export default function AllServiceRoutesScreen(_props: Props) {
   const [loading, setLoading] = useState(true);
   const [techs, setTechs] = useState<AdminUser[]>([]);
   const [assignRoute, setAssignRoute] = useState<ServiceRoute | null>(null);
+  const [sortByAlpha, setSortByAlpha] = useState(true);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -102,9 +103,23 @@ export default function AllServiceRoutesScreen(_props: Props) {
         ) : routes.length === 0 ? (
           <Text style={styles.empty}>No service routes yet.</Text>
         ) : (
-          routes.map(route => (
+          routes
+            .sort((a, b) => sortByAlpha ? a.name.localeCompare(b.name) : 0)
+            .map(route => (
             <View key={route.id} style={styles.routeBlock}>
               <View style={styles.routeHeader}>
+                <Pressable 
+                  style={[styles.sortButton, sortByAlpha ? styles.sortButtonAlpha : styles.sortButtonDelta]} 
+                  onPress={() => setSortByAlpha(!sortByAlpha)}
+                >
+                  <View style={styles.outerCircle}>
+                    <View style={[styles.innerCircle, sortByAlpha ? styles.innerCircleAlpha : styles.innerCircleDelta]}>
+                      <Text style={[styles.sortIcon, sortByAlpha ? styles.sortIconAlpha : styles.sortIconDelta]}>
+                        {sortByAlpha ? 'Α' : '△'}
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
                 <Text style={styles.routeName}>{route.name}</Text>
                 <Text style={styles.routeTech}>
                   {route.user_name ? `Tech: ${route.user_name}` : 'Unassigned'}
@@ -188,9 +203,19 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   empty: { color: colors.muted },
   routeBlock: { paddingTop: spacing(1.5), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, gap: spacing(0.75) },
-  routeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  routeName: { fontSize: 18, fontWeight: '700', color: colors.text },
+  routeHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing(1.5) },
+  routeName: { fontSize: 18, fontWeight: '700', color: colors.text, flex: 1 },
   routeTech: { color: colors.muted },
+  sortButton: { width: 34, height: 34, justifyContent: 'center', alignItems: 'center' },
+  sortButtonAlpha: { backgroundColor: colors.background },
+  sortButtonDelta: { backgroundColor: '#dc2626' },
+  outerCircle: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: colors.text, justifyContent: 'center', alignItems: 'center' },
+  innerCircle: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center' },
+  innerCircleAlpha: { borderColor: colors.text, backgroundColor: colors.background },
+  innerCircleDelta: { borderColor: '#dc2626', backgroundColor: '#dc2626' },
+  sortIcon: { fontSize: 18, fontWeight: '700' },
+  sortIconAlpha: { color: colors.text },
+  sortIconDelta: { color: '#ffffff' },
   clientLine: { color: colors.text, paddingLeft: spacing(1) },
   modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 380, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },

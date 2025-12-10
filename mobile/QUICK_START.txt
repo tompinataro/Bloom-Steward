@@ -86,3 +86,4 @@ mobile/scripts/          # Helper scripts
 1. Run: npm run build:dev
 2. Install app on iPad from EAS URL
 3. Start developing with instant OTA updates!
+UPDATE users SET password = 'Tom' WHERE email = 'marc@bloomsteward.com';UPDATE users SET password = 'Tom' WHERE email = 'marc@bloomsteward.com';

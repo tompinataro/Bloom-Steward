@@ -24,7 +24,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.pinataro.bloomsteward",
-      "buildNumber": "49",
+      "buildNumber": "50",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,

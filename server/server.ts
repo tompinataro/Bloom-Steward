@@ -143,12 +143,21 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   latestByComposite.forEach((row, key) => allDeduped.set(`composite:${key}`, row));
   
   const dedupedRows = Array.from(allDeduped.values()).sort((a, b) => {
-    const aTech = (a.tech_name || '').toLowerCase();
-    const bTech = (b.tech_name || '').toLowerCase();
-    if (aTech !== bTech) return aTech < bTech ? -1 : 1;
-    const aTs = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return aTs - bTs;
+    // Sort: Unassigned routes first, then alphabetically by route name, then by client name within each route
+    const aRoute = (a.route_name || '').toLowerCase();
+    const bRoute = (b.route_name || '').toLowerCase();
+    const aClient = (a.client_name || '').toLowerCase();
+    const bClient = (b.client_name || '').toLowerCase();
+    
+    // Unassigned routes (no route_name) come first
+    if (!aRoute && bRoute) return -1;
+    if (aRoute && !bRoute) return 1;
+    
+    // Both unassigned or both assigned: sort by route name
+    if (aRoute !== bRoute) return aRoute.localeCompare(bRoute);
+    
+    // Same route: sort by client name alphabetically
+    return aClient.localeCompare(bClient);
   });
   
   // Get all unique tech IDs from deduped rows
