@@ -4,6 +4,19 @@
       "eas": {
         "projectId": "f8e35076-3a92-4b1d-b324-c35896994cea"
       }
+    },
+    "ios": {
+      "bundleIdentifier": "com.pinataro.prime-solo-project"
+    },
+    "android": {
+      "package": "com.pinataro.primesoloproject"
     }
+  },
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "ios": {
+    "bundleIdentifier": "com.pinataro.bloomsteward"
   }
 }
