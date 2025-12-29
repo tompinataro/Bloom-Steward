@@ -12,6 +12,7 @@
     "connect-pg-simple": "^9.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
+    "expo": "^54.0.30",
     "express": "^4.17.1",
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.0",
