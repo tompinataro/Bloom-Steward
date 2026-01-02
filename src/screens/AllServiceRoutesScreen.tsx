@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Share, Pressable } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Share, Pressable, Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -82,10 +82,18 @@ export default function AllServiceRoutesScreen(_props: Props) {
       const tech = route.user_name || 'Unassigned';
       return `${route.name}\nTech: ${tech}${assignedClients ? `\nClients: ${assignedClients}` : ''}`;
     });
+    const subject = 'Service Routes';
+    const body = `Service Routes:\n\n${lines.join('\n\n')}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     try {
+      const canMail = await Linking.canOpenURL(mailto);
+      if (canMail) {
+        await Linking.openURL(mailto);
+        return;
+      }
       await Share.share({
-        title: 'Service Routes',
-        message: `Service Routes:\n\n${lines.join('\n\n')}`,
+        title: subject,
+        message: body,
       });
     } catch {}
   };
@@ -97,7 +105,7 @@ export default function AllServiceRoutesScreen(_props: Props) {
           <Text style={styles.title}>All Service Routes</Text>
           {routes.length > 0 ? (
             <Pressable style={styles.shareChip} onPress={shareRoutes}>
-              <Text style={styles.shareChipText}>Email this list</Text>
+              <Text style={styles.shareChipText}>Email This List</Text>
             </Pressable>
           ) : null}
         </View>

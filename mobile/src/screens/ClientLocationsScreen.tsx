@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking } from 'react-native';
+import * as MailComposer from 'expo-mail-composer';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -128,6 +129,10 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     const body = `Client Locations:\n\n${lines.join('\n\n')}`;
     const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     try {
+      if (await MailComposer.isAvailableAsync()) {
+        await MailComposer.composeAsync({ subject, body });
+        return;
+      }
       const canMail = await Linking.canOpenURL(mailto);
       if (canMail) {
         await Linking.openURL(mailto);
@@ -201,7 +206,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           {showAll && uniqueClients.length ? (
             <Pressable style={styles.shareChip} onPress={shareClients}>
-              <Text style={styles.shareChipText}>Email this list</Text>
+              <Text style={styles.shareChipText}>Email This List</Text>
             </Pressable>
           ) : null}
           {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}

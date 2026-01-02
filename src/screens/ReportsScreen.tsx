@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -115,7 +115,23 @@ export default function ReportsScreen(_props: Props) {
       }
       showBanner({ type: 'success', message: 'Report email(s) sent.' });
     } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Unable to send report.' });
+      // Fallback: try opening mail client with the summary text
+      try {
+        const summaryLines = summary.length
+          ? summary.map(item => `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | ${item.address} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Miles: ${item.mileageDelta ?? '—'}`)
+          : ['(No visits recorded for this range)'];
+        const subject = 'Field Summary Report';
+        const body = `Range: ${rangeText}\nFrequency: ${previewFrequency}\n\n${summaryLines.join('\n')}`;
+        const mailto = `mailto:${encodeURIComponent(cleaned.map(r => r.email).join(','))}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        if (await Linking.canOpenURL(mailto)) {
+          await Linking.openURL(mailto);
+          showBanner({ type: 'info', message: 'Opened mail client since server email failed.' });
+        } else {
+          showBanner({ type: 'error', message: err?.message || 'Unable to send report.' });
+        }
+      } catch {
+        showBanner({ type: 'error', message: err?.message || 'Unable to send report.' });
+      }
     } finally {
       setSending(false);
     }

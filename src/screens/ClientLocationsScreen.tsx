@@ -201,7 +201,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           {showAll && uniqueClients.length ? (
             <Pressable style={styles.shareChip} onPress={shareClients}>
-              <Text style={styles.shareChipText}>Email this list</Text>
+              <Text style={styles.shareChipText}>Email This List</Text>
             </Pressable>
           ) : null}
           {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}

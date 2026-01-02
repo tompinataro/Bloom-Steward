@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, Share, Linking } from 'react-native';
+import * as MailComposer from 'expo-mail-composer';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigationTypes';
@@ -60,8 +61,20 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
       const routeName = assignedRoute ? assignedRoute.name : 'Unassigned';
       return `${t.name}\nEmail: ${t.email}${t.phone ? `\nPhone: ${t.phone}` : ''}\nRoute: ${routeName}`;
     });
+    const subject = 'Field Technicians';
+    const body = `Field Technicians:\n\n${lines.join('\n\n')}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     try {
-      await Share.share({ title: 'Field Technicians', message: `Field Technicians:\n\n${lines.join('\n\n')}` });
+      if (await MailComposer.isAvailableAsync()) {
+        await MailComposer.composeAsync({ subject, body });
+        return;
+      }
+      const canMail = await Linking.canOpenURL(mailto);
+      if (canMail) {
+        await Linking.openURL(mailto);
+        return;
+      }
+      await Share.share({ title: subject, message: body });
     } catch {}
   };
 
@@ -69,13 +82,13 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>All Field Technicians</Text>
-          {techs.length > 0 ? (
-            <Pressable style={styles.shareChip} onPress={shareTechs}>
-              <Text style={styles.shareChipText}>Email this list</Text>
-            </Pressable>
-          ) : null}
-        </View>
+              <Text style={styles.title}>All Field Technicians</Text>
+              {techs.length > 0 ? (
+                <Pressable style={styles.shareChip} onPress={shareTechs}>
+                  <Text style={styles.shareChipText}>Email This List</Text>
+                </Pressable>
+              ) : null}
+            </View>
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : techs.length === 0 ? (
