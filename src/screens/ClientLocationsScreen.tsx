@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList } from 'react-native';
+import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -124,16 +124,28 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       const routeName = client.service_route_name || 'Unassigned';
       return `${client.name}\nRoute: ${routeName}`;
     });
+    const subject = 'Client Locations';
+    const body = `Client Locations:\n\n${lines.join('\n\n')}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     try {
+      const canMail = await Linking.canOpenURL(mailto);
+      if (canMail) {
+        await Linking.openURL(mailto);
+        return;
+      }
       await Share.share({
-        title: 'Client Locations',
-        message: `Client Locations:\n\n${lines.join('\n\n')}`,
+        title: subject,
+        message: body,
       });
     } catch {}
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
+    >
       {!showAll && (
         <View style={styles.card}>
           <Text style={styles.title}>Create Client Location</Text>
@@ -193,22 +205,16 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
           {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}
-          {showAll && <Text style={styles.instructionText}>(Tap route to move.)</Text>}
+          {showAll && <Text style={styles.instructionText}>(Tap Route to Change)</Text>}
         </View>
         {listToRender.length === 0 ? (
           <Text style={styles.emptyCopy}>
             {showAll ? 'No client locations yet.' : 'No unplaced client locations at this time.'}
           </Text>
         ) : (
-          <FlatList
-            data={listToRender}
-            keyExtractor={(item) => `${item.id}-${item.name}`}
-            style={showAll ? styles.listScrollFull : styles.listScroll}
-            contentContainerStyle={styles.listScrollContent}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-            renderItem={({ item: client }) => (
-              <View style={styles.listRow}>
+          <View style={showAll ? styles.listScrollFull : styles.listScroll}>
+            {listToRender.map(client => (
+              <View key={`${client.id}-${client.name}`} style={styles.listRow}>
                 <View style={styles.listMain}>
                   <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.name, 30)}</Text>
                   <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.address, 17)}</Text>
@@ -239,8 +245,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                   </Pressable>
                 )}
               </View>
-            )}
-          />
+            ))}
+          </View>
         )}
       </View>
       <Modal
@@ -326,9 +332,9 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     flexShrink: 1,
   },
-  listScroll: { maxHeight: 320, width: '100%', flexGrow: 0 },
-  listScrollFull: { maxHeight: 600, flexGrow: 1 },
-  listScrollContent: { paddingVertical: spacing(1), gap: spacing(1), flexGrow: 1 },
+  listScroll: { width: '100%' },
+  listScrollFull: { width: '100%' },
+  listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
   dropdownText: { color: colors.primary, fontWeight: '600', fontSize: 13, flexShrink: 1 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },

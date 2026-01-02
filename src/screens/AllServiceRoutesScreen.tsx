@@ -58,12 +58,15 @@ export default function AllServiceRoutesScreen(_props: Props) {
     const dedup = Array.from(
       new Map(list.map(c => [`${c.name}|${c.address}`, c])).values()
     );
-    // Sort to match Today's Route ordering: by scheduled_time when present, else by name
+    // Sort client locations: alpha when toggle is on, otherwise by scheduled_time then name
     dedup.sort((a, b) => {
+      if (sortByAlpha) {
+        return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+      }
       const at = a.scheduled_time ?? '';
       const bt = b.scheduled_time ?? '';
       if (at && bt && at !== bt) return at.localeCompare(bt);
-      return (a.name || '').localeCompare(b.name || '');
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
     });
     acc[route.id] = dedup;
     return acc;
