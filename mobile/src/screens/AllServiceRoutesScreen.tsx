@@ -33,9 +33,15 @@ export default function AllServiceRoutesScreen(_props: Props) {
       ]);
       setRoutes(routeRes?.routes || []);
       setClients(clientRes?.clients || []);
-      const filteredTechs = (usersRes?.users || []).filter(
-        u => u.role === 'tech'
-      );
+      const filteredTechs = (usersRes?.users || [])
+        .filter(u => u.role === 'tech')
+        .sort((a, b) => {
+          const [aLast = '', aFirst = ''] = (a.name || '').trim().split(/\s+?(.+)?/).filter(Boolean).reverse();
+          const [bLast = '', bFirst = ''] = (b.name || '').trim().split(/\s+?(.+)?/).filter(Boolean).reverse();
+          const lastCmp = aLast.localeCompare(bLast, undefined, { sensitivity: 'base' });
+          if (lastCmp !== 0) return lastCmp;
+          return aFirst.localeCompare(bFirst, undefined, { sensitivity: 'base' });
+        });
       setTechs(filteredTechs);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load service routes.' });

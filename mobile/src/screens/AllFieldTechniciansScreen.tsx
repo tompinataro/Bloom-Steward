@@ -28,7 +28,15 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
         adminFetchUsers(token),
         adminFetchServiceRoutes(token),
       ]);
-      setTechs((userRes?.users || []).filter(u => u.role === 'tech'));
+      const techList = (userRes?.users || []).filter(u => u.role === 'tech');
+      techList.sort((a, b) => {
+        const [aLast = '', aFirst = ''] = (a.name || '').trim().split(/\s+?(.+)?/).filter(Boolean).reverse();
+        const [bLast = '', bFirst = ''] = (b.name || '').trim().split(/\s+?(.+)?/).filter(Boolean).reverse();
+        const lastCmp = aLast.localeCompare(bLast, undefined, { sensitivity: 'base' });
+        if (lastCmp !== 0) return lastCmp;
+        return aFirst.localeCompare(bFirst, undefined, { sensitivity: 'base' });
+      });
+      setTechs(techList);
       setRoutes(routeRes?.routes || []);
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to load field technicians.' });

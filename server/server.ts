@@ -1182,6 +1182,50 @@ app.post('/api/admin/service-routes/:id/tech', requireAuth, requireAdmin, async 
   }
   try {
     await dbQuery('update service_routes set user_id = $1 where id = $2', [userId, routeId]);
+    // Keep routes_today in sync so Today's Route reflects assignment changes immediately.
+    // Grab all clients on this service route along with their last-known scheduled_time.
+    const clientRows = await dbQuery<{ client_id: number; scheduled_time: string }>(
+      `select
+         c.id as client_id,
+         coalesce(rt.scheduled_time, v.scheduled_time, '08:30') as scheduled_time
+       from clients c
+       left join routes_today rt on rt.client_id = c.id
+       left join lateral (
+         select scheduled_time
+         from visits
+         where client_id = c.id
+         order by id desc
+         limit 1
+       ) v on true
+       where c.service_route_id = $1`,
+      [routeId]
+    );
+    const clientIds = clientRows?.rows?.map(r => r.client_id) ?? [];
+    if (clientIds.length > 0) {
+      if (userId === null) {
+        // Unassign: remove today's route entries for all clients on this service route.
+        await dbQuery('delete from routes_today where client_id = any($1::int[])', [clientIds]);
+      } else {
+        // Assign: upsert routes_today rows for all clients on this route to the new tech.
+        await dbQuery(
+          `insert into routes_today (user_id, client_id, scheduled_time)
+           select $1 as user_id, c.id as client_id,
+                  coalesce(rt.scheduled_time, v.scheduled_time, '08:30') as scheduled_time
+           from clients c
+           left join routes_today rt on rt.client_id = c.id
+           left join lateral (
+             select scheduled_time
+             from visits
+             where client_id = c.id
+             order by id desc
+             limit 1
+           ) v on true
+           where c.service_route_id = $2
+           on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time`,
+          [userId, routeId]
+        );
+      }
+    }
     res.json({ ok: true });
   } catch (e: any) {
     console.error('[service-routes/tech] update error', e);

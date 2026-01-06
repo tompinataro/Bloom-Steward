@@ -210,7 +210,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             </Pressable>
           ) : null}
           {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}
-          {showAll && <Text style={styles.instructionText}>(Tap Route to Change)</Text>}
+          {showAll && <Text style={styles.instructionText}>(Tap to see Route)</Text>}
         </View>
         {listToRender.length === 0 ? (
           <Text style={styles.emptyCopy}>

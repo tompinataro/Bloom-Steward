@@ -9,7 +9,7 @@ const FALLBACK_ROUTES = [
     { id: 104, clientName: 'Harbor Plaza', address: '50 S 6th St', scheduledTime: '12:30' },
     { id: 105, clientName: 'Palm Vista', address: '1000 Nicollet Mall', scheduledTime: '14:00' },
     { id: 106, clientName: 'Riverwalk Lofts', address: '225 3rd Ave S', scheduledTime: '15:15' },
-    { id: 101, clientName: 'Acme HQ', address: '123 Main St SE, Minneapolis, MN 55414', scheduledTime: '08:30' },
+    { id: 101, clientName: 'Acme HQ', address: '761 58th Ave NE, Fridley, MN 55432', scheduledTime: '08:30' },
     { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Grove St, Minneapolis, MN 55403', scheduledTime: '09:45' },
     { id: 103, clientName: 'Sunset Mall', address: '789 University Ave NE, Minneapolis, MN 55413', scheduledTime: '11:15' }
 ];

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Linking, Share } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -112,9 +112,27 @@ export default function ReportsScreen(_props: Props) {
     try {
       for (const [freq, emails] of entries) {
         if (!emails.length) continue;
-        await adminSendReport(token, { frequency: freq, emails });
+        const subject = `Field Tech Summary (${freq})`;
+        const summaryLines = summary.length
+          ? summary.map(item =>
+              `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | ${item.address} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Miles: ${item.mileageDelta ?? '—'}`
+            )
+          : ['(No visits recorded for this range)'];
+        const body = `Range: ${rangeText}\nFrequency: ${freq}\n\n${summaryLines.join('\n')}\n\nGenerated from Bloom Steward.`;
+        const mailto = `mailto:${encodeURIComponent(emails.join(','))}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        // Prefer client-side compose to avoid SMTP 554 errors; never block on server send
+        if (await MailComposer.isAvailableAsync()) {
+          await MailComposer.composeAsync({ subject, body, recipients: emails });
+          continue;
+        }
+        const canMail = await Linking.canOpenURL(mailto);
+        if (canMail) {
+          await Linking.openURL(mailto);
+          continue;
+        }
+        await Share.share({ title: subject, message: body });
       }
-      showBanner({ type: 'success', message: 'Report email(s) sent.' });
+      showBanner({ type: 'success', message: 'Report email started (sent via Mail/share).' });
     } catch (err: any) {
       // Fallback: try opening mail client with the summary text
       try {

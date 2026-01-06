@@ -31,7 +31,7 @@ update service_routes set user_id = (select id from users where email = 'derek@b
 delete from clients;
 
 insert into clients (name, address, service_route_id, latitude, longitude) values
-  ('Acme HQ', '123 Main St', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
+  ('Acme HQ', '761 58th Ave NE, Fridley, MN 55432', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
   ('Blue Sky Co', '456 Oak Ave', (select id from service_routes where name = 'North'), 44.9875, -93.2750),
   ('Sunset Mall', '789 Pine Rd', (select id from service_routes where name = 'North'), 44.9885, -93.2730),
   ('Harbor Plaza', '50 S 6th St', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
@@ -227,4 +227,3 @@ select u.id, (now()::date),
 from users u
 where u.role = 'tech'
 on conflict (user_id, date) do nothing;
-
