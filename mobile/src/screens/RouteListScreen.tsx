@@ -19,18 +19,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 export default function RouteListScreen({ navigation, route }: Props) {
   const { token, signOut, user } = useAuth();
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
+  const title = user?.name ? `Today's Route for ${user.name.split(/\s+/)[0]}` : "Today's Route";
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   // Banners are now global; local state removed
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [inProgress, setInProgress] = useState<Set<number>>(new Set());
+  const [resetRequested, setResetRequested] = useState(false);
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     if (user?.name) {
       const firstName = user.name.split(/\s+/)[0];
-      navigation.setOptions({ title: `Today's Route for ${firstName}` });
+      navigation.setOptions({ title: '' });
     }
   }, [user?.name, navigation]);
 
@@ -271,6 +273,20 @@ type ItemProps = {
   onOpenMaps: (address?: string | null) => void;
 };
 
+  // Dev/test reset: clears local completed/in-progress and refreshes routes
+  const triggerReset = async () => {
+    try {
+      setCompleted(new Set());
+      setInProgress(new Set());
+      await ensureToday();
+      await pruneToIds([]);
+      setCompleted(new Set());
+      setInProgress(new Set());
+      await load();
+      showBanner({ type: 'info', message: 'Route state reset' });
+    } catch {}
+  };
+
   const RouteListItem = memo(function RouteListItem({ route, isDone, inProg, onOpen, onOpenMaps }: ItemProps) {
     const cardScale = useRef(new Animated.Value(1)).current;
     const onCardPressIn = () => Animated.timing(cardScale, { toValue: 0.98, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
@@ -367,6 +383,14 @@ type ItemProps = {
 
   return (
     <>
+      <SafeAreaView edges={['top']}>
+        <View style={styles.headerRow}>
+          <Text style={styles.screenTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+          <Pressable style={styles.resetChip} onPress={triggerReset} accessibilityRole="button" accessibilityLabel="Reset route state">
+            <Text style={styles.resetChipText}>Reset</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
       {error ? (
         <View style={styles.errorWrap}>
           <ThemedButton title="Retry" variant="outline" onPress={load} style={styles.retryBtn} />
@@ -462,4 +486,8 @@ const styles = StyleSheet.create({
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
   accountRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing(3) },
   secondaryBtn: { minWidth: 160 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing(4), paddingTop: spacing(3), paddingBottom: spacing(1) },
+  resetChip: { paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.5), borderRadius: 999, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
+  resetChipText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
+  screenTitle: { fontSize: 22, fontWeight: '800', color: colors.text, flexShrink: 1 },
 });

@@ -6,7 +6,7 @@ exports.saveVisit = saveVisit;
 exports.buildReportRows = buildReportRows;
 const db_1 = require("./db");
 const FALLBACK_ROUTES = [
-    { id: 104, clientName: 'Club 9625', address: '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', scheduledTime: '12:30' },
+    { id: 104, clientName: 'Club 9625', address: '1919 CR Blvd NW, Coon Rapids, MN 55433', scheduledTime: '12:30' },
     { id: 105, clientName: 'Palm Vista', address: '1000 Nicollet Mall', scheduledTime: '14:00' },
     { id: 106, clientName: 'Riverwalk Lofts', address: '225 3rd Ave S', scheduledTime: '15:15' },
     { id: 101, clientName: 'Acme HQ', address: '761 58th Ave NE, Fridley, MN 55432', scheduledTime: '08:30' },

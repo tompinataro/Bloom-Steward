@@ -601,16 +601,20 @@ exports.app.post('/api/auth/start-odometer', requireAuth, async (req, res) => {
         const userId = req.user?.id;
         if (!userId)
             return res.status(401).json({ ok: false, error: 'unauthorized' });
-        const odometerReading = typeof req.body?.odometerReading === 'string' ? parseFloat(req.body.odometerReading) : null;
-        if (odometerReading === null || Number.isNaN(odometerReading)) {
+        const raw = req.body?.odometerReading;
+        const numericReading = Number(String(raw ?? '').replace(/[^0-9.]/g, ''));
+        if (!Number.isFinite(numericReading)) {
+            console.warn('[auth/start-odometer] invalid reading', { raw, numericReading });
             return res.status(400).json({ ok: false, error: 'invalid odometer reading' });
         }
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         const result = await (0, db_1.dbQuery)(`insert into daily_start_odometer (user_id, date, odometer_reading)
        values ($1, $2, $3)
        on conflict (user_id, date) do update set odometer_reading = $3
-       returning id, odometer_reading`, [userId, today, odometerReading]);
-        return res.json({ ok: true, odometerReading: result?.rows?.[0]?.odometer_reading });
+       returning id, odometer_reading`, [userId, today, numericReading]);
+        const stored = result?.rows?.[0]?.odometer_reading;
+        const storedNumeric = typeof stored === 'number' ? stored : Number(stored);
+        return res.json({ ok: true, odometerReading: storedNumeric });
     }
     catch (err) {
         console.error('[auth/start-odometer] failed to save', err);

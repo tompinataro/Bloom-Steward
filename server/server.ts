@@ -41,6 +41,7 @@ type ReportRow = {
   routeName: string | null;
   clientName: string;
   address: string;
+  techNotes?: string | null;
   checkInTs: string | null;
   checkOutTs: string | null;
   durationMinutes: number;
@@ -50,6 +51,8 @@ type ReportRow = {
   mileageDelta: number;
   distanceFromClientFeet?: number | null;
   geoValidated?: boolean;
+  durationFlag?: boolean;
+  geoFlag?: boolean;
   managedPassword?: string | null;
 };
 
@@ -247,6 +250,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
     const durationFormatted = formatDuration(durationMinutes);
     const onSiteContact = payload.onSiteContact || null;
+    const techNotes = payload.techNotes || payload.noteToOffice || null;
     const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
     
     // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
@@ -279,13 +283,18 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     }
     const rawLoc = payload.checkOutLoc || payload.checkInLoc;
     let geoValidated: boolean | undefined = undefined;
+    let distanceFromClientFeet: number | null = null;
+    let geoFlag = false;
     if (rawLoc && typeof rawLoc.lat === 'number' && typeof rawLoc.lng === 'number') {
       const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
       if (distMiles !== null) {
-        // keep only boolean validation (within 300 feet)
-        geoValidated = (distMiles * 5280) <= 300;
+        distanceFromClientFeet = distMiles * 5280;
+        // keep only boolean validation (within 300 feet / 100 yards)
+        geoValidated = distanceFromClientFeet <= 300;
+        geoFlag = distanceFromClientFeet > 300;
       }
     }
+    const durationFlag = geoFlag;
     rows.push({
       techId: row.tech_id,
       techName: techName,
@@ -297,9 +306,13 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       durationMinutes,
       durationFormatted,
       onSiteContact,
+      techNotes,
       odometerReading,
       mileageDelta,
+      distanceFromClientFeet,
       geoValidated,
+      durationFlag,
+      geoFlag,
       managedPassword: row.tech_id ? techPasswords.get(row.tech_id) || null : null,
     });
   }
@@ -353,6 +366,7 @@ function buildCsv(rows: ReportRow[]) {
     'Password',
     'Route',
     'Client Location',
+    'Notes',
     'Address',
     'Check-In',
     'Check-Out',
@@ -369,12 +383,14 @@ function buildCsv(rows: ReportRow[]) {
       row.managedPassword || '',
       row.routeName || '',
       row.clientName,
+      (row.techNotes || '').replace(/,/g, ' '),
       row.address.replace(/,/g, ' '),
       row.checkInTs || '',
       row.checkOutTs || '',
       row.durationFormatted,
       row.mileageDelta.toFixed(2),
       row.onSiteContact || '',
+      row.distanceFromClientFeet != null ? row.distanceFromClientFeet.toFixed(0) : '',
       row.geoValidated ? 'Yes' : 'No',
     ].join(','));
   });
@@ -382,20 +398,30 @@ function buildCsv(rows: ReportRow[]) {
 }
 
 function buildHtml(rows: ReportRow[], start: Date, end: Date) {
-  const rowsHtml = rows.map(row => `
+  const rowsHtml = rows.map(row => {
+    const geoFail = row.geoValidated === false || row.distanceFromClientFeet === null || row.geoValidated === undefined;
+    const durationFlag = geoFail || !!row.durationFlag;
+    const geoFlag = geoFail || !!row.geoFlag;
+    const clientStyle = (durationFlag || geoFlag) ? 'color:#b91c1c;font-weight:700;' : '';
+    const durationStyle = durationFlag ? 'color:#b91c1c;font-weight:700;' : '';
+    const geoStyle = geoFlag ? 'color:#b91c1c;font-weight:700;' : '';
+    return `
     <tr>
       <td>${row.techName}</td>
       <td>${row.routeName || ''}</td>
-      <td>${row.clientName}</td>
+      <td style="${clientStyle}">${row.clientName}</td>
+      <td>${row.techNotes || ''}</td>
       <td>${row.address}</td>
       <td>${row.checkInTs || ''}</td>
       <td>${row.checkOutTs || ''}</td>
-      <td>${row.durationFormatted}</td>
+      <td style="${durationStyle}">${row.durationFormatted}</td>
       <td>${row.mileageDelta.toFixed(2)}</td>
       <td>${row.onSiteContact || ''}</td>
-      <td>${row.geoValidated ? 'Yes' : 'No'}</td>
+      <td>${row.distanceFromClientFeet != null ? row.distanceFromClientFeet.toFixed(0) : ''}</td>
+      <td style="${geoStyle}">${row.geoValidated === false ? 'No' : row.geoValidated === true ? 'Yes' : ''}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
   return `
     <h2>Field Tech Summary</h2>
     <p>Period: ${start.toISOString()} - ${end.toISOString()}</p>
@@ -405,12 +431,14 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
           <th>Technician</th>
           <th>Route</th>
           <th>Client</th>
+          <th>Notes</th>
           <th>Address</th>
           <th>Check-In</th>
           <th>Check-Out</th>
           <th>Duration</th>
           <th>Mileage Delta</th>
           <th>On-site Contact</th>
+          <th>Geo Distance (ft)</th>
           <th>Geo Valid</th>
         </tr>
       </thead>
@@ -668,9 +696,10 @@ app.post('/api/auth/start-odometer', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
-    const odometerReading = req.body?.odometerReading;
-    const numericReading = Number(odometerReading);
+    const raw = req.body?.odometerReading;
+    const numericReading = Number(String(raw ?? '').replace(/[^0-9.]/g, ''));
     if (!Number.isFinite(numericReading)) {
+      console.warn('[auth/start-odometer] invalid reading', { raw, numericReading });
       return res.status(400).json({ ok: false, error: 'invalid odometer reading' });
     }
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD

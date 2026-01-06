@@ -34,7 +34,7 @@ insert into clients (name, address, service_route_id, latitude, longitude) value
   ('Acme HQ', '761 58th Ave NE, Fridley, MN 55432', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
   ('Marco Polo, LLC', '2017 103rd Lane NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9875, -93.2750),
   ('Sunset Mall', '789 Pine Rd', (select id from service_routes where name = 'North'), 44.9885, -93.2730),
-  ('Club 9625', '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
+  ('Club 9625', '1919 CR Blvd NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
   ('Palm Vista Resort', '1000 Nicollet Mall', (select id from service_routes where name = 'North'), 44.9895, -93.2720),
   ('Riverwalk Lofts', '225 3rd Ave S', (select id from service_routes where name = 'North'), 44.9865, -93.2710),
   ('Cedar Ridge', '12 Cedar Ridge Rd', (select id from service_routes where name = 'South'), 44.9645, -93.3040),
