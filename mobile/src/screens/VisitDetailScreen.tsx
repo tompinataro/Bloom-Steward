@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { fetchVisit, submitVisit, Visit, markVisitInProgress } from '../api/client';
@@ -32,6 +33,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const checkInKey = useMemo(() => `visit-checkin-ts:${id}`, [id]);
+  const [locPermissionAsked, setLocPermissionAsked] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -104,7 +106,25 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   };
 
   async function getLocation(): Promise<{ lat: number; lng: number } | undefined> {
-    // Location prompts are temporarily suppressed until admins opt back in.
+    try {
+      const status = await Location.getForegroundPermissionsAsync();
+      if (!status.granted) {
+        const req = await Location.requestForegroundPermissionsAsync();
+        setLocPermissionAsked(true);
+        if (!req.granted) {
+          if (!locPermissionAsked) {
+            showBanner({ type: 'info', message: 'Location permission denied; geo validation will be skipped.' });
+          }
+          return undefined;
+        }
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      if (pos?.coords?.latitude && pos?.coords?.longitude) {
+        return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      }
+    } catch (err) {
+      showBanner({ type: 'info', message: 'Unable to fetch location; geo validation skipped.' });
+    }
     return undefined;
   }
 
@@ -134,8 +154,15 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingBottom: spacing(36) }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.content}>
           {submitError ? <Banner type="error" message={submitError} /> : null}
           <Text style={styles.sectionTitle}>Timely Notes</Text>
@@ -252,9 +279,9 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               keyboardType="number-pad"
               accessibilityLabel="Odometer reading"
               returnKeyType="done"
+              blurOnSubmit
             />
           </View>
-          <View style={{ height: spacing(28) }} />
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
@@ -266,7 +293,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         />
       </SafeAreaView>
       <LoadingOverlay visible={loading || submitting} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

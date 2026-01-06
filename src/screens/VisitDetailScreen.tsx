@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { fetchVisit, submitVisit, Visit, markVisitInProgress } from '../api/client';
@@ -134,8 +134,15 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingBottom: spacing(36) }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.content}>
           {submitError ? <Banner type="error" message={submitError} /> : null}
           <Text style={styles.sectionTitle}>Timely Notes</Text>
@@ -252,9 +259,9 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               keyboardType="number-pad"
               accessibilityLabel="Odometer reading"
               returnKeyType="done"
+              blurOnSubmit
             />
           </View>
-          <View style={{ height: spacing(28) }} />
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.stickyBar}>
@@ -266,7 +273,7 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         />
       </SafeAreaView>
       <LoadingOverlay visible={loading || submitting} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

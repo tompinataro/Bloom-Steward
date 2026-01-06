@@ -77,9 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('auth_user', JSON.stringify(res.user));
     
     // POST the daily start odometer if provided
-    if (odometerReading && Number(odometerReading) >= 0) {
+    const sanitizedOdo = typeof odometerReading === 'string'
+      ? odometerReading.replace(/[^0-9.]/g, '')
+      : String(odometerReading || '').replace(/[^0-9.]/g, '');
+    const odoVal = sanitizedOdo ? Number(sanitizedOdo) : NaN;
+    if (Number.isFinite(odoVal) && odoVal >= 0) {
       try {
-        await postStartOdometer(res.token, odometerReading);
+        await postStartOdometer(res.token, odoVal);
       } catch (e: any) {
         console.error('[signIn] failed to post odometer', e);
         // Non-fatal; continue

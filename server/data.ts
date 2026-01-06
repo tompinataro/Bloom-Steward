@@ -5,11 +5,11 @@ export type ChecklistItem = { key: string; label: string; done: boolean };
 export type Visit = { id: number; clientName: string; checklist: ChecklistItem[]; timelyNote?: string | null; address?: string | null; checkInTs?: string | null };
 
 const FALLBACK_ROUTES: TodayRoute[] = [
-  { id: 104, clientName: 'Harbor Plaza', address: '50 S 6th St', scheduledTime: '12:30' },
+  { id: 104, clientName: 'Club 9625', address: '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', scheduledTime: '12:30' },
   { id: 105, clientName: 'Palm Vista', address: '1000 Nicollet Mall', scheduledTime: '14:00' },
   { id: 106, clientName: 'Riverwalk Lofts', address: '225 3rd Ave S', scheduledTime: '15:15' },
   { id: 101, clientName: 'Acme HQ', address: '761 58th Ave NE, Fridley, MN 55432', scheduledTime: '08:30' },
-  { id: 102, clientName: 'Blue Sky Co', address: '456 Oak Grove St, Minneapolis, MN 55403', scheduledTime: '09:45' },
+  { id: 102, clientName: 'Marco Polo, LLC', address: '2017 103rd Lane NW, Coon Rapids, MN 55433', scheduledTime: '09:45' },
   { id: 103, clientName: 'Sunset Mall', address: '789 University Ave NE, Minneapolis, MN 55413', scheduledTime: '11:15' }
 ];
 const DEFAULT_TIME_SLOTS = ['08:00', '09:15', '10:30', '11:45', '13:00', '14:15', '15:30'];
@@ -182,9 +182,9 @@ export async function getVisit(id: number): Promise<Visit> {
   }
   const clientName =
     id === 101 ? 'Acme HQ' :
-    id === 102 ? 'Blue Sky Co' :
+    id === 102 ? 'Marco Polo, LLC' :
     id === 103 ? 'Sunset Mall' :
-    id === 104 ? 'Harbor Plaza' :
+    id === 104 ? 'Club 9625' :
     id === 105 ? 'Palm Vista Resort' :
     id === 106 ? 'Riverwalk Lofts' : 'Client';
   return {

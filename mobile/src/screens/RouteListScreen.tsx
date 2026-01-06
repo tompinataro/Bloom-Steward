@@ -275,6 +275,7 @@ type ItemProps = {
     const cardScale = useRef(new Animated.Value(1)).current;
     const onCardPressIn = () => Animated.timing(cardScale, { toValue: 0.98, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
     const onCardPressOut = () => Animated.timing(cardScale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    const streetOnly = (route.address || '').split(',')[0] || route.address || '';
     return (
       <Pressable
         onPress={() => onOpen(route.id)}
@@ -289,7 +290,7 @@ type ItemProps = {
           <View style={styles.rowTop}>
             <View style={styles.leftWrap}>
               <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName, 14)}</Text>
-              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.address, 36)}</Text>
+              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(streetOnly, 28)}</Text>
             </View>
             <View style={styles.centerWrap}>
               <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />

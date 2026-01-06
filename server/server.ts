@@ -218,14 +218,30 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       if (typeof payload.checkInTs === 'string') {
         const d = new Date(payload.checkInTs);
         if (!Number.isNaN(d.getTime())) checkInTs = d.toISOString();
+      } else if (payload.checkInTs) {
+        // Fallback: accept non-string payloads (e.g., Date) by coercing to ISO
+        const d = new Date(payload.checkInTs as any);
+        if (!Number.isNaN(d.getTime())) checkInTs = d.toISOString();
       }
     } catch {}
     try {
       if (typeof payload.checkOutTs === 'string') {
         const d = new Date(payload.checkOutTs);
         if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
+      } else if (payload.checkOutTs) {
+        const d = new Date(payload.checkOutTs as any);
+        if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
       }
     } catch {}
+    // If still missing, fall back to submission created_at (latest submission)
+    if (!checkInTs && row.created_at) {
+      const d = new Date(row.created_at as any);
+      if (!Number.isNaN(d.getTime())) checkInTs = d.toISOString();
+    }
+    if (!checkOutTs && row.created_at) {
+      const d = new Date(row.created_at as any);
+      if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
+    }
     const inDate = checkInTs ? new Date(checkInTs) : null;
     const outDate = checkOutTs ? new Date(checkOutTs) : null;
     const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
@@ -266,8 +282,8 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     if (rawLoc && typeof rawLoc.lat === 'number' && typeof rawLoc.lng === 'number') {
       const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
       if (distMiles !== null) {
-        // keep only boolean validation (within 100 feet)
-        geoValidated = (distMiles * 5280) <= 100;
+        // keep only boolean validation (within 300 feet)
+        geoValidated = (distMiles * 5280) <= 300;
       }
     }
     rows.push({
@@ -652,8 +668,9 @@ app.post('/api/auth/start-odometer', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
-    const odometerReading = typeof req.body?.odometerReading === 'string' ? parseFloat(req.body.odometerReading) : null;
-    if (odometerReading === null || Number.isNaN(odometerReading)) {
+    const odometerReading = req.body?.odometerReading;
+    const numericReading = Number(odometerReading);
+    if (!Number.isFinite(numericReading)) {
       return res.status(400).json({ ok: false, error: 'invalid odometer reading' });
     }
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -662,9 +679,11 @@ app.post('/api/auth/start-odometer', requireAuth, async (req, res) => {
        values ($1, $2, $3)
        on conflict (user_id, date) do update set odometer_reading = $3
        returning id, odometer_reading`,
-      [userId, today, odometerReading]
+      [userId, today, numericReading]
     );
-    return res.json({ ok: true, odometerReading: result?.rows?.[0]?.odometer_reading });
+    const stored = result?.rows?.[0]?.odometer_reading;
+    const storedNumeric = typeof stored === 'number' ? stored : Number(stored);
+    return res.json({ ok: true, odometerReading: storedNumeric });
   } catch (err: any) {
     console.error('[auth/start-odometer] failed to save', err);
     return res.status(500).json({ ok: false, error: 'failed to save odometer' });

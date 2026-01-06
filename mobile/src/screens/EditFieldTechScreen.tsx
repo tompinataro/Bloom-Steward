@@ -68,22 +68,6 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
           <ThemedButton title="Cancel" variant="outline" style={{ flex: 1 }} onPress={() => navigation.goBack()} />
           <ThemedButton title={saving ? 'Saving…' : 'Save'} style={{ flex: 1 }} onPress={onSave} disabled={saving} />
         </View>
-
-        <View style={{ marginTop: spacing(3) }}>
-          <ThemedButton
-            title="Reset assignments"
-            variant="outline"
-            onPress={async () => {
-              try {
-                if (!token || !user?.id) return;
-                await adminClearRoutesForTech(token, Number(user.id));
-                showBanner({ type: 'success', message: `Assignments reset for ${user.name}.` });
-              } catch (err: any) {
-                showBanner({ type: 'error', message: err?.message || 'Unable to reset assignments.' });
-              }
-            }}
-          />
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

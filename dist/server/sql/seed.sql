@@ -32,9 +32,9 @@ delete from clients;
 
 insert into clients (name, address, service_route_id, latitude, longitude) values
   ('Acme HQ', '123 Main St', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
-  ('Blue Sky Co', '456 Oak Ave', (select id from service_routes where name = 'North'), 44.9875, -93.2750),
+  ('Marco Polo, LLC', '2017 103rd Lane NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9875, -93.2750),
   ('Sunset Mall', '789 Pine Rd', (select id from service_routes where name = 'North'), 44.9885, -93.2730),
-  ('Harbor Plaza', '50 S 6th St', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
+  ('Club 9625', '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
   ('Palm Vista Resort', '1000 Nicollet Mall', (select id from service_routes where name = 'North'), 44.9895, -93.2720),
   ('Riverwalk Lofts', '225 3rd Ave S', (select id from service_routes where name = 'North'), 44.9865, -93.2710),
   ('Cedar Ridge', '12 Cedar Ridge Rd', (select id from service_routes where name = 'South'), 44.9645, -93.3040),
@@ -227,4 +227,3 @@ select u.id, (now()::date),
 from users u
 where u.role = 'tech'
 on conflict (user_id, date) do nothing;
-
