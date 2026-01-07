@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -32,6 +32,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const checkInKey = useMemo(() => `visit-checkin-ts:${id}`, [id]);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoSavePayload = useRef<string>('');
 
   useEffect(() => {
     (async () => {
@@ -62,6 +64,10 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const onSubmit = async () => {
     if (!token || !visit) return;
     setSubmitting(true);
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
     try {
       const outTs = checkOutTs || new Date().toISOString();
       const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
@@ -102,6 +108,43 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!token || !visit || !checkInTs || checkOutTs || submitting) return;
+    const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
+    const payload = {
+      notes: noteToOffice || undefined,
+      checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })),
+      timelyAck: requiresAck ? ack : undefined,
+      timelyInstruction: timelyInstruction || undefined,
+      checkInTs: checkInTs || undefined,
+      noteToOffice: noteToOffice || undefined,
+      onSiteContact: onSiteContact || undefined,
+      odometerReading: odometerReading || undefined,
+    };
+    const payloadKey = JSON.stringify(payload);
+    if (payloadKey === lastAutoSavePayload.current) return;
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+    }
+    autoSaveTimer.current = setTimeout(async () => {
+      if (!token || !visit || !checkInTs || checkOutTs) return;
+      const key = JSON.stringify(payload);
+      if (key === lastAutoSavePayload.current) return;
+      lastAutoSavePayload.current = key;
+      try {
+        await submitVisit(visit.id, payload, token);
+      } catch {
+        await enqueueSubmission(visit.id, payload);
+      }
+    }, 900);
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = null;
+      }
+    };
+  }, [token, visit, checkInTs, checkOutTs, noteToOffice, onSiteContact, odometerReading, ack, timelyInstruction, submitting]);
 
   async function getLocation(): Promise<{ lat: number; lng: number } | undefined> {
     // Location prompts are temporarily suppressed until admins opt back in.
@@ -182,10 +225,12 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
                 } as any;
                 try {
                   await submitVisit(visit.id, payload, token);
+                  lastAutoSavePayload.current = JSON.stringify(payload);
                   setCheckInTs(nextTs);
                   await AsyncStorage.setItem(checkInKey, nextTs);
                 } catch {
                   await enqueueSubmission(visit.id, payload);
+                  lastAutoSavePayload.current = JSON.stringify(payload);
                   showBanner({ type: 'info', message: 'Checked in offline - will sync when online' });
                   await AsyncStorage.setItem(checkInKey, nextTs);
                 }

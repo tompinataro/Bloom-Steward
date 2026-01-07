@@ -8,6 +8,7 @@ import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
 import { adminFetchReportSummary, adminSendReport, ReportSummaryRow } from '../api/client';
+import { flushQueue, getQueueStats } from '../offlineQueue';
 import { truncateText } from '../utils/text';
 
 const FREQUENCIES = [
@@ -46,6 +47,17 @@ export default function ReportsScreen(_props: Props) {
     if (!token) return;
     setLoadingSummary(true);
     try {
+      try {
+        const { sent, remaining } = await flushQueue(token);
+        if (sent > 0) {
+          showBanner({ type: 'info', message: `Synced ${sent} offline visit${sent > 1 ? 's' : ''} before refresh.` });
+        } else if (remaining > 0) {
+          const stats = await getQueueStats();
+          if (stats.maxAttempts >= 3) {
+            showBanner({ type: 'info', message: `Retrying ${remaining} queued visit${remaining > 1 ? 's' : ''} in background.` });
+          }
+        }
+      } catch {}
       const res = await adminFetchReportSummary(token, { frequency: previewFrequency });
       setSummary(res.rows || []);
       setRangeText(`${formatDate(res.range.start)} – ${formatDate(res.range.end)}`);
@@ -378,6 +390,7 @@ const styles = StyleSheet.create({
   client: { width: 110 },
   notes: { width: 140 },
   address: { width: 155 },
+  date: { width: 90 },
   checkIn: { width: 100 },
   checkOut: { width: 100 },
   duration: { width: 80 },

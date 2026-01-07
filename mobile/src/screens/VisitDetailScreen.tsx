@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -33,7 +33,11 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const checkInKey = useMemo(() => `visit-checkin-ts:${id}`, [id]);
+  const checkInLocKey = useMemo(() => `visit-checkin-loc:${id}`, [id]);
   const [locPermissionAsked, setLocPermissionAsked] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoSavePayload = useRef<string>('');
+  const checkInLocRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -50,6 +54,15 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         setOdometerReading('');
         const persistedTs = await AsyncStorage.getItem(checkInKey);
         setCheckInTs(persistedTs ?? res.visit?.checkInTs ?? null);
+        try {
+          const persistedLoc = await AsyncStorage.getItem(checkInLocKey);
+          if (persistedLoc) {
+            const parsed = JSON.parse(persistedLoc);
+            if (typeof parsed?.lat === 'number' && typeof parsed?.lng === 'number') {
+              checkInLocRef.current = parsed;
+            }
+          }
+        } catch {}
         setCheckOutTs(null);
         setSubmitError(null);
         // mark visit as in progress as soon as it's opened
@@ -64,6 +77,10 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const onSubmit = async () => {
     if (!token || !visit) return;
     setSubmitting(true);
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
     try {
       const outTs = checkOutTs || new Date().toISOString();
       const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
@@ -82,6 +99,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       if (!checkOutTs) setCheckOutTs(outTs);
         setSubmitError(null);
         await AsyncStorage.removeItem(checkInKey);
+        await AsyncStorage.removeItem(checkInLocKey);
+        checkInLocRef.current = null;
         setCheckInTs(null);
       try {
         await submitVisit(visit.id, payload, token);
@@ -93,6 +112,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
         await addCompleted(visit.id);
         await removeInProgress(visit.id);
         await AsyncStorage.removeItem(checkInKey);
+        await AsyncStorage.removeItem(checkInLocKey);
+        checkInLocRef.current = null;
         setCheckInTs(null);
         navigation.navigate('RouteList', { savedOffline: true });
       }
@@ -104,6 +125,52 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!token || !visit || !checkInTs || checkOutTs || submitting) return;
+    const requiresAck = !!timelyInstruction && timelyInstruction.trim().length > 0;
+    const payloadBase = {
+      notes: noteToOffice || undefined,
+      checklist: visit.checklist.map(c => ({ key: c.key, done: c.done })),
+      timelyAck: requiresAck ? ack : undefined,
+      timelyInstruction: timelyInstruction || undefined,
+      checkInTs: checkInTs || undefined,
+      noteToOffice: noteToOffice || undefined,
+      onSiteContact: onSiteContact || undefined,
+      odometerReading: odometerReading || undefined,
+    };
+    const payloadKey = JSON.stringify({ ...payloadBase, checkInLoc: checkInLocRef.current || null });
+    if (payloadKey === lastAutoSavePayload.current) return;
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+    }
+    autoSaveTimer.current = setTimeout(async () => {
+      if (!token || !visit || !checkInTs || checkOutTs) return;
+      let loc = checkInLocRef.current;
+      if (!loc) {
+        loc = await getLocation();
+        if (loc) {
+          checkInLocRef.current = loc;
+          try { await AsyncStorage.setItem(checkInLocKey, JSON.stringify(loc)); } catch {}
+        }
+      }
+      const payload = { ...payloadBase, checkInLoc: loc };
+      const key = JSON.stringify(payload);
+      if (key === lastAutoSavePayload.current) return;
+      lastAutoSavePayload.current = key;
+      try {
+        await submitVisit(visit.id, payload, token);
+      } catch {
+        await enqueueSubmission(visit.id, payload);
+      }
+    }, 900);
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = null;
+      }
+    };
+  }, [token, visit, checkInTs, checkOutTs, noteToOffice, onSiteContact, odometerReading, ack, timelyInstruction, submitting]);
 
   async function getLocation(): Promise<{ lat: number; lng: number } | undefined> {
     try {
@@ -189,6 +256,10 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
                 setCheckInTs(ts);
                 if (!token || !visit) return;
                 const loc = await getLocation();
+                if (loc) {
+                  checkInLocRef.current = loc;
+                  try { await AsyncStorage.setItem(checkInLocKey, JSON.stringify(loc)); } catch {}
+                }
                 const nextTs = ts;
                 const payload = {
                   notes: noteToOffice || undefined,
@@ -202,10 +273,12 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
                 } as any;
                 try {
                   await submitVisit(visit.id, payload, token);
+                  lastAutoSavePayload.current = JSON.stringify(payload);
                   setCheckInTs(nextTs);
                   await AsyncStorage.setItem(checkInKey, nextTs);
                 } catch {
                   await enqueueSubmission(visit.id, payload);
+                  lastAutoSavePayload.current = JSON.stringify(payload);
                   showBanner({ type: 'info', message: 'Checked in offline - will sync when online' });
                   await AsyncStorage.setItem(checkInKey, nextTs);
                 }

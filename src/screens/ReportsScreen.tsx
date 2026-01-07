@@ -7,6 +7,7 @@ import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
 import { adminFetchReportSummary, adminSendReport, ReportSummaryRow } from '../api/client';
+import { flushQueue, getQueueStats } from '../offlineQueue';
 import { truncateText } from '../utils/text';
 
 const FREQUENCIES = [
@@ -45,6 +46,17 @@ export default function ReportsScreen(_props: Props) {
     if (!token) return;
     setLoadingSummary(true);
     try {
+      try {
+        const { sent, remaining } = await flushQueue(token);
+        if (sent > 0) {
+          showBanner({ type: 'info', message: `Synced ${sent} offline visit${sent > 1 ? 's' : ''} before refresh.` });
+        } else if (remaining > 0) {
+          const stats = await getQueueStats();
+          if (stats.maxAttempts >= 3) {
+            showBanner({ type: 'info', message: `Retrying ${remaining} queued visit${remaining > 1 ? 's' : ''} in background.` });
+          }
+        }
+      } catch {}
       const res = await adminFetchReportSummary(token, { frequency: previewFrequency });
       setSummary(res.rows || []);
       setRangeText(`${formatDate(res.range.start)} – ${formatDate(res.range.end)}`);
@@ -118,7 +130,9 @@ export default function ReportsScreen(_props: Props) {
       // Fallback: try opening mail client with the summary text
       try {
         const summaryLines = summary.length
-          ? summary.map(item => `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | ${item.address} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Miles: ${item.mileageDelta ?? '—'}`)
+          ? summary.map(item =>
+              `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | Notes: ${item.techNotes || '—'} | ${item.address} | Date: ${item.visitDate || '—'} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Duration: ${item.durationFormatted || '—'} | Miles: ${item.mileageDelta ?? '—'} | Contact: ${item.onSiteContact || '—'}`
+            )
           : ['(No visits recorded for this range)'];
         const subject = 'Field Summary Report';
         const body = `Range: ${rangeText}\nFrequency: ${previewFrequency}\n\n${summaryLines.join('\n')}`;
@@ -141,7 +155,9 @@ export default function ReportsScreen(_props: Props) {
     'Technician',
     'Route',
     'Client',
+    'Notes',
     'Address',
+    'Date',
     'Check-In',
     'Check-Out',
     'Time On-site',
@@ -217,7 +233,9 @@ export default function ReportsScreen(_props: Props) {
                 <Text numberOfLines={1} style={[styles.cell, styles.technician, styles.headerCell]}>Technician</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.route, styles.headerCell]}>Route</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.client, styles.headerCell]}>Client</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.notes, styles.headerCell]}>Notes</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.address, styles.headerCell]}>Address</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.date, styles.headerCell]}>Date</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.checkIn, styles.headerCell]}>Check-In</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.checkOut, styles.headerCell]}>Check-Out</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
@@ -241,9 +259,11 @@ export default function ReportsScreen(_props: Props) {
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
                       /> */}
-                      <Text numberOfLines={1} style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
+                    <Text numberOfLines={1} style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
                     </View>
+                    <Text numberOfLines={1} style={[styles.cell, styles.notes]}>{truncateText(item.techNotes || '—', 16)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.date]}>{item.visitDate || '—'}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
@@ -335,7 +355,9 @@ const styles = StyleSheet.create({
   technician: { width: 100 },
   route: { width: 70, paddingRight: spacing(2) },
   client: { width: 110 },
+  notes: { width: 140 },
   address: { width: 155 },
+  date: { width: 90 },
   checkIn: { width: 100 },
   checkOut: { width: 100 },
   duration: { width: 80 },

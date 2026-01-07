@@ -284,8 +284,10 @@ export type ReportSummaryRow = {
   routeName: string | null;
   clientName: string;
   address: string;
+  techNotes?: string | null;
   checkInTs: string | null;
   checkOutTs: string | null;
+  visitDate?: string | null;
   durationFormatted: string;
   durationMinutes?: number;
   mileageDelta: number;
@@ -293,6 +295,8 @@ export type ReportSummaryRow = {
   odometerReading?: number | null;
   geoValidated?: boolean;
   distanceFromClientFeet?: number | null;
+  durationFlag?: boolean;
+  geoFlag?: boolean;
 };
 
 export type ReportSummaryResponse = {
