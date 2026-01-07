@@ -13,6 +13,12 @@ import ThemedButton from '../components/Button';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AllServiceRoutes'>;
 
+const formatRouteAddress = (address?: string | null) => {
+  if (!address) return '';
+  const street = address.split(',')[0]?.trim() || '';
+  return truncateText(street, 26);
+};
+
 export default function AllServiceRoutesScreen(_props: Props) {
   const { token } = useAuth();
   const [routes, setRoutes] = useState<ServiceRoute[]>([]);
@@ -130,17 +136,11 @@ export default function AllServiceRoutesScreen(_props: Props) {
             .map(route => (
             <View key={route.id} style={styles.routeBlock}>
               <View style={styles.routeHeader}>
-                <Pressable 
-                  style={[styles.sortButton, sortByAlpha ? styles.sortButtonAlpha : styles.sortButtonDelta]} 
+                <Pressable
+                  style={styles.sortButton}
                   onPress={() => setSortByAlpha(!sortByAlpha)}
                 >
-                  <View style={styles.outerCircle}>
-                    <View style={[styles.innerCircle, sortByAlpha ? styles.innerCircleAlpha : styles.innerCircleDelta]}>
-                      <Text style={[styles.sortIcon, sortByAlpha ? styles.sortIconAlpha : styles.sortIconDelta]}>
-                        {sortByAlpha ? 'Α' : '△'}
-                      </Text>
-                    </View>
-                  </View>
+                  <View style={[styles.sortDot, sortByAlpha ? styles.sortDotFilled : styles.sortDotEmpty]} />
                 </Pressable>
                 <Text style={styles.routeName}>{route.name}</Text>
                 <Text style={styles.routeTech}>
@@ -154,8 +154,13 @@ export default function AllServiceRoutesScreen(_props: Props) {
                 <Text style={styles.empty}>No client locations placed.</Text>
               ) : (
                 clientsByRoute[route.id].map(client => (
-                  <Text key={`${route.id}-${client.id}`} style={styles.clientLine}>
-                    • {truncateText(client.name)} — {truncateText(client.address, 32)}
+                  <Text
+                    key={`${route.id}-${client.id}`}
+                    style={styles.clientLine}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    • {truncateText(client.name, 20)} — {formatRouteAddress(client.address)}
                   </Text>
                 ))
               )}
@@ -228,16 +233,10 @@ const styles = StyleSheet.create({
   routeHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing(1.5) },
   routeName: { fontSize: 18, fontWeight: '700', color: colors.text, flex: 1 },
   routeTech: { color: colors.muted },
-  sortButton: { width: 34, height: 34, justifyContent: 'center', alignItems: 'center' },
-  sortButtonAlpha: { backgroundColor: colors.background },
-  sortButtonDelta: { backgroundColor: '#dc2626' },
-  outerCircle: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: colors.text, justifyContent: 'center', alignItems: 'center' },
-  innerCircle: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center' },
-  innerCircleAlpha: { borderColor: colors.text, backgroundColor: colors.background },
-  innerCircleDelta: { borderColor: '#dc2626', backgroundColor: '#dc2626' },
-  sortIcon: { fontSize: 18, fontWeight: '700' },
-  sortIconAlpha: { color: colors.text },
-  sortIconDelta: { color: '#ffffff' },
+  sortButton: { width: 22, height: 22, justifyContent: 'center', alignItems: 'center' },
+  sortDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
+  sortDotFilled: { backgroundColor: colors.text, borderColor: colors.text },
+  sortDotEmpty: { backgroundColor: 'transparent', borderColor: colors.text },
   clientLine: { color: colors.text, paddingLeft: spacing(1) },
   modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 380, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },

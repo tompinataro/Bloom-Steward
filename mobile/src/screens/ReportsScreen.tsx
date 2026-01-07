@@ -113,12 +113,15 @@ export default function ReportsScreen(_props: Props) {
       for (const [freq, emails] of entries) {
         if (!emails.length) continue;
         const subject = `Field Tech Summary (${freq})`;
-        const summaryLines = summary.length
-          ? summary.map(item =>
-              `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | ${item.address} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Miles: ${item.mileageDelta ?? '—'}`
+        const res = await adminFetchReportSummary(token, { frequency: freq });
+        const rows = res.rows || [];
+        const rangeLabel = `${formatDate(res.range.start)} – ${formatDate(res.range.end)}`;
+        const summaryLines = rows.length
+          ? rows.map(item =>
+              `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | Notes: ${item.techNotes || '—'} | ${item.address} | Date: ${item.visitDate || '—'} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Duration: ${item.durationFormatted || '—'} | Miles: ${Number.isFinite(item.mileageDelta) ? item.mileageDelta.toFixed(1) : '—'} | Contact: ${item.onSiteContact || '—'} | Geo: ${item.geoValidated === true ? 'Yes' : item.geoValidated === false ? 'No' : '—'}`
             )
           : ['(No visits recorded for this range)'];
-        const body = `Range: ${rangeText}\nFrequency: ${freq}\n\n${summaryLines.join('\n')}\n\nGenerated from Bloom Steward.`;
+        const body = `Range: ${rangeLabel}\nFrequency: ${freq}\n\n${summaryLines.join('\n')}\n\nGenerated from Bloom Steward.`;
         const mailto = `mailto:${encodeURIComponent(emails.join(','))}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         // Prefer client-side compose to avoid SMTP 554 errors; never block on server send
         if (await MailComposer.isAvailableAsync()) {
@@ -137,7 +140,9 @@ export default function ReportsScreen(_props: Props) {
       // Fallback: try opening mail client with the summary text
       try {
         const summaryLines = summary.length
-          ? summary.map(item => `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | ${item.address} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Miles: ${item.mileageDelta ?? '—'}`)
+          ? summary.map(item =>
+              `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | Notes: ${item.techNotes || '—'} | ${item.address} | Date: ${item.visitDate || '—'} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Duration: ${item.durationFormatted || '—'} | Miles: ${Number.isFinite(item.mileageDelta) ? item.mileageDelta.toFixed(1) : '—'} | Contact: ${item.onSiteContact || '—'} | Geo: ${item.geoValidated === true ? 'Yes' : item.geoValidated === false ? 'No' : '—'}`
+            )
           : ['(No visits recorded for this range)'];
         const subject = 'Field Summary Report';
         const body = `Range: ${rangeText}\nFrequency: ${previewFrequency}\n\n${summaryLines.join('\n')}`;
@@ -163,7 +168,9 @@ export default function ReportsScreen(_props: Props) {
     'Technician',
     'Route',
     'Client',
+    'Notes',
     'Address',
+    'Date',
     'Check-In',
     'Check-Out',
     'Time On-site',
@@ -239,7 +246,9 @@ export default function ReportsScreen(_props: Props) {
                 <Text numberOfLines={1} style={[styles.cell, styles.technician, styles.headerCell]}>Technician</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.route, styles.headerCell]}>Route</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.client, styles.headerCell]}>Client</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.notes, styles.headerCell]}>Notes</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.address, styles.headerCell]}>Address</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.date, styles.headerCell]}>Date</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.checkIn, styles.headerCell]}>Check-In</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.checkOut, styles.headerCell]}>Check-Out</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
@@ -247,8 +256,15 @@ export default function ReportsScreen(_props: Props) {
                 <Text numberOfLines={1} style={[styles.cell, styles.contact, styles.headerCell]}>Contact</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.geoValid, styles.headerCell]}>Geo Valid</Text>
               </View>
-                {summary.map((item, index) => (
-                  <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
+                {summary.map((item, index) => {
+                  const geoFail = item.geoValidated === false || (item.distanceFromClientFeet !== null && item.distanceFromClientFeet !== undefined && item.distanceFromClientFeet > 300);
+                  const durationFail = geoFail || !!item.durationFlag;
+                  const clientFail = geoFail || durationFail || !!item.geoFlag;
+                  const clientTextStyle = clientFail ? [styles.clientText, styles.flaggedText] : styles.clientText;
+                  const durationTextStyle = durationFail ? [styles.cell, styles.duration, styles.flaggedText] : [styles.cell, styles.duration];
+                  const geoTextStyle = geoFail ? [styles.cell, styles.geoValid, styles.flaggedText] : [styles.cell, styles.geoValid];
+                  return (
+                    <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
                     <Text numberOfLines={1} style={[styles.cell, styles.technician]}>{truncateText(item.techName, 14)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.route]}>{item.routeName || '—'}</Text>
                     <View style={[styles.clientCell]}>
@@ -263,23 +279,26 @@ export default function ReportsScreen(_props: Props) {
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
                       /> */}
-                      <Text numberOfLines={1} style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
+                      <Text numberOfLines={1} style={[clientTextStyle, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
                     </View>
+                    <Text numberOfLines={1} style={[styles.cell, styles.notes]}>{truncateText(item.techNotes || '—', 16)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.date]}>{item.visitDate || '—'}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
+                    <Text numberOfLines={1} style={durationTextStyle}>{item.durationFormatted}</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.mileage]}>{
                       item.mileageDelta !== undefined && item.mileageDelta !== null
                         ? item.mileageDelta.toFixed(1)
                         : '—'
                     }</Text>
                     <Text numberOfLines={1} style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.geoValid]}>{
+                    <Text numberOfLines={1} style={geoTextStyle}>{
                       item.geoValidated === true ? 'Yes' : item.geoValidated === false ? 'No' : '—'
                     }</Text>
                   </View>
-                ))}
+                  );
+                })}
             </View>
           </ScrollView>
         )}
@@ -357,6 +376,7 @@ const styles = StyleSheet.create({
   technician: { width: 100 },
   route: { width: 70, paddingRight: spacing(2) },
   client: { width: 110 },
+  notes: { width: 140 },
   address: { width: 155 },
   checkIn: { width: 100 },
   checkOut: { width: 100 },
@@ -370,6 +390,7 @@ const styles = StyleSheet.create({
   geoDotOk: { backgroundColor: '#22c55e' },
   geoDotWarn: { backgroundColor: '#ef4444' },
   geoDotUnknown: { backgroundColor: '#d4d4d8' },
+  flaggedText: { color: '#b91c1c', fontWeight: '700' },
   headerCell: { fontWeight: '700' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },

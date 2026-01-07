@@ -44,6 +44,7 @@ type ReportRow = {
   techNotes?: string | null;
   checkInTs: string | null;
   checkOutTs: string | null;
+  visitDate?: string | null;
   durationMinutes: number;
   durationFormatted: string;
   onSiteContact?: string | null;
@@ -126,8 +127,18 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     
     // Primary dedup by visit_id (most reliable)
     if (row.visit_id) {
-      if (!latestByVisit.has(row.visit_id)) {
+      const existing = latestByVisit.get(row.visit_id);
+      const hasCheckout = !!row.payload?.checkOutTs;
+      const hasMeta = !!(row.payload?.techNotes || row.payload?.noteToOffice || row.payload?.onSiteContact || row.payload?.odometerReading);
+      if (!existing) {
         latestByVisit.set(row.visit_id, row);
+      } else {
+        const existingCheckout = !!existing.payload?.checkOutTs;
+        const existingMeta = !!(existing.payload?.techNotes || existing.payload?.noteToOffice || existing.payload?.onSiteContact || existing.payload?.odometerReading);
+        // Prefer a row that has checkout or meta fields; otherwise keep the existing latest
+        if ((hasCheckout && !existingCheckout) || (hasMeta && !existingMeta)) {
+          latestByVisit.set(row.visit_id, row);
+        }
       }
       continue;
     }
@@ -145,7 +156,27 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   latestByVisit.forEach((row, visitId) => allDeduped.set(`visit:${visitId}`, row));
   latestByComposite.forEach((row, key) => allDeduped.set(`composite:${key}`, row));
   
-  const dedupedRows = Array.from(allDeduped.values()).sort((a, b) => {
+  const dedupedRows = Array.from(allDeduped.values());
+  // Keep only the latest entry per tech+client in the range.
+  const latestByTechClient = new Map<string, typeof dedupedRows[number]>();
+  const getRowTime = (r: typeof dedupedRows[number]) => {
+    const ts = r.created_at || r.payload?.checkOutTs || r.payload?.checkInTs;
+    if (!ts) return 0;
+    const d = new Date(String(ts).replace(' ', 'T'));
+    return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+  };
+  for (const row of dedupedRows) {
+    const key = `${row.tech_id || 'unassigned'}|${(row.client_name || '').trim().toLowerCase()}`;
+    const existing = latestByTechClient.get(key);
+    if (!existing) {
+      latestByTechClient.set(key, row);
+      continue;
+    }
+    if (getRowTime(row) >= getRowTime(existing)) {
+      latestByTechClient.set(key, row);
+    }
+  }
+  const latestRows = Array.from(latestByTechClient.values()).sort((a, b) => {
     // Sort: Unassigned routes first, then alphabetically by route name, then by client name within each route
     const aRoute = (a.route_name || '').toLowerCase();
     const bRoute = (b.route_name || '').toLowerCase();
@@ -164,7 +195,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   });
   
   // Get all unique tech IDs from deduped rows
-  const uniqueTechIds = Array.from(new Set(dedupedRows.map(r => r.tech_id).filter(Boolean))) as number[];
+  const uniqueTechIds = Array.from(new Set(latestRows.map(r => r.tech_id).filter(Boolean))) as number[];
   
   // Fetch managed passwords for each tech
   const techPasswords = new Map<number, string | null>(); // key: tech_id
@@ -201,18 +232,13 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
   }
   
   const rows: ReportRow[] = [];
-  const seenTechClient = new Set<string>(); // Track tech+client combinations to prevent dupes
   
-  for (const row of dedupedRows) {
+  for (const row of latestRows) {
     // Allow unassigned clients (no tech_id/tech_name) to be included
     const techName = row.tech_name ? row.tech_name.trim() : 'Unassigned';
     // Skip demo or test users
     if (row.tech_name && /^demo\b/i.test(techName)) continue;
     
-    // Skip duplicate tech+client combinations (only show first/latest per pair)
-    const techClientKey = `${row.tech_id || 'unassigned'}|${(row.client_name || '').trim().toLowerCase()}`;
-    if (seenTechClient.has(techClientKey)) continue;
-    seenTechClient.add(techClientKey);
     const payload = row.payload || {};
     // Normalize timestamps to ISO (T) format for client-side parsing
     let checkInTs: string | null = null;
@@ -247,10 +273,12 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     }
     const inDate = checkInTs ? new Date(checkInTs) : null;
     const outDate = checkOutTs ? new Date(checkOutTs) : null;
+    const dateSource = checkInTs || checkOutTs || (row.created_at ? new Date(row.created_at as any).toISOString() : null);
+    const visitDate = dateSource ? (dateSource.includes('T') ? dateSource.split('T')[0] : dateSource.split(' ')[0]) : null;
     const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
     const durationFormatted = formatDuration(durationMinutes);
     const onSiteContact = payload.onSiteContact || null;
-    const techNotes = payload.techNotes || payload.noteToOffice || null;
+    const techNotes = payload.techNotes || payload.noteToOffice || payload.notes || null;
     const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
     
     // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
@@ -303,6 +331,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       address: row.address,
       checkInTs,
       checkOutTs,
+      visitDate,
       durationMinutes,
       durationFormatted,
       onSiteContact,
@@ -348,6 +377,7 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
         address: row.address,
         checkInTs: null,
         checkOutTs: null,
+        visitDate: null,
         durationMinutes: 0,
         durationFormatted: '00:00',
         onSiteContact: null,
@@ -368,6 +398,7 @@ function buildCsv(rows: ReportRow[]) {
     'Client Location',
     'Notes',
     'Address',
+    'Visit Date',
     'Check-In',
     'Check-Out',
     'Duration',
@@ -385,6 +416,7 @@ function buildCsv(rows: ReportRow[]) {
       row.clientName,
       (row.techNotes || '').replace(/,/g, ' '),
       row.address.replace(/,/g, ' '),
+      row.visitDate || '',
       row.checkInTs || '',
       row.checkOutTs || '',
       row.durationFormatted,
@@ -399,7 +431,7 @@ function buildCsv(rows: ReportRow[]) {
 
 function buildHtml(rows: ReportRow[], start: Date, end: Date) {
   const rowsHtml = rows.map(row => {
-    const geoFail = row.geoValidated === false || row.distanceFromClientFeet === null || row.geoValidated === undefined;
+    const geoFail = row.geoValidated === false || (row.distanceFromClientFeet !== null && row.distanceFromClientFeet > 300);
     const durationFlag = geoFail || !!row.durationFlag;
     const geoFlag = geoFail || !!row.geoFlag;
     const clientStyle = (durationFlag || geoFlag) ? 'color:#b91c1c;font-weight:700;' : '';
@@ -412,6 +444,7 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
       <td style="${clientStyle}">${row.clientName}</td>
       <td>${row.techNotes || ''}</td>
       <td>${row.address}</td>
+      <td>${row.visitDate || ''}</td>
       <td>${row.checkInTs || ''}</td>
       <td>${row.checkOutTs || ''}</td>
       <td style="${durationStyle}">${row.durationFormatted}</td>
@@ -433,6 +466,7 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
           <th>Client</th>
           <th>Notes</th>
           <th>Address</th>
+          <th>Visit Date</th>
           <th>Check-In</th>
           <th>Check-Out</th>
           <th>Duration</th>

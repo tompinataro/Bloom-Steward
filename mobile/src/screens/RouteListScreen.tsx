@@ -65,7 +65,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     return trimmed.length > 0 ? trimmed : byId;
   };
 
-  const load = async () => {
+  const load = async (opts?: { reset?: boolean }) => {
     if (!token) return;
     setLoading(true);
     try {
@@ -86,12 +86,15 @@ export default function RouteListScreen({ navigation, route }: Props) {
       try {
         await ensureToday();
         await pruneToIds(deduped.map(r => r.id));
+        const reset = !!opts?.reset || resetRequested;
         // Prefer server truth when present, fall back to local state
-        const serverCompleted = new Set<number>();
-        const serverInProg = new Set<number>();
-        for (const r of deduped as any[]) {
-          if (r.completedToday) serverCompleted.add(r.id);
-          if (r.inProgress) serverInProg.add(r.id);
+        const serverCompleted = reset ? new Set<number>() : new Set<number>();
+        const serverInProg = reset ? new Set<number>() : new Set<number>();
+        if (!reset) {
+          for (const r of deduped as any[]) {
+            if (r.completedToday) serverCompleted.add(r.id);
+            if (r.inProgress) serverInProg.add(r.id);
+          }
         }
         if (serverCompleted.size || serverInProg.size) {
           // Persist server truth to local storage for consistency across views
@@ -100,8 +103,10 @@ export default function RouteListScreen({ navigation, route }: Props) {
           setInProgress(serverInProg);
         } else {
           const [c, p] = await Promise.all([getCompleted(), getInProgress()]);
-          setCompleted(c); setInProgress(p);
+          setCompleted(reset ? new Set() : c);
+          setInProgress(reset ? new Set() : p);
         }
+        if (resetRequested) setResetRequested(false);
       } catch {}
     } catch (e: any) {
       const msg = e?.message ?? 'Failed to load routes';
@@ -263,7 +268,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
     navigation.navigate('VisitDetail', { id });
   }, [navigation]);
 
-  const keyExtractor = useCallback((item: TodayRoute) => String(item.id), []);
+const keyExtractor = useCallback((item: TodayRoute) => String(item.id), []);
 
 type ItemProps = {
   route: TodayRoute;
@@ -276,13 +281,13 @@ type ItemProps = {
   // Dev/test reset: clears local completed/in-progress and refreshes routes
   const triggerReset = async () => {
     try {
+      setResetRequested(true);
       setCompleted(new Set());
       setInProgress(new Set());
       await ensureToday();
       await pruneToIds([]);
-      setCompleted(new Set());
-      setInProgress(new Set());
-      await load();
+      await syncServerTruth([], []);
+      await load({ reset: true });
       showBanner({ type: 'info', message: 'Route state reset' });
     } catch {}
   };
