@@ -6,7 +6,7 @@ export type Visit = { id: number; clientName: string; checklist: ChecklistItem[]
 
 const FALLBACK_ROUTES: TodayRoute[] = [
   { id: 104, clientName: 'Club 9625', address: '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', scheduledTime: '12:30' },
-  { id: 105, clientName: 'Palm Vista', address: '1000 Nicollet Mall', scheduledTime: '14:00' },
+  { id: 105, clientName: 'Palm Vista', address: '910 Sago Palm Way, Apollo Beach, FL 33572', scheduledTime: '14:00' },
   { id: 106, clientName: 'Riverwalk Lofts', address: '225 3rd Ave S', scheduledTime: '15:15' },
   { id: 101, clientName: 'Acme HQ', address: '761 58th Ave NE, Fridley, MN 55432', scheduledTime: '08:30' },
   { id: 102, clientName: 'Marco Polo, LLC', address: '2017 103rd Lane NW, Coon Rapids, MN 55433', scheduledTime: '09:45' },

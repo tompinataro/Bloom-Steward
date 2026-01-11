@@ -169,6 +169,13 @@ export async function adminResetVisitState(date: string | undefined, token: stri
   });
 }
 
+export async function resetMyVisitState(token: string): Promise<{ ok: boolean } & any> {
+  return fetchJson(withBase('/api/visit-state/reset'), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export type AdminUser = { id: number; name: string; email: string; role: 'admin' | 'tech'; managed_password?: string | null; phone?: string | null };
 export async function adminFetchUsers(token: string): Promise<{ ok: boolean; users: AdminUser[] }> {
   return fetchJson(withBase('/api/admin/users'), {
@@ -288,6 +295,7 @@ export type ReportSummaryRow = {
   checkInTs: string | null;
   checkOutTs: string | null;
   visitDate?: string | null;
+  rowType?: 'data' | 'total' | 'spacer';
   durationFormatted: string;
   durationMinutes?: number;
   mileageDelta: number;

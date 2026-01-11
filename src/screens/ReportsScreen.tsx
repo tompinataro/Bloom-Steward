@@ -15,6 +15,7 @@ const FREQUENCIES = [
   { label: 'Week', value: 'weekly' },
   { label: 'Pay Period', value: 'payperiod' },
   { label: 'Month', value: 'monthly' },
+  { label: 'Custom', value: 'custom' },
 ];
 
 type FrequencyValue = typeof FREQUENCIES[number]['value'];
@@ -33,6 +34,44 @@ const newRecipient = (): RecipientTarget => ({
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
 
+function formatShortDateInput(value: string) {
+  const digits = value.replace(/[^\d]/g, '').slice(0, 8);
+  if (!digits) return '';
+  const mm = digits.slice(0, 2);
+  const dd = digits.slice(2, 4);
+  const rest = digits.slice(4);
+  let out = mm;
+  if (digits.length >= 3) out = `${mm}/${dd}`;
+  if (rest) out = `${mm}/${dd}/${rest}`;
+  return out;
+}
+
+function parseShortDate(value: string): string | null {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (!match) return null;
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const yearRaw = match[3];
+  const year = yearRaw.length === 2 ? Number(`20${yearRaw}`) : Number(yearRaw);
+  if (!month || !day || !year) return null;
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  if (Number.isNaN(d.getTime())) return null;
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  return `${year}-${mm}-${dd}`;
+}
+
+function todayShortDate() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${mm}/${dd}/${yy}`;
+}
+
 export default function ReportsScreen(_props: Props) {
   const { token, user } = useAuth();
   const [recipients, setRecipients] = useState<RecipientTarget[]>([newRecipient()]);
@@ -41,6 +80,9 @@ export default function ReportsScreen(_props: Props) {
   const [rangeText, setRangeText] = useState('—');
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [sending, setSending] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const isCustom = previewFrequency === 'custom';
 
   const fetchSummary = async () => {
     if (!token) return;
@@ -57,7 +99,19 @@ export default function ReportsScreen(_props: Props) {
           }
         }
       } catch {}
-      const res = await adminFetchReportSummary(token, { frequency: previewFrequency });
+      const customStartIso = parseShortDate(customStartDate);
+      const customEndIso = parseShortDate(customEndDate);
+      if (isCustom && (!customStartIso || !customEndIso)) {
+        showBanner({ type: 'error', message: 'Enter start/end as MM/DD/YY for custom range.' });
+        return;
+      }
+      const customStart = customStartIso ? `${customStartIso}T00:00:00` : undefined;
+      const customEnd = customEndIso ? `${customEndIso}T23:59:59` : undefined;
+      const res = await adminFetchReportSummary(token, {
+        frequency: previewFrequency,
+        startDate: customStart,
+        endDate: customEnd,
+      });
       setSummary(res.rows || []);
       setRangeText(`${formatDate(res.range.start)} – ${formatDate(res.range.end)}`);
     } catch (err: any) {
@@ -68,8 +122,26 @@ export default function ReportsScreen(_props: Props) {
   };
 
   useEffect(() => {
-    fetchSummary();
-  }, [token, previewFrequency]);
+    if (!token) return;
+    if (!isCustom) {
+      fetchSummary();
+      return;
+    }
+    const startOk = !!parseShortDate(customStartDate);
+    const endOk = !!parseShortDate(customEndDate);
+    if (startOk && endOk) {
+      fetchSummary();
+    }
+  }, [token, previewFrequency, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    if (!isCustom) return;
+    if (!customStartDate && !customEndDate) {
+      const today = todayShortDate();
+      setCustomStartDate(today);
+      setCustomEndDate(today);
+    }
+  }, [isCustom, customStartDate, customEndDate]);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -109,6 +181,29 @@ export default function ReportsScreen(_props: Props) {
       showBanner({ type: 'error', message: 'Add at least one recipient email.' });
       return;
     }
+    if (isCustom) {
+      const startIso = parseShortDate(customStartDate);
+      const endIso = parseShortDate(customEndDate);
+      if (!startIso || !endIso) {
+        showBanner({ type: 'error', message: 'Enter start/end as MM/DD/YY for custom range.' });
+        return;
+      }
+      setSending(true);
+      try {
+        await adminSendReport(token, {
+          frequency: 'custom',
+          emails: cleaned.map(r => r.email),
+          startDate: `${startIso}T00:00:00`,
+          endDate: `${endIso}T23:59:59`,
+        });
+        showBanner({ type: 'success', message: 'Report email(s) sent.' });
+      } catch (err: any) {
+        showBanner({ type: 'error', message: err?.message || 'Unable to send report.' });
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
     const grouped = cleaned.reduce<Record<string, string[]>>((acc, rec) => {
       if (!acc[rec.frequency]) acc[rec.frequency] = [];
       acc[rec.frequency].push(rec.email);
@@ -130,9 +225,14 @@ export default function ReportsScreen(_props: Props) {
       // Fallback: try opening mail client with the summary text
       try {
         const summaryLines = summary.length
-          ? summary.map(item =>
-              `${item.techName} | ${item.routeName || '—'} | ${item.clientName} | Notes: ${item.techNotes || '—'} | ${item.address} | Date: ${item.visitDate || '—'} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Duration: ${item.durationFormatted || '—'} | Miles: ${item.mileageDelta ?? '—'} | Contact: ${item.onSiteContact || '—'}`
-            )
+          ? summary.map(item => {
+              if (item.rowType === 'spacer') return '';
+              if (item.rowType === 'total') {
+                const miles = item.mileageDelta ?? 0;
+                return `${item.techName} | Mileage Total: ${Number.isFinite(miles) ? Number(miles).toFixed(1) : '—'}`;
+              }
+              return `${item.techName} | ${item.routeName || '—'} | Date: ${formatCompactDate(item.visitDate)} | ${item.clientName} | Notes: ${item.techNotes || '—'} | ${item.address} | In: ${formatTime(item.checkInTs)} Out: ${formatTime(item.checkOutTs)} | Duration: ${item.durationFormatted || '—'} | Miles: ${item.mileageDelta ?? '—'} | Contact: ${item.onSiteContact || '—'}`;
+            })
           : ['(No visits recorded for this range)'];
         const subject = 'Field Summary Report';
         const body = `Range: ${rangeText}\nFrequency: ${previewFrequency}\n\n${summaryLines.join('\n')}`;
@@ -154,10 +254,10 @@ export default function ReportsScreen(_props: Props) {
   const summaryHeaders = useMemo(() => [
     'Technician',
     'Route',
+    'Date',
     'Client',
     'Notes',
     'Address',
-    'Date',
     'Check-In',
     'Check-Out',
     'Time On-site',
@@ -206,6 +306,26 @@ export default function ReportsScreen(_props: Props) {
             </Pressable>
           ))}
         </View>
+        {isCustom ? (
+          <View style={styles.customRangeRow}>
+            <TextInput
+              style={styles.customInput}
+              value={customStartDate}
+              onChangeText={(text) => setCustomStartDate(formatShortDateInput(text))}
+              placeholder="MM/DD/YY"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.customInput}
+              value={customEndDate}
+              onChangeText={(text) => setCustomEndDate(formatShortDateInput(text))}
+              placeholder="MM/DD/YY"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+            />
+          </View>
+        ) : null}
         <Text style={styles.rangeText}>Range: {rangeText}</Text>
         <View style={styles.actionRow}>
           <ThemedButton
@@ -232,10 +352,10 @@ export default function ReportsScreen(_props: Props) {
               <View style={[styles.tableRow, styles.tableHeaderRow]}>
                 <Text numberOfLines={1} style={[styles.cell, styles.technician, styles.headerCell]}>Technician</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.route, styles.headerCell]}>Route</Text>
+                <Text numberOfLines={1} style={[styles.cell, styles.date, styles.headerCell]}>Date</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.client, styles.headerCell]}>Client</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.notes, styles.headerCell]}>Notes</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.address, styles.headerCell]}>Address</Text>
-                <Text numberOfLines={1} style={[styles.cell, styles.date, styles.headerCell]}>Date</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.checkIn, styles.headerCell]}>Check-In</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.checkOut, styles.headerCell]}>Check-Out</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.duration, styles.headerCell]}>Duration</Text>
@@ -243,10 +363,16 @@ export default function ReportsScreen(_props: Props) {
                 <Text numberOfLines={1} style={[styles.cell, styles.contact, styles.headerCell]}>Contact</Text>
                 <Text numberOfLines={1} style={[styles.cell, styles.geoValid, styles.headerCell]}>Geo Valid</Text>
               </View>
-                {summary.map((item, index) => (
+                {summary.map((item, index) => {
+                  if (item.rowType === 'spacer') {
+                    return <View key={`spacer-${index}`} style={styles.spacerRow} />;
+                  }
+                  const isTotal = item.rowType === 'total';
+                  return (
                   <View key={`${item.techId}-${item.clientName}-${index}`} style={styles.tableRow}>
-                    <Text numberOfLines={1} style={[styles.cell, styles.technician]}>{truncateText(item.techName, 14)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.route]}>{item.routeName || '—'}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.technician, isTotal ? styles.totalText : null]}>{truncateText(item.techName, 14)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.route, isTotal ? styles.totalText : null]}>{item.routeName || ''}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.date, isTotal ? styles.totalText : null]}>{isTotal ? '' : formatCompactDate(item.visitDate)}</Text>
                     <View style={[styles.clientCell]}>
                       {/* GEO VALIDATION DOT DISABLED (Dec 2025)
                           Commented out the colored circle indicator showing geo validation status
@@ -259,25 +385,25 @@ export default function ReportsScreen(_props: Props) {
                           item.geoValidated === true ? styles.geoDotOk : item.geoValidated === false ? styles.geoDotWarn : styles.geoDotUnknown,
                         ]}
                       /> */}
-                    <Text numberOfLines={1} style={[styles.clientText, { fontSize: 12 }]}>{truncateText(item.clientName, 14)}</Text>
+                    <Text numberOfLines={1} style={[styles.clientText, isTotal ? styles.totalText : null, { fontSize: 12 }]}>{truncateText(item.clientName, 18)}</Text>
                     </View>
-                    <Text numberOfLines={1} style={[styles.cell, styles.notes]}>{truncateText(item.techNotes || '—', 16)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.address]}>{truncateText(item.address, 20)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.date]}>{item.visitDate || '—'}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{formatTime(item.checkInTs)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{formatTime(item.checkOutTs)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.duration]}>{item.durationFormatted}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.mileage]}>{
+                    <Text numberOfLines={1} style={[styles.cell, styles.notes, isTotal ? styles.totalText : null]}>{isTotal ? '' : truncateText(item.techNotes || '—', 16)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.address, isTotal ? styles.totalText : null]}>{isTotal ? '' : truncateText(item.address, 20)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.checkIn, { fontSize: 11 }]}>{isTotal ? '' : formatTime(item.checkInTs)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.checkOut, { fontSize: 11 }]}>{isTotal ? '' : formatTime(item.checkOutTs)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.duration, isTotal ? styles.totalText : null]}>{isTotal ? '' : item.durationFormatted}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.mileage, isTotal ? styles.totalText : null]}>{
                       item.mileageDelta !== undefined && item.mileageDelta !== null
                         ? item.mileageDelta.toFixed(1)
                         : '—'
                     }</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.contact]}>{truncateText(item.onSiteContact || '—', 12)}</Text>
-                    <Text numberOfLines={1} style={[styles.cell, styles.geoValid]}>{
-                      item.geoValidated === true ? 'Yes' : item.geoValidated === false ? 'No' : '—'
+                    <Text numberOfLines={1} style={[styles.cell, styles.contact, isTotal ? styles.totalText : null]}>{isTotal ? '' : truncateText(item.onSiteContact || '—', 12)}</Text>
+                    <Text numberOfLines={1} style={[styles.cell, styles.geoValid, isTotal ? styles.totalText : null]}>{
+                      isTotal ? '' : (item.geoValidated === true ? 'Yes' : item.geoValidated === false ? 'No' : '—')
                     }</Text>
                   </View>
-                ))}
+                  );
+                })}
             </View>
           </ScrollView>
         )}
@@ -294,6 +420,28 @@ function formatDate(value?: string | null) {
   } catch {
     return value;
   }
+}
+
+function formatCompactDate(value?: string | null) {
+  if (!value) return '—';
+  let raw = value;
+  if (raw.includes('T')) raw = raw.split('T')[0];
+  if (raw.includes(' ')) raw = raw.split(' ')[0];
+  const parts = raw.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const [year, month, day] = parts;
+    return `${month.padStart(2, '0')}${day.padStart(2, '0')}${year.slice(-2)}`;
+  }
+  try {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) {
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const yy = String(d.getFullYear()).slice(-2);
+      return `${mm}${dd}${yy}`;
+    }
+  } catch {}
+  return value;
 }
 
 function formatTime(value?: string | null) {
@@ -324,6 +472,8 @@ const styles = StyleSheet.create({
   frequencyBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   frequencyText: { color: colors.text, fontWeight: '600' },
   frequencyTextActive: { color: '#fff' },
+  customRangeRow: { flexDirection: 'row', gap: spacing(1), alignItems: 'center', flexWrap: 'wrap' },
+  customInput: { flex: 1, minWidth: 140, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: spacing(2), paddingVertical: spacing(1.5), color: colors.text },
   rangeText: { color: colors.muted },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1.5), alignItems: 'center' },
   actionButton: { flexGrow: 1, minWidth: '45%' },
@@ -357,7 +507,7 @@ const styles = StyleSheet.create({
   client: { width: 110 },
   notes: { width: 140 },
   address: { width: 155 },
-  date: { width: 90 },
+  date: { width: 70 },
   checkIn: { width: 100 },
   checkOut: { width: 100 },
   duration: { width: 80 },
@@ -370,7 +520,9 @@ const styles = StyleSheet.create({
   geoDotOk: { backgroundColor: '#22c55e' },
   geoDotWarn: { backgroundColor: '#ef4444' },
   geoDotUnknown: { backgroundColor: '#d4d4d8' },
+  totalText: { fontWeight: '700' },
   headerCell: { fontWeight: '700' },
+  spacerRow: { height: spacing(2) },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(1.5), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },

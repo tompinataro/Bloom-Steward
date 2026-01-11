@@ -25,6 +25,7 @@ Watch the Live Demo 🎥 — Live Demo (pending)
 ## Features
 - Technician check-ins and task tracking
 - Quality control reporting
+- Work Summary Report with per-visit mileage legs, per-tech mileage totals, visit date, notes, contact, and geo validation
 - Data persistence with PostgreSQL
 - Secure user authentication
 - Responsive React front-end

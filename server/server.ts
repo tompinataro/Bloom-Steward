@@ -45,6 +45,7 @@ type ReportRow = {
   checkInTs: string | null;
   checkOutTs: string | null;
   visitDate?: string | null;
+  rowType?: 'data' | 'total' | 'spacer';
   durationMinutes: number;
   durationFormatted: string;
   onSiteContact?: string | null;
@@ -87,6 +88,26 @@ function formatDuration(minutes: number) {
   return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
 
+function formatCompactDate(value?: string | null) {
+  if (!value) return '';
+  let raw = value;
+  if (raw.includes('T')) raw = raw.split('T')[0];
+  if (raw.includes(' ')) raw = raw.split(' ')[0];
+  const parts = raw.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const [year, month, day] = parts;
+    return `${month.padStart(2, '0')}${day.padStart(2, '0')}${year.slice(-2)}`;
+  }
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const yy = String(parsed.getFullYear()).slice(-2);
+    return `${mm}${dd}${yy}`;
+  }
+  return value;
+}
+
 function resolveRange(frequency: string, explicitStart?: string, explicitEnd?: string) {
   let end = explicitEnd ? new Date(explicitEnd) : new Date();
   let start = explicitStart ? new Date(explicitStart) : new Date();
@@ -96,19 +117,33 @@ function resolveRange(frequency: string, explicitStart?: string, explicitEnd?: s
     start = new Date(now);
     switch (frequency) {
       case 'daily':
-        start.setDate(now.getDate() - 1);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
         break;
       case 'weekly':
         start.setDate(now.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
         break;
       case 'payperiod':
         start.setDate(now.getDate() - 14);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
         break;
       case 'monthly':
         start.setDate(now.getDate() - 30);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
         break;
       default:
         start.setDate(now.getDate() - 7);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
         break;
     }
   }
@@ -267,9 +302,9 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       const d = new Date(row.created_at as any);
       if (!Number.isNaN(d.getTime())) checkInTs = d.toISOString();
     }
-    if (!checkOutTs && row.created_at) {
-      const d = new Date(row.created_at as any);
-      if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
+    // Do not synthesize checkOutTs; only completed visits should appear in summary.
+    if (!checkOutTs) {
+      continue;
     }
     const inDate = checkInTs ? new Date(checkInTs) : null;
     const outDate = checkOutTs ? new Date(checkOutTs) : null;
@@ -281,35 +316,8 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     const techNotes = payload.techNotes || payload.noteToOffice || payload.notes || null;
     const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
     
-    // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
     let mileageDelta = 0;
-    if (odometerReading !== null && Number.isFinite(odometerReading) && row.tech_id && checkOutTs) {
-      // Normalize checkOutTs to an ISO date string then extract YYYY-MM-DD.
-      // Some stored timestamps come as space-separated ("YYYY-MM-DD HH:MM:SS"),
-      // so replace the first space with 'T' before parsing to avoid mismatched keys.
-      let dateStr = '';
-      try {
-        const normalized = (checkOutTs || '').replace(' ', 'T');
-        const parsed = new Date(normalized);
-        if (!Number.isNaN(parsed.getTime())) {
-          dateStr = parsed.toISOString().split('T')[0];
-        } else {
-          // Fallback: if parsing fails, try splitting on 'T' or space and take first segment
-          dateStr = (checkOutTs.indexOf('T') >= 0 ? checkOutTs.split('T')[0] : checkOutTs.split(' ')[0]) || '';
-        }
-      } catch (err) {
-        dateStr = (checkOutTs.indexOf('T') >= 0 ? checkOutTs.split('T')[0] : checkOutTs.split(' ')[0]) || '';
-      }
-
-      if (dateStr) {
-        const dailyStartKey = `${row.tech_id}|${dateStr}`;
-        const dailyStartOdom = dailyStartOdometers.get(dailyStartKey);
-        if (typeof dailyStartOdom === 'number' && odometerReading >= dailyStartOdom) {
-          mileageDelta = odometerReading - dailyStartOdom;
-        }
-      }
-    }
-    const rawLoc = payload.checkOutLoc || payload.checkInLoc;
+    const rawLoc = payload.checkOutLoc;
     let geoValidated: boolean | undefined = undefined;
     let distanceFromClientFeet: number | null = null;
     let geoFlag = false;
@@ -344,6 +352,139 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       geoFlag,
       managedPassword: row.tech_id ? techPasswords.get(row.tech_id) || null : null,
     });
+  }
+
+  if (rows.length) {
+    const parseTs = (value?: string | null) => {
+      if (!value) return 0;
+      const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
+      const d = new Date(normalized);
+      const t = d.getTime();
+      return Number.isNaN(t) ? 0 : t;
+    };
+    const rowsByTechDate = new Map<string, ReportRow[]>();
+    const techTotals = new Map<string, number>();
+
+    for (const row of rows) {
+      const techId = row.techId ?? 0;
+      const dateKey = row.visitDate || (row.checkOutTs ? row.checkOutTs.split('T')[0] : '');
+      if (!dateKey) continue;
+      const key = `${techId}|${dateKey}`;
+      const list = rowsByTechDate.get(key) || [];
+      list.push(row);
+      rowsByTechDate.set(key, list);
+    }
+
+    for (const [key, group] of rowsByTechDate) {
+      const [techIdStr, dateStr] = key.split('|');
+      const techId = Number(techIdStr);
+      group.sort((a, b) => {
+        const ta = parseTs(a.checkOutTs || a.checkInTs);
+        const tb = parseTs(b.checkOutTs || b.checkInTs);
+        if (ta !== tb) return ta - tb;
+        return (a.clientName || '').localeCompare(b.clientName || '');
+      });
+
+      let prevOdo = dailyStartOdometers.get(`${techId}|${dateStr}`);
+      let total = 0;
+
+      for (const row of group) {
+        const odo = typeof row.odometerReading === 'number' ? row.odometerReading : Number(row.odometerReading);
+        let delta = 0;
+        if (Number.isFinite(odo)) {
+          if (typeof prevOdo === 'number' && odo >= prevOdo) {
+            delta = odo - prevOdo;
+          }
+          prevOdo = odo;
+        }
+        row.mileageDelta = delta;
+        total += delta;
+      }
+
+      const techKey = String(techId);
+      techTotals.set(techKey, (techTotals.get(techKey) || 0) + total);
+    }
+
+    const techGroups = new Map<string, { techId: number | null; techName: string; rows: ReportRow[] }>();
+    for (const row of rows) {
+      const key = `${row.techId ?? 'unassigned'}|${(row.techName || 'Unassigned').trim().toLowerCase()}`;
+      const entry = techGroups.get(key) || { techId: row.techId ?? null, techName: row.techName || 'Unassigned', rows: [] };
+      entry.rows.push(row);
+      techGroups.set(key, entry);
+    }
+
+    const sortedTechKeys = Array.from(techGroups.keys()).sort((a, b) => {
+      const aName = techGroups.get(a)?.techName || '';
+      const bName = techGroups.get(b)?.techName || '';
+      return aName.localeCompare(bName, undefined, { sensitivity: 'base' });
+    });
+
+    const finalRows: ReportRow[] = [];
+    for (let i = 0; i < sortedTechKeys.length; i++) {
+      const key = sortedTechKeys[i];
+      const group = techGroups.get(key);
+      if (!group) continue;
+      group.rows.sort((a, b) => {
+        const dateA = a.visitDate || '';
+        const dateB = b.visitDate || '';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        const ta = parseTs(a.checkOutTs || a.checkInTs);
+        const tb = parseTs(b.checkOutTs || b.checkInTs);
+        if (ta !== tb) return ta - tb;
+        return (a.clientName || '').localeCompare(b.clientName || '');
+      });
+      finalRows.push(...group.rows);
+
+      const total = techTotals.get(String(group.techId ?? 0)) || 0;
+      finalRows.push({
+        rowType: 'total',
+        techId: group.techId,
+        techName: group.techName,
+        routeName: null,
+        clientName: 'Mileage Total',
+        address: '',
+        checkInTs: null,
+        checkOutTs: null,
+        visitDate: null,
+        durationMinutes: 0,
+        durationFormatted: '',
+        onSiteContact: null,
+        techNotes: null,
+        odometerReading: null,
+        mileageDelta: total,
+        distanceFromClientFeet: null,
+        geoValidated: undefined,
+        durationFlag: false,
+        geoFlag: false,
+        managedPassword: group.techId ? techPasswords.get(group.techId) || null : null,
+      });
+      if (i < sortedTechKeys.length - 1) {
+        finalRows.push({
+          rowType: 'spacer',
+          techId: group.techId,
+          techName: group.techName,
+          routeName: null,
+          clientName: '',
+          address: '',
+          checkInTs: null,
+          checkOutTs: null,
+          visitDate: null,
+          durationMinutes: 0,
+          durationFormatted: '',
+          onSiteContact: null,
+          techNotes: null,
+          odometerReading: null,
+          mileageDelta: 0,
+          distanceFromClientFeet: null,
+          geoValidated: undefined,
+          durationFlag: false,
+          geoFlag: false,
+          managedPassword: group.techId ? techPasswords.get(group.techId) || null : null,
+        });
+      }
+    }
+
+    return finalRows;
   }
   if (!rows.length && hasDb()) {
     const fallback = await dbQuery<{
@@ -395,10 +536,10 @@ function buildCsv(rows: ReportRow[]) {
     'Technician',
     'Password',
     'Route',
+    'Visit Date',
     'Client Location',
     'Notes',
     'Address',
-    'Visit Date',
     'Check-In',
     'Check-Out',
     'Duration',
@@ -409,21 +550,26 @@ function buildCsv(rows: ReportRow[]) {
   ];
   const lines = [header.join(',')];
   rows.forEach(row => {
+    if (row.rowType === 'spacer') {
+      lines.push('');
+      return;
+    }
+    const isTotal = row.rowType === 'total';
     lines.push([
       row.techName,
-      row.managedPassword || '',
+      isTotal ? '' : (row.managedPassword || ''),
       row.routeName || '',
+      formatCompactDate(row.visitDate),
       row.clientName,
-      (row.techNotes || '').replace(/,/g, ' '),
-      row.address.replace(/,/g, ' '),
-      row.visitDate || '',
-      row.checkInTs || '',
-      row.checkOutTs || '',
-      row.durationFormatted,
+      isTotal ? '' : (row.techNotes || '').replace(/,/g, ' '),
+      isTotal ? '' : row.address.replace(/,/g, ' '),
+      isTotal ? '' : (row.checkInTs || ''),
+      isTotal ? '' : (row.checkOutTs || ''),
+      isTotal ? '' : row.durationFormatted,
       row.mileageDelta.toFixed(2),
-      row.onSiteContact || '',
-      row.distanceFromClientFeet != null ? row.distanceFromClientFeet.toFixed(0) : '',
-      row.geoValidated ? 'Yes' : 'No',
+      isTotal ? '' : (row.onSiteContact || ''),
+      isTotal ? '' : (row.distanceFromClientFeet != null ? row.distanceFromClientFeet.toFixed(0) : ''),
+      isTotal ? '' : (row.geoValidated ? 'Yes' : row.geoValidated === false ? 'No' : ''),
     ].join(','));
   });
   return lines.join('\n');
@@ -431,27 +577,32 @@ function buildCsv(rows: ReportRow[]) {
 
 function buildHtml(rows: ReportRow[], start: Date, end: Date) {
   const rowsHtml = rows.map(row => {
+    if (row.rowType === 'spacer') {
+      return `<tr><td colspan="13">&nbsp;</td></tr>`;
+    }
+    const isTotal = row.rowType === 'total';
     const geoFail = row.geoValidated === false || (row.distanceFromClientFeet !== null && row.distanceFromClientFeet > 300);
     const durationFlag = geoFail || !!row.durationFlag;
     const geoFlag = geoFail || !!row.geoFlag;
     const clientStyle = (durationFlag || geoFlag) ? 'color:#b91c1c;font-weight:700;' : '';
     const durationStyle = durationFlag ? 'color:#b91c1c;font-weight:700;' : '';
     const geoStyle = geoFlag ? 'color:#b91c1c;font-weight:700;' : '';
+    const totalStyle = isTotal ? 'font-weight:700;' : '';
     return `
     <tr>
-      <td>${row.techName}</td>
-      <td>${row.routeName || ''}</td>
-      <td style="${clientStyle}">${row.clientName}</td>
-      <td>${row.techNotes || ''}</td>
-      <td>${row.address}</td>
-      <td>${row.visitDate || ''}</td>
-      <td>${row.checkInTs || ''}</td>
-      <td>${row.checkOutTs || ''}</td>
-      <td style="${durationStyle}">${row.durationFormatted}</td>
-      <td>${row.mileageDelta.toFixed(2)}</td>
-      <td>${row.onSiteContact || ''}</td>
-      <td>${row.distanceFromClientFeet != null ? row.distanceFromClientFeet.toFixed(0) : ''}</td>
-      <td style="${geoStyle}">${row.geoValidated === false ? 'No' : row.geoValidated === true ? 'Yes' : ''}</td>
+      <td style="${totalStyle}">${row.techName}</td>
+      <td style="${totalStyle}">${row.routeName || ''}</td>
+      <td style="${totalStyle}">${formatCompactDate(row.visitDate)}</td>
+      <td style="${isTotal ? totalStyle : clientStyle}">${row.clientName}</td>
+      <td style="${totalStyle}">${isTotal ? '' : (row.techNotes || '')}</td>
+      <td style="${totalStyle}">${isTotal ? '' : row.address}</td>
+      <td style="${totalStyle}">${isTotal ? '' : (row.checkInTs || '')}</td>
+      <td style="${totalStyle}">${isTotal ? '' : (row.checkOutTs || '')}</td>
+      <td style="${isTotal ? totalStyle : durationStyle}">${isTotal ? '' : row.durationFormatted}</td>
+      <td style="${totalStyle}">${row.mileageDelta.toFixed(2)}</td>
+      <td style="${totalStyle}">${isTotal ? '' : (row.onSiteContact || '')}</td>
+      <td style="${totalStyle}">${isTotal ? '' : (row.distanceFromClientFeet != null ? row.distanceFromClientFeet.toFixed(0) : '')}</td>
+      <td style="${isTotal ? totalStyle : geoStyle}">${isTotal ? '' : (row.geoValidated === false ? 'No' : row.geoValidated === true ? 'Yes' : '')}</td>
     </tr>
   `;
   }).join('');
@@ -463,10 +614,10 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
         <tr>
           <th>Technician</th>
           <th>Route</th>
+          <th>Visit Date</th>
           <th>Client</th>
           <th>Notes</th>
           <th>Address</th>
-          <th>Visit Date</th>
           <th>Check-In</th>
           <th>Check-Out</th>
           <th>Duration</th>
@@ -882,14 +1033,70 @@ app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
     const id = Number(req.params.id);
     const data = req.body ?? {};
     const userId = req.user?.id;
-    // Idempotency: if already completed for today, return success (idempotent)
-    if (await isCompletedToday(id, userId)) return res.json({ ok: true, id, idempotent: true });
+    // Idempotency: if already completed for today, still persist the latest submission
+    const alreadyCompleted = await isCompletedToday(id, userId);
     const result = await saveVisit(id, data);
+    // If no daily start odometer exists for this user/date, seed it from this submission
+    if (hasDb() && userId) {
+      const rawOdo = data?.odometerReading;
+      const numericOdo = Number(String(rawOdo ?? '').replace(/[^0-9.]/g, ''));
+      const ts = data?.checkOutTs || data?.checkInTs;
+      let dateStr = dayKey();
+      if (ts) {
+        const parsed = new Date(String(ts).replace(' ', 'T'));
+        if (!Number.isNaN(parsed.getTime())) {
+          dateStr = parsed.toISOString().split('T')[0];
+        } else {
+          dateStr = String(ts).includes('T') ? String(ts).split('T')[0] : String(ts).split(' ')[0];
+        }
+      }
+      if (Number.isFinite(numericOdo)) {
+        try {
+          await dbQuery(
+            `insert into daily_start_odometer (user_id, date, odometer_reading)
+             values ($1, $2, $3)
+             on conflict (user_id, date) do nothing`,
+            [userId, dateStr, numericOdo]
+          );
+        } catch {}
+      }
+    }
     // Phase A: mark completed in memory for today
     markCompleted(id, userId);
-    res.json({ ok: true, id, idempotent: false, result });
+    res.json({ ok: true, id, idempotent: alreadyCompleted, result });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'submit error' });
+  }
+});
+
+// Tech reset: clear today's visit state for the current user
+app.post('/api/visit-state/reset', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
+    const d = dayKey();
+    for (const key of Array.from(stateMap.keys())) {
+      if (key.startsWith(`${d}:`) && key.endsWith(`:${userId}`)) {
+        stateMap.delete(key);
+      }
+    }
+    if (hasDb()) {
+      await dbQuery('delete from visit_state where date = $1 and user_id = $2', [d, userId]);
+      await dbQuery(
+        `delete from visit_submissions vs
+         using visits v
+         join clients c on c.id = v.client_id
+         join service_routes sr on sr.id = c.service_route_id
+         where vs.visit_id = v.id
+           and sr.user_id = $2
+           and vs.created_at::date = $1`,
+        [d, userId]
+      );
+      await dbQuery('delete from daily_start_odometer where date = $1 and user_id = $2', [d, userId]);
+    }
+    res.json({ ok: true, date: d, userId });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? 'reset error' });
   }
 });
 
@@ -1495,18 +1702,16 @@ app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, res) => {
 
 // Automated report emails
 if (process.env.NODE_ENV !== 'test') {
-  // Weekly report to Marc - every Monday at 5am (previous 7 days)
+  // Weekly report to Tom - every Monday at 5am
   cron.schedule('0 5 * * 1', async () => {
-    console.log('[CRON] Sending weekly report to Marc');
+    console.log('[CRON] Sending weekly report to Tom');
     try {
-      const endDate = new Date();
-      const startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 7);
+      const { startDate, endDate } = resolveRange('weekly');
       const rows = await buildSummary(startDate, endDate);
       const csv = buildCsv(rows);
       const html = buildHtml(rows, startDate, endDate);
-      await sendReportEmail(['marc@bloomsteward.com'], 'Field Work Summary Report (Weekly)', html, csv);
-      console.log('[CRON] Weekly report sent to Marc');
+      await sendReportEmail(['tom@pinataro.com'], 'Field Work Summary Report (Weekly)', html, csv);
+      console.log('[CRON] Weekly report sent to Tom');
     } catch (err: any) {
       console.error('[CRON] Failed to send weekly report:', err?.message);
     }
@@ -1514,18 +1719,16 @@ if (process.env.NODE_ENV !== 'test') {
     timezone: 'America/Chicago'
   });
 
-  // Daily report to Piper - every day at 5am (previous day)
+  // Daily report to Tom - every day at 5am
   cron.schedule('0 5 * * *', async () => {
-    console.log('[CRON] Sending daily report to Piper');
+    console.log('[CRON] Sending daily report to Tom');
     try {
-      const endDate = new Date();
-      const startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 1);
+      const { startDate, endDate } = resolveRange('daily');
       const rows = await buildSummary(startDate, endDate);
       const csv = buildCsv(rows);
       const html = buildHtml(rows, startDate, endDate);
-      await sendReportEmail(['piper@bloomsteward.com'], 'Field Work Summary Report (Daily)', html, csv);
-      console.log('[CRON] Daily report sent to Piper');
+      await sendReportEmail(['tom@pinataro.com'], 'Field Work Summary Report (Daily)', html, csv);
+      console.log('[CRON] Daily report sent to Tom');
     } catch (err: any) {
       console.error('[CRON] Failed to send daily report:', err?.message);
     }

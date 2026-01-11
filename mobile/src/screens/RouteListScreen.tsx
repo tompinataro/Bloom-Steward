@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
-import { fetchTodayRoutes, TodayRoute } from '../api/client';
+import { fetchTodayRoutes, TodayRoute, resetMyVisitState } from '../api/client';
 import { flushQueue, getQueueStats } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
@@ -281,6 +281,9 @@ type ItemProps = {
   // Dev/test reset: clears local completed/in-progress and refreshes routes
   const triggerReset = async () => {
     try {
+      if (token) {
+        try { await resetMyVisitState(token); } catch {}
+      }
       setResetRequested(true);
       setCompleted(new Set());
       setInProgress(new Set());
