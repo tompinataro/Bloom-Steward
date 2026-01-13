@@ -92,17 +92,31 @@ android {
         applicationId 'com.pinataro.bloomsteward'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 28
-        versionName "1.2.0"
+        versionCode 29
+        versionName "1.2.1"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
+    def easKeystorePath = System.getenv("EAS_BUILD_ANDROID_KEYSTORE_PATH")
+    def easKeystorePassword = System.getenv("EAS_BUILD_ANDROID_KEYSTORE_PASSWORD")
+    def easKeyAlias = System.getenv("EAS_BUILD_ANDROID_KEY_ALIAS")
+    def easKeyPassword = System.getenv("EAS_BUILD_ANDROID_KEY_PASSWORD")
+    def hasEasKeystore = easKeystorePath != null
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
             keyAlias 'androiddebugkey'
             keyPassword 'android'
+        }
+        release {
+            if (hasEasKeystore) {
+                storeFile file(easKeystorePath)
+                storePassword easKeystorePassword
+                keyAlias easKeyAlias
+                keyPassword easKeyPassword
+            }
         }
     }
     buildTypes {
@@ -112,7 +126,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig hasEasKeystore ? signingConfigs.release : signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
