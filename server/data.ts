@@ -249,40 +249,6 @@ export async function buildReportRows(startDate: Date, endDate: Date) {
      order by u.id nulls last, vs.created_at asc`,
     [startDate.toISOString(), endDate.toISOString()]
   );
-  
-  // Fetch unassigned clients (no service route assigned)
-  const unassignedRes = await dbQuery<{
-    submission_id: number | null;
-    created_at: string | null;
-    visit_id: number | null;
-    client_name: string;
-    address: string;
-    latitude: number | null;
-    longitude: number | null;
-    route_name: string | null;
-    tech_id: number | null;
-    tech_name: string | null;
-    payload: any;
-  }>(
-    `select
-       null as submission_id,
-       null as created_at,
-       null as visit_id,
-       c.name as client_name,
-       c.address,
-       c.latitude,
-       c.longitude,
-       null as route_name,
-       null as tech_id,
-       null as tech_name,
-       '{}'::jsonb as payload
-     from clients c
-     where c.service_route_id is null
-     order by c.name asc`
-  );
-  
-  // Combine: unassigned first, then submissions
-  const unassignedRows = unassignedRes?.rows ?? [];
   const submissionRows = submissionsRes?.rows ?? [];
-  return [...unassignedRows, ...submissionRows];
+  return submissionRows;
 }

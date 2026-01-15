@@ -108,43 +108,153 @@ function formatCompactDate(value?: string | null) {
   return value;
 }
 
+const REPORT_TIMEZONE = process.env.REPORT_TIMEZONE || 'America/Chicago';
+
+function getTimeZoneOffsetMinutes(timeZone: string, date: Date) {
+  try {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = dtf.formatToParts(date);
+    const values: Record<string, string> = {};
+    for (const part of parts) {
+      if (part.type !== 'literal') values[part.type] = part.value;
+    }
+    const asUTC = Date.UTC(
+      Number(values.year),
+      Number(values.month) - 1,
+      Number(values.day),
+      Number(values.hour),
+      Number(values.minute),
+      Number(values.second)
+    );
+    return (asUTC - date.getTime()) / 60000;
+  } catch {
+    return 0;
+  }
+}
+
+function getZonedDateParts(date: Date, timeZone: string) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = dtf.formatToParts(date);
+  const values: Record<string, string> = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') values[part.type] = part.value;
+  }
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+  };
+}
+
+function makeZonedDate(
+  timeZone: string,
+  year: number,
+  month: number,
+  day: number,
+  hour = 0,
+  minute = 0,
+  second = 0,
+  ms = 0
+) {
+  const utc = new Date(Date.UTC(year, month - 1, day, hour, minute, second, ms));
+  const offsetMinutes = getTimeZoneOffsetMinutes(timeZone, utc);
+  return new Date(utc.getTime() - offsetMinutes * 60000);
+}
+
+function startOfDayInZone(date: Date, timeZone: string) {
+  const { year, month, day } = getZonedDateParts(date, timeZone);
+  return makeZonedDate(timeZone, year, month, day, 0, 0, 0, 0);
+}
+
+function endOfDayInZone(date: Date, timeZone: string) {
+  const { year, month, day } = getZonedDateParts(date, timeZone);
+  const nextDay = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+  const nextStart = startOfDayInZone(nextDay, timeZone);
+  return new Date(nextStart.getTime() - 1);
+}
+
+function addDaysInZone(date: Date, days: number, timeZone: string) {
+  const { year, month, day } = getZonedDateParts(date, timeZone);
+  return new Date(Date.UTC(year, month - 1, day + days, 12, 0, 0, 0));
+}
+
+function parseDateInZone(input: string, timeZone: string): Date | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.replace(' ', 'T');
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(normalized)) {
+    const d = new Date(normalized);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const [datePart, timePart] = normalized.split('T');
+  const [yearStr, monthStr, dayStr] = datePart.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  if (!year || !month || !day) return null;
+  let hour = 0;
+  let minute = 0;
+  let second = 0;
+  if (timePart) {
+    const timePieces = timePart.split(':');
+    hour = Number(timePieces[0] || 0);
+    minute = Number(timePieces[1] || 0);
+    const secRaw = (timePieces[2] || '0').split('.')[0];
+    second = Number(secRaw || 0);
+  }
+  return makeZonedDate(timeZone, year, month, day, hour, minute, second, 0);
+}
+
 function resolveRange(frequency: string, explicitStart?: string, explicitEnd?: string) {
-  let end = explicitEnd ? new Date(explicitEnd) : new Date();
-  let start = explicitStart ? new Date(explicitStart) : new Date();
+  const parsedStart = explicitStart ? parseDateInZone(explicitStart, REPORT_TIMEZONE) : null;
+  const parsedEnd = explicitEnd ? parseDateInZone(explicitEnd, REPORT_TIMEZONE) : null;
+  let end = parsedEnd || new Date();
+  let start = parsedStart || new Date();
   const now = new Date();
-  if (!explicitStart || !explicitEnd) {
-    end = now;
-    start = new Date(now);
+  if (!parsedStart || !parsedEnd) {
     switch (frequency) {
       case 'daily':
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
+        start = startOfDayInZone(now, REPORT_TIMEZONE);
+        end = endOfDayInZone(now, REPORT_TIMEZONE);
         break;
-      case 'weekly':
-        start.setDate(now.getDate() - 7);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
+      case 'weekly': {
+        const startAnchor = addDaysInZone(now, -7, REPORT_TIMEZONE);
+        start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+        end = endOfDayInZone(now, REPORT_TIMEZONE);
         break;
-      case 'payperiod':
-        start.setDate(now.getDate() - 14);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
+      }
+      case 'payperiod': {
+        const startAnchor = addDaysInZone(now, -14, REPORT_TIMEZONE);
+        start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+        end = endOfDayInZone(now, REPORT_TIMEZONE);
         break;
-      case 'monthly':
-        start.setDate(now.getDate() - 30);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
+      }
+      case 'monthly': {
+        const startAnchor = addDaysInZone(now, -30, REPORT_TIMEZONE);
+        start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+        end = endOfDayInZone(now, REPORT_TIMEZONE);
         break;
-      default:
-        start.setDate(now.getDate() - 7);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
+      }
+      default: {
+        const startAnchor = addDaysInZone(now, -7, REPORT_TIMEZONE);
+        start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+        end = endOfDayInZone(now, REPORT_TIMEZONE);
         break;
+      }
     }
   }
   return { startDate: start, endDate: end };
@@ -485,48 +595,6 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
     }
 
     return finalRows;
-  }
-  if (!rows.length && hasDb()) {
-    const fallback = await dbQuery<{
-      tech_id: number | null;
-      tech_name: string | null;
-      route_name: string | null;
-      client_name: string;
-      address: string;
-    }>(
-      `select distinct on (sr.id, c.id)
-         u.id as tech_id,
-         u.name as tech_name,
-         sr.name as route_name,
-         c.name as client_name,
-         c.address
-       from clients c
-       join service_routes sr on sr.id = c.service_route_id
-       left join users u on u.id = sr.user_id
-       order by sr.id, c.id, c.name asc`
-    );
-    const seenTechClient = new Set<string>();
-    (fallback?.rows || []).forEach(row => {
-      const techClientKey = `${row.tech_id || 0}|${(row.client_name || '').trim().toLowerCase()}`;
-      if (seenTechClient.has(techClientKey)) return;
-      seenTechClient.add(techClientKey);
-      rows.push({
-        techId: row.tech_id || 0,
-        techName: row.tech_name || 'Unassigned',
-        routeName: row.route_name,
-        clientName: row.client_name,
-        address: row.address,
-        checkInTs: null,
-        checkOutTs: null,
-        visitDate: null,
-        durationMinutes: 0,
-        durationFormatted: '00:00',
-        onSiteContact: null,
-        odometerReading: null,
-        mileageDelta: 0,
-        geoValidated: false,
-      });
-    });
   }
   return rows;
 }
@@ -1432,6 +1500,40 @@ app.post('/api/admin/clients/:id/service-route', requireAuth, requireAdmin, asyn
   }
   try {
     await dbQuery('update clients set service_route_id = $1 where id = $2', [routeId, clientId]);
+    if (routeId === null) {
+      await dbQuery('delete from routes_today where client_id = $1', [clientId]);
+      return res.json({ ok: true });
+    }
+    const routeRes = await dbQuery<{ user_id: number | null }>(
+      'select user_id from service_routes where id = $1',
+      [routeId]
+    );
+    const assignedUserId = routeRes?.rows?.[0]?.user_id ?? null;
+    if (!assignedUserId) {
+      await dbQuery('delete from routes_today where client_id = $1', [clientId]);
+      return res.json({ ok: true });
+    }
+    const timeRes = await dbQuery<{ scheduled_time: string }>(
+      `select coalesce(rt.scheduled_time, v.scheduled_time, '08:30') as scheduled_time
+       from clients c
+       left join routes_today rt on rt.client_id = c.id
+       left join lateral (
+         select scheduled_time
+         from visits
+         where client_id = c.id
+         order by id desc
+         limit 1
+       ) v on true
+       where c.id = $1`,
+      [clientId]
+    );
+    const scheduledTime = timeRes?.rows?.[0]?.scheduled_time || '08:30';
+    await dbQuery(
+      `insert into routes_today (user_id, client_id, scheduled_time)
+       values ($1, $2, $3)
+       on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time`,
+      [assignedUserId, clientId, scheduledTime]
+    );
     res.json({ ok: true });
   } catch (e: any) {
     console.error('[clients/service-route] update error', e);
