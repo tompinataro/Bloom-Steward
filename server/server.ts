@@ -649,7 +649,7 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
       return `<tr><td colspan="13">&nbsp;</td></tr>`;
     }
     const isTotal = row.rowType === 'total';
-    const geoFail = row.geoValidated === false || (row.distanceFromClientFeet !== null && row.distanceFromClientFeet > 300);
+    const geoFail = row.geoValidated === false || (row.distanceFromClientFeet != null && row.distanceFromClientFeet > 300);
     const durationFlag = geoFail || !!row.durationFlag;
     const geoFlag = geoFail || !!row.geoFlag;
     const clientStyle = (durationFlag || geoFlag) ? 'color:#b91c1c;font-weight:700;' : '';
