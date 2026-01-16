@@ -272,14 +272,14 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                 <View style={styles.listMain}>
                   <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.name, 30)}</Text>
                   <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.address, 17)}</Text>
-                  {client.contact_name ? (
-                    <Text style={styles.listMetaSmall} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.contact_name, 32)}</Text>
-                  ) : null}
                 </View>
                 {showAll ? (
                   <View style={styles.routeActions}>
                     <Pressable
-                      style={styles.routePill}
+                      style={[
+                        styles.routePill,
+                        !client.service_route_name ? styles.routePillUnassigned : null,
+                      ]}
                       onPress={() => {
                         if (client.service_route_id) {
                           navigation.navigate('ServiceRoutes', { mode: 'all' });
@@ -288,7 +288,16 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                         }
                       }}
                     >
-                      <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Place in route'}</Text>
+                      <Text
+                        style={[
+                          styles.routePillText,
+                          !client.service_route_name ? styles.routePillTextUnassigned : null,
+                        ]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {client.service_route_name || 'Place in route'}
+                      </Text>
                     </Pressable>
                   </View>
                 ) : (
@@ -370,11 +379,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.card,
   },
-  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.75), flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' },
-  listMain: { flexGrow: 1, flexShrink: 1, minWidth: '55%', maxWidth: '100%', gap: spacing(0.25) },
+  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.75), flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between' },
+  listMain: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '60%', gap: spacing(0.25) },
   listName: { fontWeight: '600', color: colors.text },
   listMeta: { color: colors.text },
-  listMetaSmall: { color: colors.muted },
   emptyCopy: { color: colors.muted },
   dropdown: {
     borderWidth: 1,
@@ -394,9 +402,11 @@ const styles = StyleSheet.create({
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  routeActions: { flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing(1), flexWrap: 'wrap', minWidth: '40%' },
-  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), minWidth: 120, alignItems: 'center', flexShrink: 1, maxWidth: '100%' },
-  routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center', flexShrink: 1 },
+  routeActions: { flexGrow: 0, flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing(1) },
+  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), minWidth: 88, alignItems: 'center', flexShrink: 1, maxWidth: 120 },
+  routePillUnassigned: { backgroundColor: colors.primary, borderColor: colors.primary },
+  routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center', flexShrink: 1, fontSize: 13 },
+  routePillTextUnassigned: { color: colors.card, fontSize: 11 },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },

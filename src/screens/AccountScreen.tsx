@@ -93,13 +93,14 @@ const styles = StyleSheet.create({
   inlineChipText: { color: '#e11d48', fontWeight: '600', fontSize: 13 },
   sectionStack: { gap: spacing(3) },
   sectionCard: { backgroundColor: colors.card, borderRadius: 12, paddingVertical: spacing(3), paddingHorizontal: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
-  sectionHeading: { fontSize: 18, fontWeight: '700', color: colors.text },
+  sectionHeading: { fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center' },
   sectionButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     columnGap: spacing(2),
     rowGap: spacing(1.25),
+    justifyContent: 'center',
   },
-  sectionButton: { width: '46%', minWidth: 140, paddingVertical: spacing(1.5) },
-  reportButton: { width: '100%' },
+  sectionButton: { width: '40%', minWidth: 120, paddingVertical: spacing(1.25) },
+  reportButton: { width: '70%', alignSelf: 'center' },
 });
