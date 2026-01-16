@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Share, Pressable, Linking } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -19,7 +19,7 @@ const formatRouteAddress = (address?: string | null) => {
   return truncateText(street, 26);
 };
 
-export default function AllServiceRoutesScreen(_props: Props) {
+export default function AllServiceRoutesScreen({ navigation }: Props) {
   const { token } = useAuth();
   const [routes, setRoutes] = useState<ServiceRoute[]>([]);
   const [clients, setClients] = useState<AdminClient[]>([]);
@@ -65,6 +65,18 @@ export default function AllServiceRoutesScreen(_props: Props) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: routes.length
+        ? () => (
+            <Pressable style={styles.headerChip} onPress={shareRoutes}>
+              <Text style={styles.headerChipText}>Email List</Text>
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [navigation, routes.length]);
 
   const clientsByRoute = routes.reduce<Record<number, AdminClient[]>>((acc, route) => {
     const list = clients.filter(c => c.service_route_id === route.id);
@@ -118,14 +130,6 @@ export default function AllServiceRoutesScreen(_props: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>All Service Routes</Text>
-          {routes.length > 0 ? (
-            <Pressable style={styles.shareChip} onPress={shareRoutes}>
-              <Text style={styles.shareChipText}>Email This List</Text>
-            </Pressable>
-          ) : null}
-        </View>
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : routes.length === 0 ? (
@@ -227,23 +231,21 @@ function RouteAssignModal({
 const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
   empty: { color: colors.muted },
   routeBlock: { paddingTop: spacing(1.5), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, gap: spacing(0.75) },
   routeHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing(1.5) },
   routeName: { fontSize: 18, fontWeight: '700', color: colors.text, flex: 1 },
   routeTech: { color: colors.muted },
-  sortButton: { width: 22, height: 22, justifyContent: 'center', alignItems: 'center' },
-  sortDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
+  sortButton: { width: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
+  sortDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5 },
   sortDotFilled: { backgroundColor: colors.text, borderColor: colors.text },
   sortDotEmpty: { backgroundColor: 'transparent', borderColor: colors.text },
   clientLine: { color: colors.text, paddingLeft: spacing(1) },
   modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
   modalCard: { width: '100%', maxWidth: 380, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: spacing(1) },
-  shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
-  shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(5.5) },
+  headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
   secondaryChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   secondaryChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
 });

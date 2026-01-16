@@ -419,6 +419,6 @@ const styles = StyleSheet.create({
   modalOptionSub: { fontSize: 13, color: colors.muted },
   cardHeader: { flexDirection: 'row', gap: spacing(2), width: '100%' },
   cardHeaderCentered: { alignItems: 'center', justifyContent: 'center' },
-  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(1) },
+  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(5.5) },
   headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
 });

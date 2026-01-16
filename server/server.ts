@@ -1531,6 +1531,24 @@ app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) 
   }
 });
 
+app.delete('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const clientId = Number(req.params.id);
+  if (!clientId || Number.isNaN(clientId)) {
+    return res.status(400).json({ ok: false, error: 'invalid client id' });
+  }
+  try {
+    const result = await dbQuery<{ id: number }>('delete from clients where id = $1 returning id', [clientId]);
+    if (!result?.rows?.length) {
+      return res.status(404).json({ ok: false, error: 'client not found' });
+    }
+    return res.json({ ok: true, id: clientId });
+  } catch (e: any) {
+    console.error('[admin/clients] delete error', e);
+    return res.status(500).json({ ok: false, error: 'failed to delete client' });
+  }
+});
+
 app.post('/api/admin/routes/assign', requireAuth, requireAdmin, async (req, res) => {
   if (!ensureDatabase(res)) return;
   const { clientId, userId, scheduledTime } = req.body ?? {};

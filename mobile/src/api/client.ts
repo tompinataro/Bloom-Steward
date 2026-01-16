@@ -321,6 +321,16 @@ export async function adminUpdateClient(
   });
 }
 
+export async function adminDeleteClient(
+  token: string,
+  clientId: number
+): Promise<{ ok: boolean; id?: number }> {
+  return fetchJson(withBase(`/api/admin/clients/${clientId}`), {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export type ReportSummaryRow = {
   techId: number;
   techName: string;

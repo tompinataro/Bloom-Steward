@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking, Platform } from 'react-native';
+import { Alert, ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking, Platform } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
 import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,6 +12,7 @@ import {
   adminFetchClients,
   adminFetchServiceRoutes,
   adminSetClientRoute,
+  adminDeleteClient,
   adminUpdateClient,
   AdminClient,
   ServiceRoute
@@ -50,6 +51,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const [editLatitude, setEditLatitude] = useState('');
   const [editLongitude, setEditLongitude] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingEdit, setDeletingEdit] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -240,6 +242,39 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     } finally {
       setSavingEdit(false);
     }
+  };
+
+  const confirmDelete = () => {
+    if (!editClient) return;
+    const handleDelete = async () => {
+      if (!token || !editClient) return;
+      setDeletingEdit(true);
+      try {
+        await Promise.all(editClient.duplicateIds.map(id => adminDeleteClient(token, id)));
+        showBanner({ type: 'success', message: 'Client deleted.' });
+        setEditClient(null);
+        await load();
+      } catch (err: any) {
+        showBanner({ type: 'error', message: err?.message || 'Unable to delete client.' });
+      } finally {
+        setDeletingEdit(false);
+      }
+    };
+    if (Platform.OS === 'web') {
+      const ok = window.confirm('Are you sure you want to delete this Client Location?');
+      if (ok) {
+        handleDelete();
+      }
+      return;
+    }
+    Alert.alert(
+      'Delete Client Location',
+      'Are you sure you want to delete this Client Location?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: handleDelete },
+      ]
+    );
   };
 
   const shareClients = async () => {
@@ -558,6 +593,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
               autoCorrect={false}
             />
             <ThemedButton title={savingEdit ? 'Saving...' : 'Save'} onPress={saveEdit} disabled={savingEdit} />
+            <ThemedButton title={deletingEdit ? 'Deleting...' : 'Delete'} variant="outline" onPress={confirmDelete} disabled={deletingEdit} />
             <ThemedButton title="Cancel" variant="outline" onPress={() => setEditClient(null)} />
           </View>
         </View>
@@ -637,6 +673,6 @@ const styles = StyleSheet.create({
   modalOptionSub: { fontSize: 13, color: colors.muted },
   cardHeader: { flexDirection: 'row', gap: spacing(2), width: '100%' },
   cardHeaderCentered: { alignItems: 'center', justifyContent: 'center' },
-  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(1) },
+  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(5.5) },
   headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
 });
