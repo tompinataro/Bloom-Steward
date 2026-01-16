@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking, Platform } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
 import * as Location from 'expo-location';
@@ -78,6 +78,22 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   useEffect(() => {
     navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
   }, [navigation, showAll]);
+
+  const uniqueClients = useUniqueClients(clients);
+  const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
+  const listToRender = showAll ? uniqueClients : unassignedClients;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: showAll && uniqueClients.length
+        ? () => (
+            <Pressable style={styles.headerChip} onPress={shareClients}>
+              <Text style={styles.headerChipText}>Email List</Text>
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [navigation, showAll, uniqueClients.length]);
 
   const buildFullAddress = (streetRaw: string, cityRaw: string, stateRaw: string, zipRaw: string) => {
     const street = streetRaw.trim();
@@ -225,10 +241,6 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       setSavingEdit(false);
     }
   };
-
-  const uniqueClients = useUniqueClients(clients);
-  const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
-  const listToRender = showAll ? uniqueClients : unassignedClients;
 
   const shareClients = async () => {
     if (!uniqueClients.length) {
@@ -379,15 +391,11 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         </View>
       )}
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          {showAll && uniqueClients.length ? (
-            <Pressable style={styles.shareChip} onPress={shareClients}>
-              <Text style={styles.shareChipText}>Email This List</Text>
-            </Pressable>
-          ) : null}
-          {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}
-          {showAll && <Text style={styles.instructionText}>(Tap to see Route)</Text>}
-        </View>
+        {!showAll && (
+          <View style={[styles.cardHeader, styles.cardHeaderCentered]}>
+            <Text style={styles.subTitle}>Locations Awaiting Placement</Text>
+          </View>
+        )}
         {listToRender.length === 0 ? (
           <Text style={styles.emptyCopy}>
             {showAll ? 'No client locations yet.' : 'No unplaced client locations at this time.'}
@@ -585,7 +593,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing(3), gap: spacing(2.5) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(2), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  subTitle: { fontSize: 16, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  subTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -627,8 +635,8 @@ const styles = StyleSheet.create({
   editPillText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
-  shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
-  shareChipText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  instructionText: { fontSize: 14, color: colors.text, fontWeight: '700' },
-  cardHeader: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing(2) },
+  cardHeader: { flexDirection: 'row', gap: spacing(2), width: '100%' },
+  cardHeaderCentered: { alignItems: 'center', justifyContent: 'center' },
+  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(1) },
+  headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
 });

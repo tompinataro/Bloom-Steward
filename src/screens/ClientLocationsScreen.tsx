@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -64,6 +64,22 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   useEffect(() => {
     navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
   }, [navigation, showAll]);
+
+  const uniqueClients = useUniqueClients(clients);
+  const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
+  const listToRender = showAll ? uniqueClients : unassignedClients;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: showAll && uniqueClients.length
+        ? () => (
+            <Pressable style={styles.headerChip} onPress={shareClients}>
+              <Text style={styles.headerChipText}>Email List</Text>
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [navigation, showAll, uniqueClients.length]);
 
   const buildFullAddress = (streetRaw: string, cityRaw: string, stateRaw: string, zipRaw: string) => {
     const street = streetRaw.trim();
@@ -141,10 +157,6 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       setPickerClient(null);
     }
   };
-
-  const uniqueClients = useUniqueClients(clients);
-  const unassignedClients = uniqueClients.filter(client => !client.service_route_id);
-  const listToRender = showAll ? uniqueClients : unassignedClients;
 
   const shareClients = async () => {
     if (!uniqueClients.length) {
@@ -252,15 +264,11 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         </View>
       )}
       <View style={styles.card}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          {showAll && uniqueClients.length ? (
-            <Pressable style={styles.shareChip} onPress={shareClients}>
-              <Text style={styles.shareChipText}>Email This List</Text>
-            </Pressable>
-          ) : null}
-          {!showAll && <Text style={styles.subTitle}>Locations Awaiting Placement</Text>}
-          {showAll && <Text style={styles.instructionText}>(Tap Route to Change)</Text>}
-        </View>
+        {!showAll && (
+          <View style={[styles.cardHeader, styles.cardHeaderCentered]}>
+            <Text style={styles.subTitle}>Locations Awaiting Placement</Text>
+          </View>
+        )}
         {listToRender.length === 0 ? (
           <Text style={styles.emptyCopy}>
             {showAll ? 'No client locations yet.' : 'No unplaced client locations at this time.'}
@@ -409,7 +417,8 @@ const styles = StyleSheet.create({
   routePillTextUnassigned: { color: colors.card, fontSize: 11 },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
-  shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
-  shareChipText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  instructionText: { fontSize: 14, color: colors.muted, fontWeight: '700', marginTop: spacing(0.5) },
+  cardHeader: { flexDirection: 'row', gap: spacing(2), width: '100%' },
+  cardHeaderCentered: { alignItems: 'center', justifyContent: 'center' },
+  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(1) },
+  headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
 });

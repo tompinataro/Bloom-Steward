@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Pressable, Share, Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -39,6 +39,18 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
     load();
   }, [token]);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: techs.length
+        ? () => (
+            <Pressable style={styles.headerChip} onPress={shareTechs}>
+              <Text style={styles.headerChipText}>Email List</Text>
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [navigation, techs.length]);
+
   useFocusEffect(
     React.useCallback(() => {
       // Refresh list whenever returning to this screen
@@ -76,14 +88,6 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>All Field Technicians</Text>
-          {techs.length > 0 ? (
-            <Pressable style={styles.shareChip} onPress={shareTechs}>
-              <Text style={styles.shareChipText}>Email This List</Text>
-            </Pressable>
-          ) : null}
-        </View>
         {loading ? (
           <Text style={styles.empty}>Loading…</Text>
         ) : techs.length === 0 ? (
@@ -137,7 +141,6 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { padding: spacing(4) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
-  title: { fontSize: 16, fontWeight: '700', color: colors.text },
   empty: { color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingVertical: spacing(1.5), gap: spacing(2) },
   infoColumn: { flex: 1, gap: spacing(0.25) },
@@ -149,7 +152,6 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(1) },
   clearBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: 'transparent' },
   clearBtnText: { color: colors.text, fontWeight: '600', fontSize: 14 },
-  shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
-  shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(1) },
+  headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
 });
