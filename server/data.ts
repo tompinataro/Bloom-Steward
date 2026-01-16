@@ -24,8 +24,9 @@ async function ensureVisitForClient(clientId: number, scheduledTime: string) {
     `select id, scheduled_time from visits where client_id = $1 order by id desc limit 1`,
     [clientId]
   );
-  if (existing?.rows?.[0]) {
-    return existing.rows[0];
+  const last = existing?.rows?.[0];
+  if (last && last.scheduled_time === scheduledTime) {
+    return last;
   }
   const created = await dbQuery<{ id: number; scheduled_time: string }>(
     `insert into visits (client_id, scheduled_time) values ($1, $2) returning id, scheduled_time`,
@@ -108,28 +109,30 @@ async function routesFromServiceAssignments(userId: number): Promise<TodayRoute[
 export async function getTodayRoutes(userId: number): Promise<TodayRoute[]> {
   if (hasDb()) {
     const res = await dbQuery<{
-      visit_id: number;
+      client_id: number;
       client_name: string;
       address: string;
       scheduled_time: string;
     }>(
-      `select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
+      `select rt.client_id, c.name as client_name, c.address, rt.scheduled_time
        from routes_today rt
        join clients c on c.id = rt.client_id
-       join lateral (
-         select id, scheduled_time
-         from visits
-         where client_id = c.id and scheduled_time = rt.scheduled_time
-         order by id desc
-         limit 1
-       ) v on true
        where rt.user_id = $1
        order by rt.scheduled_time asc`,
       [userId]
     );
     const rows = res?.rows ?? [];
     if (rows.length > 0) {
-      const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+      const mapped: TodayRoute[] = [];
+      for (const row of rows) {
+        const visit = await ensureVisitForClient(row.client_id, row.scheduled_time || fallbackTimeFor(1));
+        mapped.push({
+          id: visit.id,
+          clientName: row.client_name,
+          address: row.address,
+          scheduledTime: row.scheduled_time || visit.scheduled_time || fallbackTimeFor(1),
+        });
+      }
       const deduped = dedupeByKey(dedupeById(mapped));
       try { console.log(`[getTodayRoutes] routes_today for user ${userId}: ${deduped.length}`); } catch {}
       return ensureMinimumRoutes(deduped);

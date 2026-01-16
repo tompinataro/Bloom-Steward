@@ -326,7 +326,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               placeholder="Check-in during each visit, enter name here."
               placeholderTextColor={colors.muted}
               accessibilityLabel="On-site contact"
-              returnKeyType="done"
+              returnKeyType="next"
+              blurOnSubmit
             />
           </View>
           <View style={styles.headerRow}>
@@ -349,9 +350,9 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
               onChangeText={setOdometerReading}
               placeholder="Enter current mileage"
               placeholderTextColor={colors.muted}
-              keyboardType="number-pad"
+              keyboardType="numbers-and-punctuation"
               accessibilityLabel="Odometer reading"
-              returnKeyType="done"
+              returnKeyType="next"
               blurOnSubmit
             />
           </View>
