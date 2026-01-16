@@ -480,6 +480,14 @@ export default function ReportsScreen(_props: Props) {
 
 function formatDate(value?: string | null) {
   if (!value) return '—';
+  let raw = value;
+  if (raw.includes('T')) raw = raw.split('T')[0];
+  if (raw.includes(' ')) raw = raw.split(' ')[0];
+  const parts = raw.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    const [year, month, day] = parts;
+    return `${Number(month)}/${Number(day)}/${year}`;
+  }
   try {
     const date = new Date(value);
     return date.toLocaleDateString();

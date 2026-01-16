@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking } from 'react-native';
+import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking, Platform } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -11,6 +11,7 @@ import {
   adminFetchClients,
   adminFetchServiceRoutes,
   adminSetClientRoute,
+  adminUpdateClient,
   AdminClient,
   ServiceRoute
 } from '../api/client';
@@ -34,6 +35,14 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
   const [pickerClient, setPickerClient] = useState<UniqueClient | null>(null);
+  const [editClient, setEditClient] = useState<UniqueClient | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editContactName, setEditContactName] = useState('');
+  const [editContactPhone, setEditContactPhone] = useState('');
+  const [editLatitude, setEditLatitude] = useState('');
+  const [editLongitude, setEditLongitude] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -109,6 +118,51 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       showBanner({ type: 'error', message: err?.message || 'Unable to place client in route.' });
     } finally {
       setPickerClient(null);
+    }
+  };
+
+  const openEdit = (client: UniqueClient) => {
+    setEditClient(client);
+    setEditName(client.name || '');
+    setEditAddress(client.address || '');
+    setEditContactName(client.contact_name || '');
+    setEditContactPhone(client.contact_phone || '');
+    setEditLatitude(client.latitude != null ? String(client.latitude) : '');
+    setEditLongitude(client.longitude != null ? String(client.longitude) : '');
+  };
+
+  const saveEdit = async () => {
+    if (!token || !editClient) return;
+    const trimmedName = editName.trim();
+    const trimmedAddress = editAddress.trim();
+    if (!trimmedName || !trimmedAddress) {
+      showBanner({ type: 'error', message: 'Name and address are required.' });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const lat = editLatitude.trim();
+      const lng = editLongitude.trim();
+      const latValue = lat ? Number(lat) : undefined;
+      const lngValue = lng ? Number(lng) : undefined;
+      const payload = {
+        name: trimmedName,
+        address: trimmedAddress,
+        contact_name: editContactName.trim() || undefined,
+        contact_phone: editContactPhone.trim() || undefined,
+        latitude: Number.isFinite(latValue as number) ? (latValue as number) : undefined,
+        longitude: Number.isFinite(lngValue as number) ? (lngValue as number) : undefined,
+      };
+      await Promise.all(
+        editClient.duplicateIds.map(id => adminUpdateClient(token, { id, ...payload }))
+      );
+      showBanner({ type: 'success', message: 'Client updated.' });
+      setEditClient(null);
+      await load();
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to update client.' });
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -189,7 +243,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setLatitude}
             placeholder="Latitude (optional)"
             placeholderTextColor={colors.muted}
-            keyboardType="numeric"
+            keyboardType="default"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           <TextInput
             style={styles.input}
@@ -197,7 +253,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setLongitude}
             placeholder="Longitude (optional)"
             placeholderTextColor={colors.muted}
-            keyboardType="numeric"
+            keyboardType="default"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
         </View>
@@ -228,20 +286,25 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                   ) : null}
                 </View>
                 {showAll ? (
-                  <View style={styles.routeActions}>
-                    <Pressable
-                      style={styles.routePill}
-                      onPress={() => {
-                        if (client.service_route_id) {
-                          navigation.navigate('ServiceRoutes', { mode: 'all' });
-                        } else {
-                          setPickerClient(client);
-                        }
-                      }}
-                    >
-                      <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Place in route'}</Text>
+                  <>
+                    <Pressable style={styles.editPill} onPress={() => openEdit(client)}>
+                      <Text style={styles.editPillText}>Edit</Text>
                     </Pressable>
-                  </View>
+                    <View style={styles.routeActions}>
+                      <Pressable
+                        style={styles.routePill}
+                        onPress={() => {
+                          if (client.service_route_id) {
+                            navigation.navigate('ServiceRoutes', { mode: 'all' });
+                          } else {
+                            setPickerClient(client);
+                          }
+                        }}
+                      >
+                        <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Place in route'}</Text>
+                      </Pressable>
+                    </View>
+                  </>
                 ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
                     <Text style={styles.dropdownText} numberOfLines={1} ellipsizeMode="tail">
@@ -277,6 +340,69 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
               </Pressable>
             </ScrollView>
             <ThemedButton title="Cancel" variant="outline" onPress={() => setPickerClient(null)} />
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={!!editClient}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditClient(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit Client Location</Text>
+            <TextInput
+              style={styles.input}
+              value={editName}
+              onChangeText={setEditName}
+              placeholder="Client name"
+              placeholderTextColor={colors.muted}
+            />
+            <TextInput
+              style={styles.input}
+              value={editAddress}
+              onChangeText={setEditAddress}
+              placeholder="Service address"
+              placeholderTextColor={colors.muted}
+            />
+            <TextInput
+              style={styles.input}
+              value={editContactName}
+              onChangeText={setEditContactName}
+              placeholder="Primary contact (optional)"
+              placeholderTextColor={colors.muted}
+            />
+            <TextInput
+              style={styles.input}
+              value={editContactPhone}
+              onChangeText={setEditContactPhone}
+              placeholder="Contact phone (optional)"
+              placeholderTextColor={colors.muted}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.input}
+              value={editLatitude}
+              onChangeText={setEditLatitude}
+              placeholder="Latitude (optional)"
+              placeholderTextColor={colors.muted}
+              keyboardType="default"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={styles.input}
+              value={editLongitude}
+              onChangeText={setEditLongitude}
+              placeholder="Longitude (optional)"
+              placeholderTextColor={colors.muted}
+              keyboardType="default"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <ThemedButton title={savingEdit ? 'Saving...' : 'Save'} onPress={saveEdit} disabled={savingEdit} />
+            <ThemedButton title="Cancel" variant="outline" onPress={() => setEditClient(null)} />
           </View>
         </View>
       </Modal>
@@ -352,5 +478,5 @@ const styles = StyleSheet.create({
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   shareChipText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  instructionText: { fontSize: 14, color: colors.muted, fontWeight: '700', marginTop: spacing(0.5) },
+  instructionText: { fontSize: 14, color: colors.text, fontWeight: '700', marginTop: spacing(0.5) },
 });

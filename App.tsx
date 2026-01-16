@@ -92,7 +92,7 @@ function RootNavigator() {
         })}
       />
       <Stack.Screen name="About" component={AboutScreen} />
-      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Admin' }} />
+      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Admin Home' }} />
       <Stack.Screen name="FieldTechnicians" component={FieldTechniciansScreen} options={{ title: 'Field Technicians' }} />
       <Stack.Screen name="ClientLocations" component={ClientLocationsScreen} options={{ title: 'Client Locations' }} />
       <Stack.Screen name="ServiceRoutes" component={ServiceRoutesScreen} options={{ title: 'Service Routes' }} />

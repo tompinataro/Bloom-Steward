@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -14,7 +14,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'LoginForm'>;
 
 export default function LoginFormScreen(_props: Props) {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('marc@bloomsteward.com');
+  const { width, height } = useWindowDimensions();
+  const maxContentWidth = Math.min(width - spacing(6), 420);
+  const contentWidth = Math.max(280, maxContentWidth);
+  const isShort = height < 700;
+  const logoSize = Math.min(contentWidth, Math.round(height * (isShort ? 0.26 : 0.3)));
+  const paddingTop = isShort ? spacing(8) : spacing(12);
+  const paddingBottom = isShort ? spacing(8) : spacing(10);
+  const paddingHorizontal = isShort ? spacing(4) : spacing(6);
+  const [email, setEmail] = useState('tom@pinataro.com');
   const [password, setPassword] = useState('');
   const [initialOdometer, setInitialOdometer] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +48,20 @@ export default function LoginFormScreen(_props: Props) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 160 : 0}>
       <SafeAreaView edges={["top"]} style={styles.safeTop}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={true} bounces={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          {
+            maxWidth: contentWidth,
+            paddingTop,
+            paddingBottom,
+            paddingHorizontal,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={true}
+        bounces={false}
+      >
         <View style={styles.inputsSection}>
           <TextInput
             style={styles.input}
@@ -88,7 +109,7 @@ export default function LoginFormScreen(_props: Props) {
             <ThemedButton title="Log In" onPress={onSubmit} style={styles.fullWidthBtn} />
           )}
         </View>
-        <View style={styles.logoFrame}>
+        <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
           <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
         </View>
       </ScrollView>
@@ -103,11 +124,9 @@ import { Image } from 'react-native';
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   safeTop: { flex: 1 },
-  content: { flexGrow: 1, width: '100%', maxWidth: 420, alignItems: 'center', gap: spacing(2), paddingHorizontal: spacing(6), paddingBottom: spacing(10), paddingTop: spacing(12), justifyContent: 'space-between', alignSelf: 'center' },
+  content: { flexGrow: 1, width: '100%', alignItems: 'center', gap: spacing(2), justifyContent: 'space-between', alignSelf: 'center' },
   inputsSection: { width: '100%', gap: spacing(3) },
   logoFrame: {
-    width: '100%',
-    aspectRatio: 1,
     borderWidth: 3,
     borderColor: '#000',
     borderRadius: 24,
@@ -122,4 +141,3 @@ const styles = StyleSheet.create({
   fullWidthBtn: { alignSelf: 'stretch', marginTop: spacing(2) },
   error: { color: colors.danger, marginTop: spacing(2) },
 });
-

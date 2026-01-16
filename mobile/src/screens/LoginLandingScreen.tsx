@@ -1,48 +1,128 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
-import type { RootStackParamList } from '../navigationTypes';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, useWindowDimensions, TextInput, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../auth';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
+import { showBanner } from '../components/globalBannerBus';
 
 export default function LoginLandingScreen() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const { signIn } = useAuth();
+  const { width, height } = useWindowDimensions();
+  const maxContentWidth = Math.min(width - spacing(6), 420);
+  const contentWidth = Math.max(280, maxContentWidth);
+  const isShort = height < 700;
+  const logoSize = Math.min(contentWidth, Math.round(height * (isShort ? 0.34 : 0.4)));
+  const verticalPad = isShort ? spacing(4) : spacing(6);
+  const gap = isShort ? spacing(2) : spacing(3);
+  const [email, setEmail] = useState('tom@pinataro.com');
+  const [password, setPassword] = useState('');
+  const [initialOdometer, setInitialOdometer] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async () => {
+    setLoading(true);
+    try {
+      await signIn(email, password, initialOdometer.trim() || undefined);
+      if (initialOdometer.trim()) {
+        await AsyncStorage.setItem('dailyInitialOdometer', initialOdometer.trim());
+      }
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      showBanner({ type: 'error', message: `Login failed - ${msg}` });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.logoFrame}>
-          <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.rightsText}>All Rights Reserved. ©️ 2024, 2025</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingVertical: verticalPad, gap }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.content, { maxWidth: contentWidth }]}>
+          <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
+            <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+            <Text style={styles.rightsText}>All Rights Reserved. ©️ 2026</Text>
+          </View>
+          <Text style={styles.heading}>The Field Tech&#39;s Favorite Dashboard</Text>
+          <Text style={styles.subtitle}>A Tixpy App</Text>
+          <View style={styles.inputsSection}>
+            <TextInput
+              style={styles.input}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email"
+              placeholderTextColor={colors.muted}
+              returnKeyType="next"
+              autoComplete="email"
+              textContentType="username"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={styles.input}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              placeholderTextColor={colors.muted}
+              returnKeyType="next"
+              onSubmitEditing={onSubmit}
+              textContentType="oneTimeCode"
+              autoComplete="off"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              value={initialOdometer}
+              onChangeText={setInitialOdometer}
+              placeholder="Starting Odometer (optional)"
+              placeholderTextColor={colors.muted}
+              returnKeyType="done"
+              autoComplete="off"
+              autoCorrect={false}
+              blurOnSubmit={false}
+            />
+          </View>
         </View>
-        <Text style={styles.heading}>The Field Tech&#39;s Favorite Dashboard</Text>
-        <Text style={styles.subtitle}>A Tixpy App</Text>
-      </View>
-      <View style={styles.footer}>
-        <ThemedButton
-          title="Log In"
-          onPress={() => navigation.navigate('LoginForm')}
-          style={styles.fullWidthBtn}
-        />
-      </View>
-    </View>
+        <View style={[styles.footer, { maxWidth: contentWidth }]}>
+          {loading ? (
+            <ActivityIndicator />
+          ) : (
+            <ThemedButton
+              title="Log In"
+              onPress={onSubmit}
+              style={styles.halfWidthBtn}
+            />
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
-    flex: 1,
+  safe: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flexGrow: 1,
     width: '100%',
-    maxWidth: 420,
+    backgroundColor: colors.background,
     alignItems: 'center',
-    gap: spacing(3),
-    padding: spacing(6),
-    justifyContent: 'center',
-    alignSelf: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing(4),
   },
-  logoFrame: {
+  content: {
     width: '100%',
-    aspectRatio: 1,
+    alignItems: 'center',
+    gap: spacing(2),
+    justifyContent: 'center',
+  },
+  inputsSection: { width: '100%', gap: spacing(2) },
+  logoFrame: {
     borderWidth: 3,
     borderColor: '#000',
     borderRadius: 24,
@@ -57,9 +137,9 @@ const styles = StyleSheet.create({
   rightsText: { position: 'absolute', bottom: 8, left: 12, right: 12, textAlign: 'center', fontSize: 11, color: colors.muted },
   footer: {
     width: '100%',
-    maxWidth: 420,
-    padding: spacing(6),
     alignSelf: 'center',
+    alignItems: 'center',
   },
-  fullWidthBtn: { alignSelf: 'stretch' },
+  input: { width: '100%', borderColor: colors.border, color: colors.text, borderWidth: 1, padding: spacing(3), borderRadius: 8, backgroundColor: colors.card },
+  halfWidthBtn: { alignSelf: 'center', width: '50%' },
 });
