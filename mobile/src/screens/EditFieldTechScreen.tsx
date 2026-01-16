@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Alert, View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { colors, spacing } from '../theme';
 import { useAuth } from '../auth';
-import { adminUpdateUser, adminClearRoutesForTech } from '../api/client';
+import { adminUpdateUser, adminDeleteUser } from '../api/client';
 import { showBanner } from '../components/globalBannerBus';
 import ThemedButton from '../components/Button';
 
@@ -14,6 +14,7 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [password, setPassword] = useState(user?.managed_password ?? '');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function onSave() {
     if (!token || !user?.id) {
@@ -38,6 +39,30 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
       setSaving(false);
     }
   }
+
+  const confirmDelete = () => {
+    if (!token || !user?.id) return;
+    const handleDelete = async () => {
+      setDeleting(true);
+      try {
+        await adminDeleteUser(token, user.id);
+        showBanner({ type: 'success', message: 'Field tech deleted.' });
+        navigation.goBack();
+      } catch (e: any) {
+        showBanner({ type: 'error', message: e?.message || 'Unable to delete field tech.' });
+      } finally {
+        setDeleting(false);
+      }
+    };
+    Alert.alert(
+      'Delete Field Technician',
+      'Are you sure you want to delete this Field Technician?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: handleDelete },
+      ]
+    );
+  };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.background }}>
@@ -68,6 +93,12 @@ export default function EditFieldTechScreen({ route, navigation }: any) {
           <ThemedButton title="Cancel" variant="outline" style={{ flex: 1 }} onPress={() => navigation.goBack()} />
           <ThemedButton title={saving ? 'Saving…' : 'Save'} style={{ flex: 1 }} onPress={onSave} disabled={saving} />
         </View>
+        <ThemedButton
+          title={deleting ? 'Deleting…' : 'Delete'}
+          variant="outline"
+          onPress={confirmDelete}
+          disabled={deleting}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );

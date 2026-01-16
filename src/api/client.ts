@@ -229,6 +229,16 @@ export async function adminUpdateUser(
   });
 }
 
+export async function adminDeleteUser(
+  token: string,
+  userId: number
+): Promise<{ ok: boolean; id?: number }> {
+  return fetchJson(withBase(`/api/admin/users/${userId}`), {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export async function adminCreateClient(
   token: string,
   data: {

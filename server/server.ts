@@ -1423,6 +1423,29 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
   }
 });
 
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const userId = Number(req.params.id);
+  if (!userId || Number.isNaN(userId)) {
+    return res.status(400).json({ ok: false, error: 'invalid user id' });
+  }
+  try {
+    const roleRes = await dbQuery<{ role: string }>('select coalesce(role, \'tech\') as role from users where id = $1', [userId]);
+    const role = roleRes?.rows?.[0]?.role === 'admin' ? 'admin' : 'tech';
+    if (role === 'admin') {
+      return res.status(400).json({ ok: false, error: 'cannot delete admin user' });
+    }
+    const result = await dbQuery<{ id: number }>('delete from users where id = $1 returning id', [userId]);
+    if (!result?.rows?.length) {
+      return res.status(404).json({ ok: false, error: 'user not found' });
+    }
+    return res.json({ ok: true, id: userId });
+  } catch (e: any) {
+    console.error('[admin/users] delete error', e);
+    return res.status(500).json({ ok: false, error: 'failed to delete user' });
+  }
+});
+
 app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
   if (!ensureDatabase(res)) return;
   const { name, address, contactName, contactPhone, latitude, longitude } = req.body ?? {};
