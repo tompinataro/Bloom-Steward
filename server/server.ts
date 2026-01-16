@@ -1437,6 +1437,56 @@ app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
   return res.json({ ok: true, client });
 });
 
+app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) => {
+  if (!ensureDatabase(res)) return;
+  const clientId = Number(req.params.id);
+  if (!clientId || Number.isNaN(clientId)) {
+    return res.status(400).json({ ok: false, error: 'invalid client id' });
+  }
+  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+  const address = typeof req.body?.address === 'string' ? req.body.address.trim() : '';
+  const contactName = typeof req.body?.contact_name === 'string' ? req.body.contact_name.trim() : '';
+  const contactPhone = typeof req.body?.contact_phone === 'string' ? req.body.contact_phone.trim() : '';
+  const latInput = req.body?.latitude;
+  const lngInput = req.body?.longitude;
+  const latitude = latInput === null || latInput === undefined || latInput === '' ? null : Number(latInput);
+  const longitude = lngInput === null || lngInput === undefined || lngInput === '' ? null : Number(lngInput);
+  if (!name || !address) {
+    return res.status(400).json({ ok: false, error: 'name and address required' });
+  }
+  if ((latitude !== null && Number.isNaN(latitude)) || (longitude !== null && Number.isNaN(longitude))) {
+    return res.status(400).json({ ok: false, error: 'invalid latitude/longitude' });
+  }
+  try {
+    const result = await dbQuery<{
+      id: number;
+      name: string;
+      address: string;
+      contact_name: string | null;
+      contact_phone: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    }>(
+      `update clients
+         set name = $1,
+             address = $2,
+             contact_name = $3,
+             contact_phone = $4,
+             latitude = $5,
+             longitude = $6
+       where id = $7
+       returning id, name, address, contact_name, contact_phone, latitude, longitude`,
+      [name, address, contactName || null, contactPhone || null, latitude, longitude, clientId]
+    );
+    const client = result?.rows?.[0];
+    if (!client) return res.status(404).json({ ok: false, error: 'client not found' });
+    return res.json({ ok: true, client });
+  } catch (e: any) {
+    console.error('[admin/clients] update error', e);
+    return res.status(500).json({ ok: false, error: 'failed to update client' });
+  }
+});
+
 app.post('/api/admin/routes/assign', requireAuth, requireAdmin, async (req, res) => {
   if (!ensureDatabase(res)) return;
   const { clientId, userId, scheduledTime } = req.body ?? {};
