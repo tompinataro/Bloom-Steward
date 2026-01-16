@@ -1172,8 +1172,8 @@ app.post('/api/visit-state/reset', requireAuth, async (req, res) => {
 app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
   if (!ensureDatabase(res)) return;
   try {
-    const q = await dbQuery<{ id: number; email: string; name: string; role: string; managed_password: string | null }>(
-      'select id, email, name, coalesce(role, \'tech\') as role, managed_password from users order by id asc'
+    const q = await dbQuery<{ id: number; email: string; name: string; role: string; managed_password: string | null; phone: string | null }>(
+      'select id, email, name, coalesce(role, \'tech\') as role, managed_password, phone from users order by id asc'
     );
     const users = (q?.rows ?? []).map((u) => ({ ...u, role: u.role === 'admin' ? 'admin' : 'tech' }));
     res.json({ ok: true, users });
@@ -1189,15 +1189,21 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
       `select column_name
          from information_schema.columns
         where table_name = 'clients'
-          and column_name in ('latitude','longitude')`
+          and column_name in ('latitude','longitude','city','state','zip')`
     );
     const hasLatitude = (columns?.rows || []).some(col => col.column_name === 'latitude');
     const hasLongitude = (columns?.rows || []).some(col => col.column_name === 'longitude');
+    const hasCity = (columns?.rows || []).some(col => col.column_name === 'city');
+    const hasState = (columns?.rows || []).some(col => col.column_name === 'state');
+    const hasZip = (columns?.rows || []).some(col => col.column_name === 'zip');
     const select = `
        select
          c.id,
          c.name,
          c.address,
+         ${hasCity ? 'c.city' : 'null as city'},
+         ${hasState ? 'c.state' : 'null as state'},
+         ${hasZip ? 'c.zip' : 'null as zip'},
          c.contact_name,
          c.contact_phone,
          sr.id as service_route_id,
@@ -1213,6 +1219,9 @@ app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
       id: number;
       name: string;
       address: string;
+      city: string | null;
+      state: string | null;
+      zip: string | null;
       contact_name: string | null;
       contact_phone: string | null;
       service_route_id: number | null;
@@ -1284,6 +1293,24 @@ function generatePassword(): string {
     out += digits[bytes[i] % digits.length];
   }
   return out;
+}
+
+function buildFullAddress(streetRaw: string, cityRaw: string, stateRaw: string, zipRaw: string) {
+  const street = streetRaw.trim();
+  const city = cityRaw.trim();
+  const state = stateRaw.trim();
+  const zip = zipRaw.trim();
+  let line2 = '';
+  if (city) {
+    line2 += city;
+  }
+  if (state) {
+    line2 += line2 ? `, ${state}` : state;
+  }
+  if (zip) {
+    line2 += line2 ? ` ${zip}` : zip;
+  }
+  return line2 ? `${street}, ${line2}` : street;
 }
 
 app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
@@ -1404,21 +1431,28 @@ app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
   if (!trimmedName || !trimmedAddress) {
     return res.status(400).json({ ok: false, error: 'name and address required' });
   }
+  const city = typeof req.body?.city === 'string' ? req.body.city.trim() : '';
+  const stateCode = typeof req.body?.state === 'string' ? req.body.state.trim() : '';
+  const zip = typeof req.body?.zip === 'string' ? req.body.zip.trim() : '';
+  const formattedAddress = buildFullAddress(trimmedAddress, city, stateCode, zip);
   const latValue = latitude !== undefined && latitude !== null ? Number(latitude) : null;
   const lngValue = longitude !== undefined && longitude !== null ? Number(longitude) : null;
   const result = await dbQuery<{
     id: number;
     name: string;
     address: string;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
     contact_name: string | null;
     contact_phone: string | null;
     latitude: number | null;
     longitude: number | null;
   }>(
-    `insert into clients (name, address, contact_name, contact_phone, latitude, longitude)
-     values ($1, $2, nullif($3, ''), nullif($4, ''), $5, $6)
-     returning id, name, address, contact_name, contact_phone, latitude, longitude`,
-    [trimmedName, trimmedAddress, contactName || null, contactPhone || null, latValue, lngValue]
+    `insert into clients (name, address, city, state, zip, contact_name, contact_phone, latitude, longitude)
+     values ($1, $2, nullif($3, ''), nullif($4, ''), nullif($5, ''), nullif($6, ''), nullif($7, ''), $8, $9)
+     returning id, name, address, city, state, zip, contact_name, contact_phone, latitude, longitude`,
+    [trimmedName, formattedAddress, city, stateCode, zip, contactName || null, contactPhone || null, latValue, lngValue]
   ).catch((e: any) => {
     const message = String(e?.message ?? '');
     if (/duplicate key value violates unique constraint/i.test(message)) {
@@ -1445,6 +1479,9 @@ app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) 
   }
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   const address = typeof req.body?.address === 'string' ? req.body.address.trim() : '';
+  const city = typeof req.body?.city === 'string' ? req.body.city.trim() : '';
+  const stateCode = typeof req.body?.state === 'string' ? req.body.state.trim() : '';
+  const zip = typeof req.body?.zip === 'string' ? req.body.zip.trim() : '';
   const contactName = typeof req.body?.contact_name === 'string' ? req.body.contact_name.trim() : '';
   const contactPhone = typeof req.body?.contact_phone === 'string' ? req.body.contact_phone.trim() : '';
   const latInput = req.body?.latitude;
@@ -1454,6 +1491,7 @@ app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) 
   if (!name || !address) {
     return res.status(400).json({ ok: false, error: 'name and address required' });
   }
+  const formattedAddress = city || stateCode || zip ? buildFullAddress(address, city, stateCode, zip) : address;
   if ((latitude !== null && Number.isNaN(latitude)) || (longitude !== null && Number.isNaN(longitude))) {
     return res.status(400).json({ ok: false, error: 'invalid latitude/longitude' });
   }
@@ -1462,6 +1500,9 @@ app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) 
       id: number;
       name: string;
       address: string;
+      city: string | null;
+      state: string | null;
+      zip: string | null;
       contact_name: string | null;
       contact_phone: string | null;
       latitude: number | null;
@@ -1470,13 +1511,16 @@ app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) 
       `update clients
          set name = $1,
              address = $2,
-             contact_name = $3,
-             contact_phone = $4,
-             latitude = $5,
-             longitude = $6
-       where id = $7
-       returning id, name, address, contact_name, contact_phone, latitude, longitude`,
-      [name, address, contactName || null, contactPhone || null, latitude, longitude, clientId]
+             city = nullif($3, ''),
+             state = nullif($4, ''),
+             zip = nullif($5, ''),
+             contact_name = $6,
+             contact_phone = $7,
+             latitude = $8,
+             longitude = $9
+       where id = $10
+       returning id, name, address, city, state, zip, contact_name, contact_phone, latitude, longitude`,
+      [name, formattedAddress, city, stateCode, zip, contactName || null, contactPhone || null, latitude, longitude, clientId]
     );
     const client = result?.rows?.[0];
     if (!client) return res.status(404).json({ ok: false, error: 'client not found' });

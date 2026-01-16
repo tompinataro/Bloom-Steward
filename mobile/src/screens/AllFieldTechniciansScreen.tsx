@@ -109,7 +109,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
                 <View style={styles.infoColumn}>
                   <Text style={styles.name}>{truncateText(user.name, 40)}</Text>
                   <Text style={styles.email}>{truncateText(`${user.email}${user.managed_password ? ` (${user.managed_password})` : ''}`, 56)}</Text>
-                  {user.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
+                  {user.phone ? <Text style={styles.email}>{user.phone}</Text> : null}
                   <Text style={styles.routeLabel}>
                     {assignedRoute ? `Assigned Route(s) = "${assignedRoute.name}"` : 'Assigned Route(s) = "Unassigned"'}
                   </Text>
@@ -162,7 +162,6 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing(1) },
   clearBtn: { paddingVertical: spacing(1), paddingHorizontal: spacing(2), borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: 'transparent' },
   clearBtnText: { color: colors.text, fontWeight: '600', fontSize: 14 },
-  phone: { color: colors.text },
   shareChip: { alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   shareChipText: { color: colors.primary, fontWeight: '600', fontSize: 12 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

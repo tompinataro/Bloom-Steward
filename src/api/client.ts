@@ -187,6 +187,9 @@ export type AdminClient = {
   id: number;
   name: string;
   address: string;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
   contact_name?: string | null;
   contact_phone?: string | null;
   assigned_user_id?: number | null;
@@ -228,7 +231,17 @@ export async function adminUpdateUser(
 
 export async function adminCreateClient(
   token: string,
-  data: { name: string; address: string; contactName?: string; contactPhone?: string; latitude?: number; longitude?: number }
+  data: {
+    name: string;
+    address: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    contactName?: string;
+    contactPhone?: string;
+    latitude?: number;
+    longitude?: number;
+  }
 ): Promise<{ ok: boolean; client: AdminClient }> {
   return fetchJson(withBase('/api/admin/clients'), {
     method: 'POST',
@@ -282,6 +295,29 @@ export async function adminSetClientRoute(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ serviceRouteId: data.serviceRouteId }),
+  });
+}
+
+export async function adminUpdateClient(
+  token: string,
+  data: {
+    id: number;
+    name: string;
+    address: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    contact_name?: string;
+    contact_phone?: string;
+    latitude?: number;
+    longitude?: number;
+  }
+): Promise<{ ok: boolean }> {
+  const { id, ...payload } = data;
+  return fetchJson(withBase(`/api/admin/clients/${id}`), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
   });
 }
 

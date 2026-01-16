@@ -24,6 +24,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const showAll = route.params?.mode === 'all';
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [region, setRegion] = useState('');
+  const [zip, setZip] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -62,6 +65,24 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
   }, [navigation, showAll]);
 
+  const buildFullAddress = (streetRaw: string, cityRaw: string, stateRaw: string, zipRaw: string) => {
+    const street = streetRaw.trim();
+    const cityPart = cityRaw.trim();
+    const statePart = stateRaw.trim();
+    const zipPart = zipRaw.trim();
+    let line2 = '';
+    if (cityPart) {
+      line2 += cityPart;
+    }
+    if (statePart) {
+      line2 += line2 ? `, ${statePart}` : statePart;
+    }
+    if (zipPart) {
+      line2 += line2 ? ` ${zipPart}` : zipPart;
+    }
+    return line2 ? `${street}, ${line2}` : street;
+  };
+
   const addClient = async () => {
     if (!token) return;
     const trimmedName = name.trim();
@@ -70,11 +91,18 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       showBanner({ type: 'error', message: 'Name and address are required.' });
       return;
     }
+    const trimmedCity = city.trim();
+    const trimmedRegion = region.trim();
+    const trimmedZip = zip.trim();
+    const fullAddress = buildFullAddress(trimmedAddress, trimmedCity, trimmedRegion, trimmedZip);
     setCreating(true);
     try {
       await adminCreateClient(token, {
         name: trimmedName,
-        address: trimmedAddress,
+        address: fullAddress,
+        city: trimmedCity || undefined,
+        state: trimmedRegion || undefined,
+        zip: trimmedZip || undefined,
         contactName: contactName.trim() || undefined,
         contactPhone: contactPhone.trim() || undefined,
         latitude: latitude ? Number(latitude) : undefined,
@@ -83,6 +111,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       showBanner({ type: 'success', message: `Added ${trimmedName}.` });
       setName('');
       setAddress('');
+      setCity('');
+      setRegion('');
+      setZip('');
       setContactName('');
       setContactPhone('');
       setLatitude('');
@@ -162,6 +193,29 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setAddress}
             placeholder="Service address"
             placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={city}
+            onChangeText={setCity}
+            placeholder="City"
+            placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={region}
+            onChangeText={setRegion}
+            placeholder="State"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="characters"
+          />
+          <TextInput
+            style={styles.input}
+            value={zip}
+            onChangeText={setZip}
+            placeholder="Zip"
+            placeholderTextColor={colors.muted}
+            keyboardType="number-pad"
           />
           <TextInput
             style={styles.input}

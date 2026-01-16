@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking, Platform } from 'react-native';
 import * as MailComposer from 'expo-mail-composer';
+import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
@@ -26,6 +27,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const showAll = route.params?.mode === 'all';
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [region, setRegion] = useState('');
+  const [zip, setZip] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -38,6 +42,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   const [editClient, setEditClient] = useState<UniqueClient | null>(null);
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editRegion, setEditRegion] = useState('');
+  const [editZip, setEditZip] = useState('');
   const [editContactName, setEditContactName] = useState('');
   const [editContactPhone, setEditContactPhone] = useState('');
   const [editLatitude, setEditLatitude] = useState('');
@@ -72,6 +79,38 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     navigation.setOptions({ title: showAll ? 'All Client Locations' : 'Client Locations' });
   }, [navigation, showAll]);
 
+  const buildFullAddress = (streetRaw: string, cityRaw: string, stateRaw: string, zipRaw: string) => {
+    const street = streetRaw.trim();
+    const cityPart = cityRaw.trim();
+    const statePart = stateRaw.trim();
+    const zipPart = zipRaw.trim();
+    let line2 = '';
+    if (cityPart) {
+      line2 += cityPart;
+    }
+    if (statePart) {
+      line2 += line2 ? `, ${statePart}` : statePart;
+    }
+    if (zipPart) {
+      line2 += line2 ? ` ${zipPart}` : zipPart;
+    }
+    return line2 ? `${street}, ${line2}` : street;
+  };
+
+  const parseAddressParts = (value: string) => {
+    const parts = value.split(',').map(part => part.trim()).filter(Boolean);
+    const street = parts[0] || value.trim();
+    const cityPart = parts[1] || '';
+    let statePart = '';
+    let zipPart = '';
+    if (parts[2]) {
+      const rest = parts[2].split(/\s+/).filter(Boolean);
+      statePart = rest[0] || '';
+      zipPart = rest.slice(1).join(' ');
+    }
+    return { street, cityPart, statePart, zipPart };
+  };
+
   const addClient = async () => {
     if (!token) return;
     const trimmedName = name.trim();
@@ -80,11 +119,18 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       showBanner({ type: 'error', message: 'Name and address are required.' });
       return;
     }
+    const trimmedCity = city.trim();
+    const trimmedRegion = region.trim();
+    const trimmedZip = zip.trim();
+    const fullAddress = buildFullAddress(trimmedAddress, trimmedCity, trimmedRegion, trimmedZip);
     setCreating(true);
     try {
       await adminCreateClient(token, {
         name: trimmedName,
-        address: trimmedAddress,
+        address: fullAddress,
+        city: trimmedCity || undefined,
+        state: trimmedRegion || undefined,
+        zip: trimmedZip || undefined,
         contactName: contactName.trim() || undefined,
         contactPhone: contactPhone.trim() || undefined,
         latitude: latitude ? Number(latitude) : undefined,
@@ -93,6 +139,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       showBanner({ type: 'success', message: `Added ${trimmedName}.` });
       setName('');
       setAddress('');
+      setCity('');
+      setRegion('');
+      setZip('');
       setContactName('');
       setContactPhone('');
       setLatitude('');
@@ -122,9 +171,13 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
   };
 
   const openEdit = (client: UniqueClient) => {
+    const fallbackParts = parseAddressParts(client.address || '');
     setEditClient(client);
     setEditName(client.name || '');
-    setEditAddress(client.address || '');
+    setEditAddress(client.address ? (client.address.split(',')[0]?.trim() || client.address) : '');
+    setEditCity(client.city || fallbackParts.cityPart);
+    setEditRegion(client.state || fallbackParts.statePart);
+    setEditZip(client.zip || fallbackParts.zipPart);
     setEditContactName(client.contact_name || '');
     setEditContactPhone(client.contact_phone || '');
     setEditLatitude(client.latitude != null ? String(client.latitude) : '');
@@ -139,6 +192,10 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       showBanner({ type: 'error', message: 'Name and address are required.' });
       return;
     }
+    const trimmedCity = editCity.trim();
+    const trimmedRegion = editRegion.trim();
+    const trimmedZip = editZip.trim();
+    const fullAddress = buildFullAddress(trimmedAddress, trimmedCity, trimmedRegion, trimmedZip);
     setSavingEdit(true);
     try {
       const lat = editLatitude.trim();
@@ -147,7 +204,10 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       const lngValue = lng ? Number(lng) : undefined;
       const payload = {
         name: trimmedName,
-        address: trimmedAddress,
+        address: fullAddress,
+        city: trimmedCity || undefined,
+        state: trimmedRegion || undefined,
+        zip: trimmedZip || undefined,
         contact_name: editContactName.trim() || undefined,
         contact_phone: editContactPhone.trim() || undefined,
         latitude: Number.isFinite(latValue as number) ? (latValue as number) : undefined,
@@ -199,6 +259,29 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     } catch {}
   };
 
+  const setLatLongToCurrentLocation = async () => {
+    if (Platform.OS === 'web') {
+      showBanner({ type: 'info', message: 'Current location is only available on mobile.' });
+      return;
+    }
+    try {
+      const status = await Location.getForegroundPermissionsAsync();
+      if (status.status !== 'granted') {
+        const req = await Location.requestForegroundPermissionsAsync();
+        if (req.status !== 'granted') {
+          showBanner({ type: 'info', message: 'Location permission denied.' });
+          return;
+        }
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setLatitude(pos.coords.latitude.toFixed(6));
+      setLongitude(pos.coords.longitude.toFixed(6));
+      showBanner({ type: 'success', message: 'Lat/long set from current location.' });
+    } catch (err: any) {
+      showBanner({ type: 'error', message: err?.message || 'Unable to read current location.' });
+    }
+  };
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -207,7 +290,6 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     >
       {!showAll && (
         <View style={styles.card}>
-          <Text style={styles.title}>Create Client Location</Text>
           <TextInput
             style={styles.input}
             value={name}
@@ -221,6 +303,29 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setAddress}
             placeholder="Service address"
             placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={city}
+            onChangeText={setCity}
+            placeholder="City"
+            placeholderTextColor={colors.muted}
+          />
+          <TextInput
+            style={styles.input}
+            value={region}
+            onChangeText={setRegion}
+            placeholder="State"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="characters"
+          />
+          <TextInput
+            style={styles.input}
+            value={zip}
+            onChangeText={setZip}
+            placeholder="Zip"
+            placeholderTextColor={colors.muted}
+            keyboardType="number-pad"
           />
           <TextInput
             style={styles.input}
@@ -257,11 +362,12 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             autoCapitalize="none"
             autoCorrect={false}
           />
+          <ThemedButton title="Set Lat/Long to Current Location" variant="outline" onPress={setLatLongToCurrentLocation} />
           <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
         </View>
       )}
       <View style={styles.card}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={styles.cardHeader}>
           {showAll && uniqueClients.length ? (
             <Pressable style={styles.shareChip} onPress={shareClients}>
               <Text style={styles.shareChipText}>Email This List</Text>
@@ -286,25 +392,23 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                   ) : null}
                 </View>
                 {showAll ? (
-                  <>
+                  <View style={styles.rowActions}>
                     <Pressable style={styles.editPill} onPress={() => openEdit(client)}>
                       <Text style={styles.editPillText}>Edit</Text>
                     </Pressable>
-                    <View style={styles.routeActions}>
-                      <Pressable
-                        style={styles.routePill}
-                        onPress={() => {
-                          if (client.service_route_id) {
-                            navigation.navigate('ServiceRoutes', { mode: 'all' });
-                          } else {
-                            setPickerClient(client);
-                          }
-                        }}
-                      >
-                        <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Place in route'}</Text>
-                      </Pressable>
-                    </View>
-                  </>
+                    <Pressable
+                      style={styles.routePill}
+                      onPress={() => {
+                        if (client.service_route_id) {
+                          navigation.navigate('ServiceRoutes', { mode: 'all' });
+                        } else {
+                          setPickerClient(client);
+                        }
+                      }}
+                    >
+                      <Text style={styles.routePillText} numberOfLines={1} ellipsizeMode="tail">{client.service_route_name || 'Place in route'}</Text>
+                    </Pressable>
+                  </View>
                 ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
                     <Text style={styles.dropdownText} numberOfLines={1} ellipsizeMode="tail">
@@ -365,6 +469,29 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
               onChangeText={setEditAddress}
               placeholder="Service address"
               placeholderTextColor={colors.muted}
+            />
+            <TextInput
+              style={styles.input}
+              value={editCity}
+              onChangeText={setEditCity}
+              placeholder="City"
+              placeholderTextColor={colors.muted}
+            />
+            <TextInput
+              style={styles.input}
+              value={editRegion}
+              onChangeText={setEditRegion}
+              placeholder="State"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="characters"
+            />
+            <TextInput
+              style={styles.input}
+              value={editZip}
+              onChangeText={setEditZip}
+              placeholder="Zip"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
             />
             <TextInput
               style={styles.input}
@@ -437,7 +564,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing(3), gap: spacing(2.5) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(2), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  subTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 16, fontWeight: '700', color: colors.text, textAlign: 'center' },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -447,7 +574,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.card,
   },
-  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.75), flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' },
+  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.75), flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   listMain: { flexGrow: 1, flexShrink: 1, minWidth: '55%', maxWidth: '100%', gap: spacing(0.25) },
   listName: { fontWeight: '600', color: colors.text },
   listMeta: { color: colors.text },
@@ -471,12 +598,15 @@ const styles = StyleSheet.create({
   modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalOption: { paddingVertical: spacing(1.5), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  routeActions: { flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing(1), flexWrap: 'wrap', minWidth: '40%' },
-  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), minWidth: 120, alignItems: 'center', flexShrink: 1, maxWidth: '100%' },
-  routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center', flexShrink: 1 },
+  rowActions: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing(3) },
+  routePill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.5), minWidth: 88, alignItems: 'center', flexShrink: 1, maxWidth: 140 },
+  routePillText: { color: colors.primary, fontWeight: '600', textAlign: 'center', flexShrink: 1, fontSize: 13 },
+  editPill: { borderColor: colors.primary, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5), alignSelf: 'center' },
+  editPillText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   modalOptionText: { fontSize: 16, color: colors.text, fontWeight: '600' },
   modalOptionSub: { fontSize: 13, color: colors.muted },
   shareChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(0.5) },
   shareChipText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  instructionText: { fontSize: 14, color: colors.text, fontWeight: '700', marginTop: spacing(0.5) },
+  instructionText: { fontSize: 14, color: colors.text, fontWeight: '700' },
+  cardHeader: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing(2) },
 });
