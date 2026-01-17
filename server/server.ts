@@ -290,8 +290,17 @@ async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]
       } else {
         const existingCheckout = !!existing.payload?.checkOutTs;
         const existingMeta = !!(existing.payload?.techNotes || existing.payload?.noteToOffice || existing.payload?.onSiteContact || existing.payload?.odometerReading);
-        // Prefer a row that has checkout or meta fields; otherwise keep the existing latest
-        if ((hasCheckout && !existingCheckout) || (hasMeta && !existingMeta)) {
+        // Always prefer a row with checkout; never replace it with a non-checkout row.
+        if (existingCheckout && !hasCheckout) {
+          continue;
+        }
+        // If this row has checkout and existing doesn't, prefer this row.
+        if (hasCheckout && !existingCheckout) {
+          latestByVisit.set(row.visit_id, row);
+          continue;
+        }
+        // Otherwise, prefer rows that add meta fields.
+        if (hasMeta && !existingMeta) {
           latestByVisit.set(row.visit_id, row);
         }
       }
