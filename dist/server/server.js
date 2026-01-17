@@ -351,6 +351,7 @@ async function buildSummary(startDate, endDate) {
     }
     // Fetch daily_start_odometer for each tech and each day in the range
     const dailyStartOdometers = new Map(); // key: "tech_id|date"
+    const fallbackStartOdometers = new Map(); // key: tech_id -> latest nonzero
     if (uniqueTechIds.length > 0 && (0, db_1.hasDb)()) {
         const startDateStr = startDate.toISOString().split('T')[0];
         const endDateStr = endDate.toISOString().split('T')[0];
@@ -364,6 +365,16 @@ async function buildSummary(startDate, endDate) {
                 // Normalize the date portion to YYYY-MM-DD in case the driver returned a Date object
                 const rowDateStr = typeof row.date === 'string' ? row.date : new Date(row.date).toISOString().split('T')[0];
                 dailyStartOdometers.set(`${row.user_id}|${rowDateStr}`, val);
+            }
+        });
+        const fallbackResult = await (0, db_1.dbQuery)(`select distinct on (user_id) user_id, odometer_reading
+       from daily_start_odometer
+       where user_id = any($1) and odometer_reading > 0 and date <= $2
+       order by user_id, date desc`, [uniqueTechIds, endDateStr]);
+        (fallbackResult?.rows || []).forEach(row => {
+            const val = typeof row.odometer_reading === 'number' ? row.odometer_reading : Number(row.odometer_reading);
+            if (!Number.isNaN(val)) {
+                fallbackStartOdometers.set(row.user_id, val);
             }
         });
     }
@@ -493,6 +504,12 @@ async function buildSummary(startDate, endDate) {
                 return (a.clientName || '').localeCompare(b.clientName || '');
             });
             let prevOdo = dailyStartOdometers.get(`${techId}|${dateStr}`);
+            if (!(typeof prevOdo === 'number' && prevOdo > 0)) {
+                const fallback = fallbackStartOdometers.get(techId);
+                if (typeof fallback === 'number' && fallback > 0) {
+                    prevOdo = fallback;
+                }
+            }
             let total = 0;
             for (const row of group) {
                 const odo = typeof row.odometerReading === 'number' ? row.odometerReading : Number(row.odometerReading);
@@ -1064,7 +1081,8 @@ exports.app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
         // If no daily start odometer exists for this user/date, seed it from this submission
         if ((0, db_1.hasDb)() && userId) {
             const rawOdo = data?.odometerReading;
-            const numericOdo = Number(String(rawOdo ?? '').replace(/[^0-9.]/g, ''));
+            const rawStr = rawOdo === null || rawOdo === undefined ? '' : String(rawOdo).trim();
+            const numericOdo = Number(rawStr.replace(/[^0-9.]/g, ''));
             const ts = data?.checkOutTs || data?.checkInTs;
             let dateStr = dayKey();
             if (ts) {
@@ -1076,7 +1094,7 @@ exports.app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
                     dateStr = String(ts).includes('T') ? String(ts).split('T')[0] : String(ts).split(' ')[0];
                 }
             }
-            if (Number.isFinite(numericOdo)) {
+            if (rawStr && Number.isFinite(numericOdo)) {
                 try {
                     await (0, db_1.dbQuery)(`insert into daily_start_odometer (user_id, date, odometer_reading)
              values ($1, $2, $3)
