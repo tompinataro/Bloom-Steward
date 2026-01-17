@@ -93,7 +93,11 @@ function RootNavigator() {
       />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Admin Home' }} />
-      <Stack.Screen name="FieldTechnicians" component={FieldTechniciansScreen} options={{ title: 'Field Technicians' }} />
+      <Stack.Screen
+        name="FieldTechnicians"
+        component={FieldTechniciansScreen}
+        options={{ title: 'Field Technicians', headerBackTitle: 'Back' }}
+      />
       <Stack.Screen
         name="ClientLocations"
         component={ClientLocationsScreen}
@@ -104,8 +108,16 @@ function RootNavigator() {
         component={ServiceRoutesScreen}
         options={{ title: 'Service Routes', headerBackTitle: 'Back' }}
       />
-      <Stack.Screen name="AllServiceRoutes" component={AllServiceRoutesScreen} options={{ title: 'All Service Routes' }} />
-      <Stack.Screen name="AllFieldTechnicians" component={AllFieldTechniciansScreen} options={{ title: 'All Field Technicians' }} />
+      <Stack.Screen
+        name="AllServiceRoutes"
+        component={AllServiceRoutesScreen}
+        options={{ title: 'All Service Routes', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="AllFieldTechnicians"
+        component={AllFieldTechniciansScreen}
+        options={{ title: 'All Field Technicians', headerBackTitle: 'Back' }}
+      />
       <Stack.Screen name="EditFieldTech" component={EditFieldTechScreen} options={{ title: 'Edit Field Tech' }} />
       <Stack.Screen
         name="Reports"
