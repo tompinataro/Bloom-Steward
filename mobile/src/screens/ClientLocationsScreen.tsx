@@ -407,7 +407,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setLatitude}
             placeholder="Latitude (optional)"
             placeholderTextColor={colors.muted}
-            keyboardType="default"
+            keyboardType="numbers-and-punctuation"
+            inputMode="decimal"
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -417,7 +418,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setLongitude}
             placeholder="Longitude (optional)"
             placeholderTextColor={colors.muted}
-            keyboardType="default"
+            keyboardType="numbers-and-punctuation"
+            inputMode="decimal"
             autoCapitalize="none"
             autoCorrect={false}
           />
@@ -469,14 +471,14 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                         numberOfLines={1}
                         ellipsizeMode="tail"
                       >
-                        {client.service_route_name || 'Place in route'}
+                        {client.service_route_name || 'Pl in route'}
                       </Text>
                     </Pressable>
                   </View>
                 ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
                     <Text style={styles.dropdownText} numberOfLines={1} ellipsizeMode="tail">
-                      {client.service_route_name || 'Place in route'}
+                      {client.service_route_name || 'Pl in route'}
                     </Text>
                   </Pressable>
                 )}
@@ -578,7 +580,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
               onChangeText={setEditLatitude}
               placeholder="Latitude (optional)"
               placeholderTextColor={colors.muted}
-              keyboardType="default"
+              keyboardType="numbers-and-punctuation"
+              inputMode="decimal"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -588,7 +591,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
               onChangeText={setEditLongitude}
               placeholder="Longitude (optional)"
               placeholderTextColor={colors.muted}
-              keyboardType="default"
+              keyboardType="numbers-and-punctuation"
+              inputMode="decimal"
               autoCapitalize="none"
               autoCorrect={false}
             />

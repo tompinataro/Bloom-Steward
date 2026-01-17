@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, memo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, memo, useRef, useLayoutEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Linking, Platform, Pressable, Animated, AppState, AppStateStatus, Easing, GestureResponderEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -35,6 +35,17 @@ export default function RouteListScreen({ navigation, route }: Props) {
       navigation.setOptions({ title: '' });
     }
   }, [user?.name, navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: title,
+      headerRight: () => (
+        <Pressable style={styles.resetChip} onPress={triggerReset} accessibilityRole="button" accessibilityLabel="Reset route state">
+          <Text style={styles.resetChipText}>Reset</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, title]);
 
   const dedupeRoutes = (items: TodayRoute[]) => {
     // Always collapse by visit id first (protects legitimate duplicates)
@@ -314,7 +325,7 @@ type ItemProps = {
           <View style={styles.rowTop}>
             <View style={styles.leftWrap}>
               <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName, 14)}</Text>
-              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(streetOnly, 28)}</Text>
+              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(streetOnly, 22)}</Text>
             </View>
             <View style={styles.centerWrap}>
               <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />
@@ -391,14 +402,6 @@ type ItemProps = {
 
   return (
     <>
-      <SafeAreaView edges={['top']}>
-        <View style={styles.headerRow}>
-          <Text style={styles.screenTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
-          <Pressable style={styles.resetChip} onPress={triggerReset} accessibilityRole="button" accessibilityLabel="Reset route state">
-            <Text style={styles.resetChipText}>Reset</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
       {error ? (
         <View style={styles.errorWrap}>
           <ThemedButton title="Retry" variant="outline" onPress={load} style={styles.retryBtn} />

@@ -113,7 +113,7 @@ export default function ReportsScreen(_props: Props) {
         endDate: customEnd,
       });
       setSummary(res.rows || []);
-      setRangeText(`${formatDate(res.range.start)} – ${formatDate(res.range.end)}`);
+      setRangeText(buildRangeLabel(res.range, previewFrequency, customStartIso, customEndIso));
     } catch (err: any) {
       showBanner({ type: 'error', message: err?.message || 'Unable to fetch report.' });
     } finally {
@@ -430,6 +430,21 @@ function formatDate(value?: string | null) {
   }
 }
 
+function buildRangeLabel(
+  range: { start?: string | null; end?: string | null } | undefined,
+  frequency: FrequencyValue,
+  customStartIso?: string | null,
+  customEndIso?: string | null
+) {
+  if (frequency === 'custom' && customStartIso && customEndIso) {
+    return `${formatDate(customStartIso)} – ${formatDate(customEndIso)}`;
+  }
+  if (frequency === 'daily' && range?.start) {
+    return `${formatDate(range.start)} – ${formatDate(range.start)}`;
+  }
+  return `${formatDate(range?.start)} – ${formatDate(range?.end)}`;
+}
+
 function formatCompactDate(value?: string | null) {
   if (!value) return '—';
   let raw = value;
@@ -475,10 +490,10 @@ const styles = StyleSheet.create({
   heading: { fontSize: 20, fontWeight: '700', color: colors.text },
   label: { fontWeight: '600', color: colors.text },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing(2), color: colors.text },
-  frequencyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1) },
-  frequencyBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingVertical: spacing(1), paddingHorizontal: spacing(2) },
+  frequencyRow: { flexDirection: 'row', flexWrap: 'nowrap', gap: spacing(0.5), justifyContent: 'space-between' },
+  frequencyBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingVertical: spacing(0.5), paddingHorizontal: spacing(1.25), flexShrink: 1 },
   frequencyBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  frequencyText: { color: colors.text, fontWeight: '600' },
+  frequencyText: { color: colors.text, fontWeight: '600', fontSize: 12 },
   frequencyTextActive: { color: '#fff' },
   customRangeRow: { flexDirection: 'row', gap: spacing(1), alignItems: 'center', flexWrap: 'wrap' },
   customInput: { flex: 1, minWidth: 140, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: spacing(2), paddingVertical: spacing(1.5), color: colors.text },

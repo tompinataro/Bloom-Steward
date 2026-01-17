@@ -1,7 +1,7 @@
 -- Seed admin and tech accounts
 insert into users (email, name, password_hash, role, must_change_password, managed_password, phone)
 values
-  ('marc@bloomsteward.com', 'Marc', '$2a$10$EG.3exhuFUnYzAEknAwB5.Mb7o.1FjX.lg7OD/lGibEi5LLzipUl2', 'admin', false, '83472618', '612-555-1001'),
+  ('marc@bloomsteward.com', 'Marc', '$2a$10$DyGw51hzsDpowxaXq.fUU.DaBvyIPMttE7zDqy0y/JHFVSIM7yXae', 'admin', false, 'Tom', '612-555-1001'),
   ('jacob@b.com', 'Jacob Daniels', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, 'Jacob123', '612-555-2002'),
   ('sadie@b.com', 'Sadie Percontra', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '50293847', '612-555-3003'),
   ('chris@b.com', 'Chris Lane', '$2a$10$whaYHbgK6XHqK8GwEYaCCevjhE5ah/gcyHXC4oIhrRFoTSnMlMJd.', 'tech', false, '71920485', '612-555-4004'),
@@ -31,11 +31,11 @@ update service_routes set user_id = (select id from users where email = 'derek@b
 delete from clients;
 
 insert into clients (name, address, service_route_id, latitude, longitude) values
-  ('Acme HQ', '123 Main St', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
+  ('Acme HQ', '761 58th Ave NE, Fridley, MN 55432', (select id from service_routes where name = 'North'), 44.9865, -93.2740),
   ('Marco Polo, LLC', '2017 103rd Lane NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9875, -93.2750),
   ('Sunset Mall', '789 Pine Rd', (select id from service_routes where name = 'North'), 44.9885, -93.2730),
-  ('Club 9625', '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
-  ('Palm Vista Resort', '1000 Nicollet Mall', (select id from service_routes where name = 'North'), 44.9895, -93.2720),
+  ('Club 9625', '1919 CR Blvd NW, Coon Rapids, MN 55433', (select id from service_routes where name = 'North'), 44.9855, -93.2760),
+  ('Palm Vista Resort', '910 Sago Palm Way, Apollo Beach, FL 33572', (select id from service_routes where name = 'North'), 27.77822, -82.4138332),
   ('Riverwalk Lofts', '225 3rd Ave S', (select id from service_routes where name = 'North'), 44.9865, -93.2710),
   ('Cedar Ridge', '12 Cedar Ridge Rd', (select id from service_routes where name = 'South'), 44.9645, -93.3040),
   ('Pine Grove', '88 Pine Grove Ln', (select id from service_routes where name = 'South'), 44.9655, -93.3050),

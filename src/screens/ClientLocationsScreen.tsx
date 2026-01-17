@@ -250,7 +250,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setLatitude}
             placeholder="Latitude (optional)"
             placeholderTextColor={colors.muted}
-            keyboardType="numeric"
+            keyboardType="numbers-and-punctuation"
+            inputMode="decimal"
           />
           <TextInput
             style={styles.input}
@@ -258,7 +259,8 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
             onChangeText={setLongitude}
             placeholder="Longitude (optional)"
             placeholderTextColor={colors.muted}
-            keyboardType="numeric"
+            keyboardType="numbers-and-punctuation"
+            inputMode="decimal"
           />
           <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
         </View>
@@ -304,14 +306,14 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                         numberOfLines={1}
                         ellipsizeMode="tail"
                       >
-                        {client.service_route_name || 'Place in route'}
+                        {client.service_route_name || 'Pl in route'}
                       </Text>
                     </Pressable>
                   </View>
                 ) : (
                   <Pressable style={styles.dropdown} onPress={() => setPickerClient(client)}>
                     <Text style={styles.dropdownText} numberOfLines={1} ellipsizeMode="tail">
-                      {client.service_route_name || 'Place in route'}
+                      {client.service_route_name || 'Pl in route'}
                     </Text>
                   </Pressable>
                 )}

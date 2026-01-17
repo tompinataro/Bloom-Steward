@@ -6,7 +6,7 @@ exports.saveVisit = saveVisit;
 exports.buildReportRows = buildReportRows;
 const db_1 = require("./db");
 const FALLBACK_ROUTES = [
-    { id: 104, clientName: 'Club 9625', address: '1919 CR Blvd NW, Coon Rapids, MN 55433', scheduledTime: '12:30' },
+    { id: 104, clientName: 'Club 9625', address: '1919 Coon Rapids Blvd NW, Coon Rapids, MN 55433', scheduledTime: '12:30' },
     { id: 105, clientName: 'Palm Vista', address: '910 Sago Palm Way, Apollo Beach, FL 33572', scheduledTime: '14:00' },
     { id: 106, clientName: 'Riverwalk Lofts', address: '225 3rd Ave S', scheduledTime: '15:15' },
     { id: 101, clientName: 'Acme HQ', address: '761 58th Ave NE, Fridley, MN 55432', scheduledTime: '08:30' },
@@ -14,17 +14,41 @@ const FALLBACK_ROUTES = [
     { id: 103, clientName: 'Sunset Mall', address: '789 University Ave NE, Minneapolis, MN 55413', scheduledTime: '11:15' }
 ];
 const DEFAULT_TIME_SLOTS = ['08:00', '09:15', '10:30', '11:45', '13:00', '14:15', '15:30'];
+const DEFAULT_CHECKLIST = [
+    { key: 'watered', label: 'Watered Plants', done: false },
+    { key: 'pruned', label: 'Pruned and cleaned', done: false },
+    { key: 'replaced', label: 'Replaced unhealthy plants', done: false },
+];
 function fallbackTimeFor(order) {
     const idx = Math.max(order - 1, 0) % DEFAULT_TIME_SLOTS.length;
     return DEFAULT_TIME_SLOTS[idx];
 }
 async function ensureVisitForClient(clientId, scheduledTime) {
     const existing = await (0, db_1.dbQuery)(`select id, scheduled_time from visits where client_id = $1 order by id desc limit 1`, [clientId]);
-    if (existing?.rows?.[0]) {
-        return existing.rows[0];
+    const last = existing?.rows?.[0];
+    if (last && last.scheduled_time === scheduledTime) {
+        await ensureChecklistForVisit(last.id);
+        return last;
     }
     const created = await (0, db_1.dbQuery)(`insert into visits (client_id, scheduled_time) values ($1, $2) returning id, scheduled_time`, [clientId, scheduledTime]);
-    return created?.rows?.[0] || { id: clientId, scheduled_time: scheduledTime };
+    const visit = created?.rows?.[0] || { id: clientId, scheduled_time: scheduledTime };
+    await ensureChecklistForVisit(visit.id);
+    return visit;
+}
+async function ensureChecklistForVisit(visitId) {
+    if (!(0, db_1.hasDb)())
+        return;
+    const existing = await (0, db_1.dbQuery)(`select key from visit_checklist where visit_id = $1 limit 1`, [visitId]);
+    if (existing?.rows?.length)
+        return;
+    const values = [];
+    const placeholders = [];
+    DEFAULT_CHECKLIST.forEach((item, idx) => {
+        const base = idx * 4;
+        values.push(visitId, item.key, item.label, item.done);
+        placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
+    });
+    await (0, db_1.dbQuery)(`insert into visit_checklist (visit_id, key, label, done) values ${placeholders.join(', ')}`, values);
 }
 function normalizeKey(route) {
     const name = (route.clientName || '').trim().toLowerCase();
@@ -91,21 +115,23 @@ async function routesFromServiceAssignments(userId) {
 }
 async function getTodayRoutes(userId) {
     if ((0, db_1.hasDb)()) {
-        const res = await (0, db_1.dbQuery)(`select v.id as visit_id, c.name as client_name, c.address, rt.scheduled_time
+        const res = await (0, db_1.dbQuery)(`select rt.client_id, c.name as client_name, c.address, rt.scheduled_time
        from routes_today rt
        join clients c on c.id = rt.client_id
-       join lateral (
-         select id, scheduled_time
-         from visits
-         where client_id = c.id and scheduled_time = rt.scheduled_time
-         order by id desc
-         limit 1
-       ) v on true
        where rt.user_id = $1
        order by rt.scheduled_time asc`, [userId]);
         const rows = res?.rows ?? [];
         if (rows.length > 0) {
-            const mapped = rows.map(r => ({ id: r.visit_id, clientName: r.client_name, address: r.address, scheduledTime: r.scheduled_time }));
+            const mapped = [];
+            for (const row of rows) {
+                const visit = await ensureVisitForClient(row.client_id, row.scheduled_time || fallbackTimeFor(1));
+                mapped.push({
+                    id: visit.id,
+                    clientName: row.client_name,
+                    address: row.address,
+                    scheduledTime: row.scheduled_time || visit.scheduled_time || fallbackTimeFor(1),
+                });
+            }
             const deduped = dedupeByKey(dedupeById(mapped));
             try {
                 console.log(`[getTodayRoutes] routes_today for user ${userId}: ${deduped.length}`);
@@ -187,6 +213,11 @@ async function buildReportRows(startDate, endDate) {
     const submissionsRes = await (0, db_1.dbQuery)(`select
        vs.id as submission_id,
        vs.created_at,
+       coalesce(
+         nullif(vs.payload->>'checkOutTs', '')::timestamptz,
+         nullif(vs.payload->>'checkInTs', '')::timestamptz,
+         vs.created_at
+       ) as visit_time,
        v.id as visit_id,
        c.name as client_name,
        c.address,
@@ -201,26 +232,12 @@ async function buildReportRows(startDate, endDate) {
      join clients c on c.id = v.client_id
      left join service_routes sr on sr.id = c.service_route_id
      left join users u on u.id = sr.user_id
-     where vs.created_at between $1 and $2
-     order by u.id nulls last, vs.created_at asc`, [startDate.toISOString(), endDate.toISOString()]);
-    // Fetch unassigned clients (no service route assigned)
-    const unassignedRes = await (0, db_1.dbQuery)(`select
-       null as submission_id,
-       null as created_at,
-       null as visit_id,
-       c.name as client_name,
-       c.address,
-       c.latitude,
-       c.longitude,
-       null as route_name,
-       null as tech_id,
-       null as tech_name,
-       '{}'::jsonb as payload
-     from clients c
-     where c.service_route_id is null
-     order by c.name asc`);
-    // Combine: unassigned first, then submissions
-    const unassignedRows = unassignedRes?.rows ?? [];
+     where coalesce(
+       nullif(vs.payload->>'checkOutTs', '')::timestamptz,
+       nullif(vs.payload->>'checkInTs', '')::timestamptz,
+       vs.created_at
+     ) between $1 and $2
+     order by u.id nulls last, visit_time asc`, [startDate.toISOString(), endDate.toISOString()]);
     const submissionRows = submissionsRes?.rows ?? [];
-    return [...unassignedRows, ...submissionRows];
+    return submissionRows;
 }

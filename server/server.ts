@@ -110,6 +110,16 @@ function formatCompactDate(value?: string | null) {
 
 const REPORT_TIMEZONE = process.env.REPORT_TIMEZONE || 'America/Chicago';
 
+function formatRangeLabel(start: Date, end: Date) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: REPORT_TIMEZONE,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  });
+  return `${fmt.format(start)} – ${fmt.format(end)}`;
+}
+
 function getTimeZoneOffsetMinutes(timeZone: string, date: Date) {
   try {
     const dtf = new Intl.DateTimeFormat('en-US', {
@@ -676,7 +686,7 @@ function buildHtml(rows: ReportRow[], start: Date, end: Date) {
   }).join('');
   return `
     <h2>Field Tech Summary</h2>
-    <p>Period: ${start.toISOString()} - ${end.toISOString()}</p>
+    <p>Range: ${formatRangeLabel(start, end)}</p>
     <table border="1" cellpadding="6" cellspacing="0">
       <thead>
         <tr>

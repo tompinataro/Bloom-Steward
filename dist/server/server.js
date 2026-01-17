@@ -44,6 +44,7 @@ const cors_1 = __importDefault(require("cors"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = require("crypto");
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const node_cron_1 = __importDefault(require("node-cron"));
 const health_1 = __importDefault(require("./routes/health"));
 const metrics_1 = __importStar(require("./routes/metrics"));
 const data_1 = require("./data");
@@ -114,43 +115,143 @@ function formatCompactDate(value) {
     }
     return value;
 }
+const REPORT_TIMEZONE = process.env.REPORT_TIMEZONE || 'America/Chicago';
+function formatRangeLabel(start, end) {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: REPORT_TIMEZONE,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+    });
+    return `${fmt.format(start)} – ${fmt.format(end)}`;
+}
+function getTimeZoneOffsetMinutes(timeZone, date) {
+    try {
+        const dtf = new Intl.DateTimeFormat('en-US', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        });
+        const parts = dtf.formatToParts(date);
+        const values = {};
+        for (const part of parts) {
+            if (part.type !== 'literal')
+                values[part.type] = part.value;
+        }
+        const asUTC = Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day), Number(values.hour), Number(values.minute), Number(values.second));
+        return (asUTC - date.getTime()) / 60000;
+    }
+    catch {
+        return 0;
+    }
+}
+function getZonedDateParts(date, timeZone) {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+    const parts = dtf.formatToParts(date);
+    const values = {};
+    for (const part of parts) {
+        if (part.type !== 'literal')
+            values[part.type] = part.value;
+    }
+    return {
+        year: Number(values.year),
+        month: Number(values.month),
+        day: Number(values.day),
+    };
+}
+function makeZonedDate(timeZone, year, month, day, hour = 0, minute = 0, second = 0, ms = 0) {
+    const utc = new Date(Date.UTC(year, month - 1, day, hour, minute, second, ms));
+    const offsetMinutes = getTimeZoneOffsetMinutes(timeZone, utc);
+    return new Date(utc.getTime() - offsetMinutes * 60000);
+}
+function startOfDayInZone(date, timeZone) {
+    const { year, month, day } = getZonedDateParts(date, timeZone);
+    return makeZonedDate(timeZone, year, month, day, 0, 0, 0, 0);
+}
+function endOfDayInZone(date, timeZone) {
+    const { year, month, day } = getZonedDateParts(date, timeZone);
+    const nextDay = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+    const nextStart = startOfDayInZone(nextDay, timeZone);
+    return new Date(nextStart.getTime() - 1);
+}
+function addDaysInZone(date, days, timeZone) {
+    const { year, month, day } = getZonedDateParts(date, timeZone);
+    return new Date(Date.UTC(year, month - 1, day + days, 12, 0, 0, 0));
+}
+function parseDateInZone(input, timeZone) {
+    const trimmed = input.trim();
+    if (!trimmed)
+        return null;
+    const normalized = trimmed.replace(' ', 'T');
+    if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(normalized)) {
+        const d = new Date(normalized);
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+    const [datePart, timePart] = normalized.split('T');
+    const [yearStr, monthStr, dayStr] = datePart.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    if (!year || !month || !day)
+        return null;
+    let hour = 0;
+    let minute = 0;
+    let second = 0;
+    if (timePart) {
+        const timePieces = timePart.split(':');
+        hour = Number(timePieces[0] || 0);
+        minute = Number(timePieces[1] || 0);
+        const secRaw = (timePieces[2] || '0').split('.')[0];
+        second = Number(secRaw || 0);
+    }
+    return makeZonedDate(timeZone, year, month, day, hour, minute, second, 0);
+}
 function resolveRange(frequency, explicitStart, explicitEnd) {
-    let end = explicitEnd ? new Date(explicitEnd) : new Date();
-    let start = explicitStart ? new Date(explicitStart) : new Date();
+    const parsedStart = explicitStart ? parseDateInZone(explicitStart, REPORT_TIMEZONE) : null;
+    const parsedEnd = explicitEnd ? parseDateInZone(explicitEnd, REPORT_TIMEZONE) : null;
+    let end = parsedEnd || new Date();
+    let start = parsedStart || new Date();
     const now = new Date();
-    if (!explicitStart || !explicitEnd) {
-        end = now;
-        start = new Date(now);
+    if (!parsedStart || !parsedEnd) {
         switch (frequency) {
             case 'daily':
-                start.setHours(0, 0, 0, 0);
-                end = new Date(now);
-                end.setHours(23, 59, 59, 999);
+                start = startOfDayInZone(now, REPORT_TIMEZONE);
+                end = endOfDayInZone(now, REPORT_TIMEZONE);
                 break;
-            case 'weekly':
-                start.setDate(now.getDate() - 7);
-                start.setHours(0, 0, 0, 0);
-                end = new Date(now);
-                end.setHours(23, 59, 59, 999);
+            case 'weekly': {
+                const startAnchor = addDaysInZone(now, -7, REPORT_TIMEZONE);
+                start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+                end = endOfDayInZone(now, REPORT_TIMEZONE);
                 break;
-            case 'payperiod':
-                start.setDate(now.getDate() - 14);
-                start.setHours(0, 0, 0, 0);
-                end = new Date(now);
-                end.setHours(23, 59, 59, 999);
+            }
+            case 'payperiod': {
+                const startAnchor = addDaysInZone(now, -14, REPORT_TIMEZONE);
+                start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+                end = endOfDayInZone(now, REPORT_TIMEZONE);
                 break;
-            case 'monthly':
-                start.setDate(now.getDate() - 30);
-                start.setHours(0, 0, 0, 0);
-                end = new Date(now);
-                end.setHours(23, 59, 59, 999);
+            }
+            case 'monthly': {
+                const startAnchor = addDaysInZone(now, -30, REPORT_TIMEZONE);
+                start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+                end = endOfDayInZone(now, REPORT_TIMEZONE);
                 break;
-            default:
-                start.setDate(now.getDate() - 7);
-                start.setHours(0, 0, 0, 0);
-                end = new Date(now);
-                end.setHours(23, 59, 59, 999);
+            }
+            default: {
+                const startAnchor = addDaysInZone(now, -7, REPORT_TIMEZONE);
+                start = startOfDayInZone(startAnchor, REPORT_TIMEZONE);
+                end = endOfDayInZone(now, REPORT_TIMEZONE);
                 break;
+            }
         }
     }
     return { startDate: start, endDate: end };
@@ -174,6 +275,7 @@ async function buildSummary(startDate, endDate) {
             else {
                 const existingCheckout = !!existing.payload?.checkOutTs;
                 const existingMeta = !!(existing.payload?.techNotes || existing.payload?.noteToOffice || existing.payload?.onSiteContact || existing.payload?.odometerReading);
+                // Prefer a row that has checkout or meta fields; otherwise keep the existing latest
                 if ((hasCheckout && !existingCheckout) || (hasMeta && !existingMeta)) {
                     latestByVisit.set(row.visit_id, row);
                 }
@@ -213,16 +315,20 @@ async function buildSummary(startDate, endDate) {
         }
     }
     const latestRows = Array.from(latestByTechClient.values()).sort((a, b) => {
+        // Sort: Unassigned routes first, then alphabetically by route name, then by client name within each route
         const aRoute = (a.route_name || '').toLowerCase();
         const bRoute = (b.route_name || '').toLowerCase();
         const aClient = (a.client_name || '').toLowerCase();
         const bClient = (b.client_name || '').toLowerCase();
+        // Unassigned routes (no route_name) come first
         if (!aRoute && bRoute)
             return -1;
         if (aRoute && !bRoute)
             return 1;
+        // Both unassigned or both assigned: sort by route name
         if (aRoute !== bRoute)
             return aRoute.localeCompare(bRoute);
+        // Same route: sort by client name alphabetically
         return aClient.localeCompare(bClient);
     });
     // Get all unique tech IDs from deduped rows
@@ -271,6 +377,7 @@ async function buildSummary(startDate, endDate) {
                     checkInTs = d.toISOString();
             }
             else if (payload.checkInTs) {
+                // Fallback: accept non-string payloads (e.g., Date) by coercing to ISO
                 const d = new Date(payload.checkInTs);
                 if (!Number.isNaN(d.getTime()))
                     checkInTs = d.toISOString();
@@ -290,11 +397,13 @@ async function buildSummary(startDate, endDate) {
             }
         }
         catch { }
+        // If still missing, fall back to submission created_at (latest submission)
         if (!checkInTs && row.created_at) {
             const d = new Date(row.created_at);
             if (!Number.isNaN(d.getTime()))
                 checkInTs = d.toISOString();
         }
+        // Do not synthesize checkOutTs; only completed visits should appear in summary.
         if (!checkOutTs) {
             continue;
         }
@@ -307,7 +416,6 @@ async function buildSummary(startDate, endDate) {
         const onSiteContact = payload.onSiteContact || null;
         const techNotes = payload.techNotes || payload.noteToOffice || payload.notes || null;
         const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
-        // Calculate mileage delta from start-of-day odometer (fetched from daily_start_odometer table)
         let mileageDelta = 0;
         const rawLoc = payload.checkOutLoc;
         let geoValidated = undefined;
@@ -317,6 +425,7 @@ async function buildSummary(startDate, endDate) {
             const distMiles = haversineMiles(row.latitude, row.longitude, rawLoc.lat, rawLoc.lng);
             if (distMiles !== null) {
                 distanceFromClientFeet = distMiles * 5280;
+                // keep only boolean validation (within 300 feet / 100 yards)
                 geoValidated = distanceFromClientFeet <= 300;
                 geoFlag = distanceFromClientFeet > 300;
             }
@@ -472,41 +581,6 @@ async function buildSummary(startDate, endDate) {
         }
         return finalRows;
     }
-    if (!rows.length && (0, db_1.hasDb)()) {
-        const fallback = await (0, db_1.dbQuery)(`select distinct on (sr.id, c.id)
-         u.id as tech_id,
-         u.name as tech_name,
-         sr.name as route_name,
-         c.name as client_name,
-         c.address
-       from clients c
-       join service_routes sr on sr.id = c.service_route_id
-       left join users u on u.id = sr.user_id
-       order by sr.id, c.id, c.name asc`);
-        const seenTechClient = new Set();
-        (fallback?.rows || []).forEach(row => {
-            const techClientKey = `${row.tech_id || 0}|${(row.client_name || '').trim().toLowerCase()}`;
-            if (seenTechClient.has(techClientKey))
-                return;
-            seenTechClient.add(techClientKey);
-            rows.push({
-                techId: row.tech_id || 0,
-                techName: row.tech_name || 'Unassigned',
-                routeName: row.route_name,
-                clientName: row.client_name,
-                address: row.address,
-                checkInTs: null,
-                checkOutTs: null,
-                visitDate: null,
-                durationMinutes: 0,
-                durationFormatted: '00:00',
-                onSiteContact: null,
-                odometerReading: null,
-                mileageDelta: 0,
-                geoValidated: false,
-            });
-        });
-    }
     return rows;
 }
 function buildCsv(rows) {
@@ -558,7 +632,7 @@ function buildHtml(rows, start, end) {
             return `<tr><td colspan="13">&nbsp;</td></tr>`;
         }
         const isTotal = row.rowType === 'total';
-        const geoFail = row.geoValidated === false || (row.distanceFromClientFeet !== null && row.distanceFromClientFeet > 300);
+        const geoFail = row.geoValidated === false || (row.distanceFromClientFeet != null && row.distanceFromClientFeet > 300);
         const durationFlag = geoFail || !!row.durationFlag;
         const geoFlag = geoFail || !!row.geoFlag;
         const clientStyle = (durationFlag || geoFlag) ? 'color:#b91c1c;font-weight:700;' : '';
@@ -585,7 +659,7 @@ function buildHtml(rows, start, end) {
     }).join('');
     return `
     <h2>Field Tech Summary</h2>
-    <p>Period: ${start.toISOString()} - ${end.toISOString()}</p>
+    <p>Range: ${formatRangeLabel(start, end)}</p>
     <table border="1" cellpadding="6" cellspacing="0">
       <thead>
         <tr>
@@ -1045,7 +1119,7 @@ exports.app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res)
     if (!ensureDatabase(res))
         return;
     try {
-        const q = await (0, db_1.dbQuery)('select id, email, name, coalesce(role, \'tech\') as role, managed_password from users order by id asc');
+        const q = await (0, db_1.dbQuery)('select id, email, name, coalesce(role, \'tech\') as role, managed_password, phone from users order by id asc');
         const users = (q?.rows ?? []).map((u) => ({ ...u, role: u.role === 'admin' ? 'admin' : 'tech' }));
         res.json({ ok: true, users });
     }
@@ -1060,14 +1134,20 @@ exports.app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, re
         const columns = await (0, db_1.dbQuery)(`select column_name
          from information_schema.columns
         where table_name = 'clients'
-          and column_name in ('latitude','longitude')`);
+          and column_name in ('latitude','longitude','city','state','zip')`);
         const hasLatitude = (columns?.rows || []).some(col => col.column_name === 'latitude');
         const hasLongitude = (columns?.rows || []).some(col => col.column_name === 'longitude');
+        const hasCity = (columns?.rows || []).some(col => col.column_name === 'city');
+        const hasState = (columns?.rows || []).some(col => col.column_name === 'state');
+        const hasZip = (columns?.rows || []).some(col => col.column_name === 'zip');
         const select = `
        select
          c.id,
          c.name,
          c.address,
+         ${hasCity ? 'c.city' : 'null as city'},
+         ${hasState ? 'c.state' : 'null as state'},
+         ${hasZip ? 'c.zip' : 'null as zip'},
          c.contact_name,
          c.contact_phone,
          sr.id as service_route_id,
@@ -1134,6 +1214,23 @@ function generatePassword() {
         out += digits[bytes[i] % digits.length];
     }
     return out;
+}
+function buildFullAddress(streetRaw, cityRaw, stateRaw, zipRaw) {
+    const street = streetRaw.trim();
+    const city = cityRaw.trim();
+    const state = stateRaw.trim();
+    const zip = zipRaw.trim();
+    let line2 = '';
+    if (city) {
+        line2 += city;
+    }
+    if (state) {
+        line2 += line2 ? `, ${state}` : state;
+    }
+    if (zip) {
+        line2 += line2 ? ` ${zip}` : zip;
+    }
+    return line2 ? `${street}, ${line2}` : street;
 }
 exports.app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
     if (!ensureDatabase(res))
@@ -1239,6 +1336,30 @@ exports.app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req,
         res.status(500).json({ ok: false, error: 'failed to update user' });
     }
 });
+exports.app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const userId = Number(req.params.id);
+    if (!userId || Number.isNaN(userId)) {
+        return res.status(400).json({ ok: false, error: 'invalid user id' });
+    }
+    try {
+        const roleRes = await (0, db_1.dbQuery)('select coalesce(role, \'tech\') as role from users where id = $1', [userId]);
+        const role = roleRes?.rows?.[0]?.role === 'admin' ? 'admin' : 'tech';
+        if (role === 'admin') {
+            return res.status(400).json({ ok: false, error: 'cannot delete admin user' });
+        }
+        const result = await (0, db_1.dbQuery)('delete from users where id = $1 returning id', [userId]);
+        if (!result?.rows?.length) {
+            return res.status(404).json({ ok: false, error: 'user not found' });
+        }
+        return res.json({ ok: true, id: userId });
+    }
+    catch (e) {
+        console.error('[admin/users] delete error', e);
+        return res.status(500).json({ ok: false, error: 'failed to delete user' });
+    }
+});
 exports.app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, res) => {
     if (!ensureDatabase(res))
         return;
@@ -1248,11 +1369,15 @@ exports.app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, re
     if (!trimmedName || !trimmedAddress) {
         return res.status(400).json({ ok: false, error: 'name and address required' });
     }
+    const city = typeof req.body?.city === 'string' ? req.body.city.trim() : '';
+    const stateCode = typeof req.body?.state === 'string' ? req.body.state.trim() : '';
+    const zip = typeof req.body?.zip === 'string' ? req.body.zip.trim() : '';
+    const formattedAddress = buildFullAddress(trimmedAddress, city, stateCode, zip);
     const latValue = latitude !== undefined && latitude !== null ? Number(latitude) : null;
     const lngValue = longitude !== undefined && longitude !== null ? Number(longitude) : null;
-    const result = await (0, db_1.dbQuery)(`insert into clients (name, address, contact_name, contact_phone, latitude, longitude)
-     values ($1, $2, nullif($3, ''), nullif($4, ''), $5, $6)
-     returning id, name, address, contact_name, contact_phone, latitude, longitude`, [trimmedName, trimmedAddress, contactName || null, contactPhone || null, latValue, lngValue]).catch((e) => {
+    const result = await (0, db_1.dbQuery)(`insert into clients (name, address, city, state, zip, contact_name, contact_phone, latitude, longitude)
+     values ($1, $2, nullif($3, ''), nullif($4, ''), nullif($5, ''), nullif($6, ''), nullif($7, ''), $8, $9)
+     returning id, name, address, city, state, zip, contact_name, contact_phone, latitude, longitude`, [trimmedName, formattedAddress, city, stateCode, zip, contactName || null, contactPhone || null, latValue, lngValue]).catch((e) => {
         const message = String(e?.message ?? '');
         if (/duplicate key value violates unique constraint/i.test(message)) {
             return { error: 'duplicate' };
@@ -1268,6 +1393,73 @@ exports.app.post('/api/admin/clients', requireAuth, requireAdmin, async (req, re
     }
     const client = result?.rows?.[0];
     return res.json({ ok: true, client });
+});
+exports.app.patch('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const clientId = Number(req.params.id);
+    if (!clientId || Number.isNaN(clientId)) {
+        return res.status(400).json({ ok: false, error: 'invalid client id' });
+    }
+    const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+    const address = typeof req.body?.address === 'string' ? req.body.address.trim() : '';
+    const city = typeof req.body?.city === 'string' ? req.body.city.trim() : '';
+    const stateCode = typeof req.body?.state === 'string' ? req.body.state.trim() : '';
+    const zip = typeof req.body?.zip === 'string' ? req.body.zip.trim() : '';
+    const contactName = typeof req.body?.contact_name === 'string' ? req.body.contact_name.trim() : '';
+    const contactPhone = typeof req.body?.contact_phone === 'string' ? req.body.contact_phone.trim() : '';
+    const latInput = req.body?.latitude;
+    const lngInput = req.body?.longitude;
+    const latitude = latInput === null || latInput === undefined || latInput === '' ? null : Number(latInput);
+    const longitude = lngInput === null || lngInput === undefined || lngInput === '' ? null : Number(lngInput);
+    if (!name || !address) {
+        return res.status(400).json({ ok: false, error: 'name and address required' });
+    }
+    const formattedAddress = city || stateCode || zip ? buildFullAddress(address, city, stateCode, zip) : address;
+    if ((latitude !== null && Number.isNaN(latitude)) || (longitude !== null && Number.isNaN(longitude))) {
+        return res.status(400).json({ ok: false, error: 'invalid latitude/longitude' });
+    }
+    try {
+        const result = await (0, db_1.dbQuery)(`update clients
+         set name = $1,
+             address = $2,
+             city = nullif($3, ''),
+             state = nullif($4, ''),
+             zip = nullif($5, ''),
+             contact_name = $6,
+             contact_phone = $7,
+             latitude = $8,
+             longitude = $9
+       where id = $10
+       returning id, name, address, city, state, zip, contact_name, contact_phone, latitude, longitude`, [name, formattedAddress, city, stateCode, zip, contactName || null, contactPhone || null, latitude, longitude, clientId]);
+        const client = result?.rows?.[0];
+        if (!client)
+            return res.status(404).json({ ok: false, error: 'client not found' });
+        return res.json({ ok: true, client });
+    }
+    catch (e) {
+        console.error('[admin/clients] update error', e);
+        return res.status(500).json({ ok: false, error: 'failed to update client' });
+    }
+});
+exports.app.delete('/api/admin/clients/:id', requireAuth, requireAdmin, async (req, res) => {
+    if (!ensureDatabase(res))
+        return;
+    const clientId = Number(req.params.id);
+    if (!clientId || Number.isNaN(clientId)) {
+        return res.status(400).json({ ok: false, error: 'invalid client id' });
+    }
+    try {
+        const result = await (0, db_1.dbQuery)('delete from clients where id = $1 returning id', [clientId]);
+        if (!result?.rows?.length) {
+            return res.status(404).json({ ok: false, error: 'client not found' });
+        }
+        return res.json({ ok: true, id: clientId });
+    }
+    catch (e) {
+        console.error('[admin/clients] delete error', e);
+        return res.status(500).json({ ok: false, error: 'failed to delete client' });
+    }
 });
 exports.app.post('/api/admin/routes/assign', requireAuth, requireAdmin, async (req, res) => {
     if (!ensureDatabase(res))
@@ -1331,6 +1523,31 @@ exports.app.post('/api/admin/clients/:id/service-route', requireAuth, requireAdm
     }
     try {
         await (0, db_1.dbQuery)('update clients set service_route_id = $1 where id = $2', [routeId, clientId]);
+        if (routeId === null) {
+            await (0, db_1.dbQuery)('delete from routes_today where client_id = $1', [clientId]);
+            return res.json({ ok: true });
+        }
+        const routeRes = await (0, db_1.dbQuery)('select user_id from service_routes where id = $1', [routeId]);
+        const assignedUserId = routeRes?.rows?.[0]?.user_id ?? null;
+        if (!assignedUserId) {
+            await (0, db_1.dbQuery)('delete from routes_today where client_id = $1', [clientId]);
+            return res.json({ ok: true });
+        }
+        const timeRes = await (0, db_1.dbQuery)(`select coalesce(rt.scheduled_time, v.scheduled_time, '08:30') as scheduled_time
+       from clients c
+       left join routes_today rt on rt.client_id = c.id
+       left join lateral (
+         select scheduled_time
+         from visits
+         where client_id = c.id
+         order by id desc
+         limit 1
+       ) v on true
+       where c.id = $1`, [clientId]);
+        const scheduledTime = timeRes?.rows?.[0]?.scheduled_time || '08:30';
+        await (0, db_1.dbQuery)(`insert into routes_today (user_id, client_id, scheduled_time)
+       values ($1, $2, $3)
+       on conflict (client_id) do update set user_id = excluded.user_id, scheduled_time = excluded.scheduled_time`, [assignedUserId, clientId, scheduledTime]);
         res.json({ ok: true });
     }
     catch (e) {
@@ -1387,7 +1604,7 @@ exports.app.post('/api/admin/service-routes/:id/tech', requireAuth, requireAdmin
          limit 1
        ) v on true
        where c.service_route_id = $1`, [routeId]);
-        const clientIds = (clientRows === null || clientRows === void 0 ? void 0 : clientRows.rows.map(r => r.client_id)) || [];
+        const clientIds = clientRows?.rows?.map(r => r.client_id) ?? [];
         if (clientIds.length > 0) {
             if (userId === null) {
                 // Unassign: remove today's route entries for all clients on this service route.
@@ -1595,6 +1812,43 @@ exports.app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, r
         res.status(500).json({ ok: false, error: e?.message ?? 'failed to run seed' });
     }
 });
+// Automated report emails
+if (process.env.NODE_ENV !== 'test') {
+    // Weekly report to Tom - every Monday at 5am
+    node_cron_1.default.schedule('0 5 * * 1', async () => {
+        console.log('[CRON] Sending weekly report to Tom');
+        try {
+            const { startDate, endDate } = resolveRange('weekly');
+            const rows = await buildSummary(startDate, endDate);
+            const csv = buildCsv(rows);
+            const html = buildHtml(rows, startDate, endDate);
+            await sendReportEmail(['tom@pinataro.com'], 'Field Work Summary Report (Weekly)', html, csv);
+            console.log('[CRON] Weekly report sent to Tom');
+        }
+        catch (err) {
+            console.error('[CRON] Failed to send weekly report:', err?.message);
+        }
+    }, {
+        timezone: 'America/Chicago'
+    });
+    // Daily report to Tom - every day at 5am
+    node_cron_1.default.schedule('0 5 * * *', async () => {
+        console.log('[CRON] Sending daily report to Tom');
+        try {
+            const { startDate, endDate } = resolveRange('daily');
+            const rows = await buildSummary(startDate, endDate);
+            const csv = buildCsv(rows);
+            const html = buildHtml(rows, startDate, endDate);
+            await sendReportEmail(['tom@pinataro.com'], 'Field Work Summary Report (Daily)', html, csv);
+            console.log('[CRON] Daily report sent to Tom');
+        }
+        catch (err) {
+            console.error('[CRON] Failed to send daily report:', err?.message);
+        }
+    }, {
+        timezone: 'America/Chicago'
+    });
+}
 const port = Number(process.env.PORT) || 5100;
 const host = process.env.HOST || '0.0.0.0';
 if (process.env.NODE_ENV !== 'test') {

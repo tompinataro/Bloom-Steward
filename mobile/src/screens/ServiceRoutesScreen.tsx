@@ -156,7 +156,6 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.container}>
         {!showAll && (
           <View style={styles.card}>
-            <Text style={styles.title}>Create Service Route</Text>
             <TextInput
               style={styles.input}
               value={routeName}
@@ -205,7 +204,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
   card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text, textAlign: 'center' },
   input: {
     borderWidth: 1,
     borderColor: colors.border,

@@ -289,7 +289,7 @@ type ItemProps = {
           <View style={styles.rowTop}>
             <View style={styles.leftWrap}>
               <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName, 14)}</Text>
-              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.address, 36)}</Text>
+              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.address, 28)}</Text>
             </View>
             <View style={styles.centerWrap}>
               <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />

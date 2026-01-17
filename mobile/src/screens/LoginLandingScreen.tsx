@@ -77,15 +77,15 @@ export default function LoginLandingScreen() {
             />
             <TextInput
               style={styles.input}
-              keyboardType="decimal-pad"
+              keyboardType="numbers-and-punctuation"
               value={initialOdometer}
               onChangeText={setInitialOdometer}
               placeholder="Starting Odometer (optional)"
               placeholderTextColor={colors.muted}
-              returnKeyType="done"
+              returnKeyType="next"
               autoComplete="off"
               autoCorrect={false}
-              blurOnSubmit={false}
+              blurOnSubmit
             />
           </View>
         </View>

@@ -13,6 +13,11 @@ const FALLBACK_ROUTES: TodayRoute[] = [
   { id: 103, clientName: 'Sunset Mall', address: '789 University Ave NE, Minneapolis, MN 55413', scheduledTime: '11:15' }
 ];
 const DEFAULT_TIME_SLOTS = ['08:00', '09:15', '10:30', '11:45', '13:00', '14:15', '15:30'];
+const DEFAULT_CHECKLIST: ChecklistItem[] = [
+  { key: 'watered', label: 'Watered Plants', done: false },
+  { key: 'pruned', label: 'Pruned and cleaned', done: false },
+  { key: 'replaced', label: 'Replaced unhealthy plants', done: false },
+];
 
 function fallbackTimeFor(order: number) {
   const idx = Math.max(order - 1, 0) % DEFAULT_TIME_SLOTS.length;
@@ -26,13 +31,36 @@ async function ensureVisitForClient(clientId: number, scheduledTime: string) {
   );
   const last = existing?.rows?.[0];
   if (last && last.scheduled_time === scheduledTime) {
+    await ensureChecklistForVisit(last.id);
     return last;
   }
   const created = await dbQuery<{ id: number; scheduled_time: string }>(
     `insert into visits (client_id, scheduled_time) values ($1, $2) returning id, scheduled_time`,
     [clientId, scheduledTime]
   );
-  return created?.rows?.[0] || { id: clientId, scheduled_time: scheduledTime };
+  const visit = created?.rows?.[0] || { id: clientId, scheduled_time: scheduledTime };
+  await ensureChecklistForVisit(visit.id);
+  return visit;
+}
+
+async function ensureChecklistForVisit(visitId: number) {
+  if (!hasDb()) return;
+  const existing = await dbQuery<{ key: string }>(
+    `select key from visit_checklist where visit_id = $1 limit 1`,
+    [visitId]
+  );
+  if (existing?.rows?.length) return;
+  const values: any[] = [];
+  const placeholders: string[] = [];
+  DEFAULT_CHECKLIST.forEach((item, idx) => {
+    const base = idx * 4;
+    values.push(visitId, item.key, item.label, item.done);
+    placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
+  });
+  await dbQuery(
+    `insert into visit_checklist (visit_id, key, label, done) values ${placeholders.join(', ')}`,
+    values
+  );
 }
 
 function normalizeKey(route: TodayRoute): string {
@@ -221,6 +249,7 @@ export async function buildReportRows(startDate: Date, endDate: Date) {
   const submissionsRes = await dbQuery<{
     submission_id: number;
     created_at: string;
+    visit_time: string;
     visit_id: number;
     client_name: string;
     address: string;
@@ -234,6 +263,11 @@ export async function buildReportRows(startDate: Date, endDate: Date) {
     `select
        vs.id as submission_id,
        vs.created_at,
+       coalesce(
+         nullif(vs.payload->>'checkOutTs', '')::timestamptz,
+         nullif(vs.payload->>'checkInTs', '')::timestamptz,
+         vs.created_at
+       ) as visit_time,
        v.id as visit_id,
        c.name as client_name,
        c.address,
@@ -248,8 +282,12 @@ export async function buildReportRows(startDate: Date, endDate: Date) {
      join clients c on c.id = v.client_id
      left join service_routes sr on sr.id = c.service_route_id
      left join users u on u.id = sr.user_id
-     where vs.created_at between $1 and $2
-     order by u.id nulls last, vs.created_at asc`,
+     where coalesce(
+       nullif(vs.payload->>'checkOutTs', '')::timestamptz,
+       nullif(vs.payload->>'checkInTs', '')::timestamptz,
+       vs.created_at
+     ) between $1 and $2
+     order by u.id nulls last, visit_time asc`,
     [startDate.toISOString(), endDate.toISOString()]
   );
   const submissionRows = submissionsRes?.rows ?? [];

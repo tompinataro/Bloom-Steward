@@ -30,6 +30,9 @@ create table if not exists clients (
   id serial primary key,
   name text not null,
   address text not null default '',
+  city text,
+  state text,
+  zip text,
   contact_name text,
   contact_phone text,
   created_at timestamptz not null default now(),
@@ -39,6 +42,9 @@ create table if not exists clients (
 );
 
 alter table clients
+  add column if not exists city text,
+  add column if not exists state text,
+  add column if not exists zip text,
   add column if not exists contact_name text,
   add column if not exists contact_phone text,
   add column if not exists created_at timestamptz not null default now(),
