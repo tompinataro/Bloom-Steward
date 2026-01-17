@@ -191,8 +191,7 @@ function startOfDayInZone(date: Date, timeZone: string) {
 }
 
 function endOfDayInZone(date: Date, timeZone: string) {
-  const { year, month, day } = getZonedDateParts(date, timeZone);
-  const nextDay = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+  const nextDay = addDaysInZone(date, 1, timeZone);
   const nextStart = startOfDayInZone(nextDay, timeZone);
   return new Date(nextStart.getTime() - 1);
 }
