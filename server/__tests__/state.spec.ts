@@ -35,7 +35,21 @@ describe('Visit state flags (memory mode)', () => {
     expect(item.completedToday).toBe(true);
   });
 
+  it('tech reset clears server flags for today', async () => {
+    const reset = await request(app)
+      .post('/api/visit-state/reset')
+      .set('Authorization', `Bearer ${token}`);
+    expect(reset.status).toBe(200);
+    const routes = await request(app).get('/api/routes/today').set('Authorization', `Bearer ${token}`);
+    const item = routes.body.routes.find((r: any) => r.id === visitId);
+    expect(item.completedToday).toBeFalsy();
+    expect(item.inProgress).toBeFalsy();
+  });
+
   it('admin reset clears server flags for today', async () => {
+    await request(app)
+      .post(`/api/visits/${visitId}/in-progress`)
+      .set('Authorization', `Bearer ${token}`);
     const reset = await request(app)
       .post('/api/admin/visit-state/reset')
       .set('Authorization', `Bearer ${token}`);
@@ -46,4 +60,3 @@ describe('Visit state flags (memory mode)', () => {
     expect(item.inProgress).toBeFalsy();
   });
 });
-

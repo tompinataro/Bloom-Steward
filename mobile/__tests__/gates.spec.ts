@@ -2,25 +2,46 @@ import { describe, it, expect } from 'vitest';
 import { isSubmitDisabled } from '../src/logic/gates';
 
 describe('isSubmitDisabled', () => {
-  const base = { submitting: false, checkInTs: null as string | null, timelyNotes: '', ack: false };
+  const checklistDone = [
+    { key: 'watered', done: true },
+    { key: 'pruned', done: true },
+    { key: 'replaced', done: false },
+  ];
+  const checklistNotDone = [
+    { key: 'watered', done: false },
+    { key: 'pruned', done: true },
+    { key: 'replaced', done: false },
+  ];
+  const base = {
+    submitting: false,
+    checkInTs: null as string | null,
+    requiresAck: false,
+    ack: false,
+    checklist: checklistDone,
+  };
 
   it('disables when not checked in', () => {
     const res = isSubmitDisabled({ ...base, checkInTs: null });
     expect(res).toBe(true);
   });
 
-  it('enabled after check-in with no notes', () => {
-    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z' });
+  it('enabled after check-in when checklist is complete', () => {
+    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z', checklist: checklistDone });
     expect(res).toBe(false);
   });
 
-  it('disables when notes present but not acknowledged', () => {
-    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z', timelyNotes: 'urgent', ack: false });
+  it('disables when checklist is not complete', () => {
+    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z', checklist: checklistNotDone });
     expect(res).toBe(true);
   });
 
-  it('enabled when notes present and acknowledged', () => {
-    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z', timelyNotes: 'urgent', ack: true });
+  it('disables when notes require ack but not acknowledged', () => {
+    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z', requiresAck: true, ack: false });
+    expect(res).toBe(true);
+  });
+
+  it('enabled when notes require ack and are acknowledged', () => {
+    const res = isSubmitDisabled({ ...base, checkInTs: '2025-01-01T00:00:00Z', requiresAck: true, ack: true });
     expect(res).toBe(false);
   });
 
@@ -29,4 +50,3 @@ describe('isSubmitDisabled', () => {
     expect(res).toBe(true);
   });
 });
-

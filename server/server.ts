@@ -1,5 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -10,17 +8,26 @@ import healthRouter from './routes/health';
 import metricsRouter, { requestMetrics } from './routes/metrics';
 import { getTodayRoutes, getVisit, saveVisit, buildReportRows } from './data';
 import { dbQuery, hasDb } from './db';
+import {
+  HOST,
+  IS_TEST,
+  JWT_SECRET,
+  PORT,
+  REPORT_TIMEZONE,
+  SMTP_HOST,
+  SMTP_PASS,
+  SMTP_PORT,
+  SMTP_SECURE,
+  SMTP_URL,
+  SMTP_USER,
+  getAdminEmail,
+  getDemoEmail,
+  getDemoPassword,
+} from './config';
 const encryptLib = require('./modules/encryption') as {
   encryptPassword: (password: string) => string;
   comparePassword: (candidate: string, stored: string) => boolean;
 };
-
-const SMTP_URL = process.env.SMTP_URL || '';
-const SMTP_HOST = process.env.SMTP_HOST;
-const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || (SMTP_PORT === 465);
 
 type MailTransport = ReturnType<typeof nodemailer.createTransport>;
 let mailTransport: MailTransport | null = null;
@@ -107,8 +114,6 @@ function formatCompactDate(value?: string | null) {
   }
   return value;
 }
-
-const REPORT_TIMEZONE = process.env.REPORT_TIMEZONE || 'America/Chicago';
 
 function formatRangeLabel(start: Date, end: Date) {
   const fmt = new Intl.DateTimeFormat('en-US', {
@@ -774,50 +779,59 @@ function keyFor(visitId: number, userId?: number, d = new Date()) {
   return `${dayKey(d)}:${visitId}:${userId ?? 'anon'}`;
 }
 function markInProgress(visitId: number, userId?: number) {
-  const k = keyFor(visitId, userId);
-  const cur = stateMap.get(k) || { updatedAt: new Date().toISOString() } as VisitState;
-  cur.inProgress = true;
-  cur.updatedAt = new Date().toISOString();
-  stateMap.set(k, cur);
-  // DB Phase B: upsert state when DB is configured
-  if (hasDb()) {
-    dbQuery(
-      `insert into visit_state (visit_id, date, user_id, status)
-       values ($1, $2, $3, 'in_progress')
-       on conflict (visit_id, date, user_id) do update set status = excluded.status, created_at = now()`,
-      [visitId, dayKey(), userId || 0]
-    ).catch(() => {});
+  if (!hasDb()) {
+    const k = keyFor(visitId, userId);
+    const cur = stateMap.get(k) || { updatedAt: new Date().toISOString() } as VisitState;
+    cur.inProgress = true;
+    cur.updatedAt = new Date().toISOString();
+    stateMap.set(k, cur);
+    return;
   }
+  // DB is the source of truth when configured
+  dbQuery(
+    `insert into visit_state (visit_id, date, user_id, status)
+     values ($1, $2, $3, 'in_progress')
+     on conflict (visit_id, date, user_id) do update set status = excluded.status, created_at = now()`,
+    [visitId, dayKey(), userId || 0]
+  ).catch(() => {});
 }
 function markCompleted(visitId: number, userId?: number) {
-  const k = keyFor(visitId, userId);
-  const cur = stateMap.get(k) || { updatedAt: new Date().toISOString() } as VisitState;
-  cur.completed = true;
-  cur.inProgress = false;
-  cur.updatedAt = new Date().toISOString();
-  stateMap.set(k, cur);
-  if (hasDb()) {
-    dbQuery(
-      `insert into visit_state (visit_id, date, user_id, status)
-       values ($1, $2, $3, 'completed')
-       on conflict (visit_id, date, user_id) do update set status = excluded.status, created_at = now()`,
-      [visitId, dayKey(), userId || 0]
-    ).catch(() => {});
+  if (!hasDb()) {
+    const k = keyFor(visitId, userId);
+    const cur = stateMap.get(k) || { updatedAt: new Date().toISOString() } as VisitState;
+    cur.completed = true;
+    cur.inProgress = false;
+    cur.updatedAt = new Date().toISOString();
+    stateMap.set(k, cur);
+    return;
   }
+  dbQuery(
+    `insert into visit_state (visit_id, date, user_id, status)
+     values ($1, $2, $3, 'completed')
+     on conflict (visit_id, date, user_id) do update set status = excluded.status, created_at = now()`,
+    [visitId, dayKey(), userId || 0]
+  ).catch(() => {});
 }
 async function isCompletedToday(visitId: number, userId?: number): Promise<boolean> {
-  try {
-    if (hasDb() && userId) {
+  if (hasDb() && userId) {
+    try {
       const rows = await dbQuery<{ status: string }>(
         `select status from visit_state where visit_id = $1 and date = $2 and user_id = $3 limit 1`,
         [visitId, dayKey(), userId]
       );
       const st = rows?.rows?.[0]?.status;
       if (st) return st === 'completed';
+      return false;
+    } catch (err) {
+      console.error('[visit-state] failed to read status', err);
+      return false;
     }
-  } catch {}
-  const k = keyFor(visitId, userId);
-  return !!stateMap.get(k)?.completed;
+  }
+  if (!hasDb()) {
+    const k = keyFor(visitId, userId);
+    return !!stateMap.get(k)?.completed;
+  }
+  return false;
 }
 function getFlags(visitId: number, userId?: number) {
   const k = keyFor(visitId, userId);
@@ -834,9 +848,6 @@ app.use(requestMetrics);
 // Health and metrics
 app.use(healthRouter);
 app.use(metricsRouter);
-
-// JWT auth
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
 type UserRole = 'admin' | 'tech';
 type JwtUser = { id: number; email: string; name: string; role?: UserRole; mustChangePassword?: boolean };
@@ -888,13 +899,6 @@ function ensureDatabase(res: express.Response): boolean {
 }
 
 // API routes (DB-backed when configured; demo otherwise)
-// Sprint 8 controls: visit state read strategy
-type ReadMode = 'db' | 'memory' | 'shadow';
-const defaultReadMode: ReadMode = hasDb()
-  ? ((process.env.VISIT_STATE_READ_MODE as ReadMode) || ((process.env.STAGING === '1' || /(staging)/i.test(process.env.NODE_ENV || '')) ? 'shadow' : 'db'))
-  : 'memory';
-let readMode: ReadMode = defaultReadMode;
-const shadowLogOncePerDay = new Set<string>();
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body ?? {};
   if (!email || !password) {
@@ -933,10 +937,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(500).json({ ok: false, error: 'login error' });
     }
   }
-  const DEMO_EMAIL = (process.env.DEMO_EMAIL || 'demo@example.com').toLowerCase();
-  const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password';
-  if (String(email).toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD) {
-    const isAdmin = (process.env.ADMIN_EMAIL || DEMO_EMAIL).toLowerCase() === String(email).toLowerCase();
+  const demoEmail = getDemoEmail();
+  const demoPassword = getDemoPassword();
+  if (String(email).toLowerCase() === demoEmail && password === demoPassword) {
+    const isAdmin = getAdminEmail() === String(email).toLowerCase();
     const user: JwtUser = { id: isAdmin ? 9991 : 9990, name: isAdmin ? 'Admin User' : 'Demo User', email, role: isAdmin ? 'admin' : 'tech', mustChangePassword: false };
     const token = signToken(user);
     return res.json({ ok: true, token, user });
@@ -1064,8 +1068,7 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
     } catch {}
     let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
     const day = dayKey();
-    const wantDb = readMode === 'db' || readMode === 'shadow';
-    if (wantDb && hasDb() && userId) {
+    if (hasDb() && userId) {
       try {
         const rows = await dbQuery<{ visit_id: number; status: string }>(
           `select visit_id, status from visit_state where date = $1 and user_id = $2`,
@@ -1073,38 +1076,15 @@ app.get('/api/routes/today', requireAuth, async (req, res) => {
         );
         const map = new Map<number, string>();
         (rows?.rows || []).forEach(r => map.set(r.visit_id, r.status));
-        const dbFlags = routes.map(r => {
+        withFlags = routes.map(r => {
           const st = map.get(r.id);
           return { ...r, completedToday: st === 'completed', inProgress: st === 'in_progress' };
         });
-        if (readMode === 'shadow' && !shadowLogOncePerDay.has(day)) {
-          // Compare with in-memory once per day and log mismatches
-          const memFlags = routes.map(r => ({ id: r.id, ...getFlags(r.id, userId) }));
-          const mismatches = dbFlags.filter(df => {
-            const m = memFlags.find(mf => mf.id === df.id)!;
-            return (df.completedToday !== m.completedToday) || (df.inProgress !== m.inProgress);
-          });
-          if (mismatches.length > 0) {
-            console.warn(`[visit-state shadow] ${mismatches.length} mismatch(es) for ${day}`, mismatches.map(m => ({ id: m.id, db: { c: m.completedToday, p: m.inProgress } })));
-          } else {
-            if (process.env.NODE_ENV !== 'production') {
-              console.log(`[visit-state shadow] parity OK for ${day}`);
-            }
-            // Flip reads to DB for this process after successful parity
-            readMode = 'db';
-            if (process.env.NODE_ENV !== 'production') {
-              console.log('[visit-state] flipping read mode to db for this process');
-            }
-          }
-          shadowLogOncePerDay.add(day);
-        }
-        withFlags = dbFlags;
-      } catch {
-        // Fallback to in-memory if DB read fails
-        withFlags = routes.map(r => ({ ...r, ...getFlags(r.id, userId) }));
+      } catch (err) {
+        console.error('[visit-state] failed to load flags', err);
       }
     } else {
-      // Attach server-truth flags (Phase A: in-memory)
+      // Attach in-memory flags when no DB is configured
       withFlags = routes.map(r => ({ ...r, ...getFlags(r.id, userId) }));
     }
     res.json({ ok: true, routes: withFlags });
@@ -1168,7 +1148,7 @@ app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
         } catch {}
       }
     }
-    // Phase A: mark completed in memory for today
+    // Mark completed for today (DB when available, memory otherwise)
     markCompleted(id, userId);
     res.json({ ok: true, id, idempotent: alreadyCompleted, result });
   } catch (e: any) {
@@ -1182,9 +1162,11 @@ app.post('/api/visit-state/reset', requireAuth, async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ ok: false, error: 'unauthorized' });
     const d = dayKey();
-    for (const key of Array.from(stateMap.keys())) {
-      if (key.startsWith(`${d}:`) && key.endsWith(`:${userId}`)) {
-        stateMap.delete(key);
+    if (!hasDb()) {
+      for (const key of Array.from(stateMap.keys())) {
+        if (key.startsWith(`${d}:`) && key.endsWith(`:${userId}`)) {
+          stateMap.delete(key);
+        }
       }
     }
     if (hasDb()) {
@@ -1931,20 +1913,22 @@ app.put('/api/visits/field-tech', requireAuth, requireAdmin, async (req, res) =>
 
 // Admin utility — reset today's visit state for demos/QA
 // POST /api/admin/visit-state/reset?date=YYYY-MM-DD
-// If DB is configured, delete rows from visit_state for that date; always clear in-memory cache for that date.
+// If DB is configured, delete rows from visit_state for that date; otherwise clear in-memory cache for that date.
 app.post('/api/admin/visit-state/reset', requireAuth, requireAdmin, async (req, res) => {
   const d = (req.query.date as string) || dayKey();
   try {
-    // Clear in-memory state for the day
-    const toDel: string[] = [];
-    stateMap.forEach((_v, k) => { if (k.startsWith(`${d}:`)) toDel.push(k); });
-    toDel.forEach(k => stateMap.delete(k));
+    let clearedKeys = 0;
+    if (!hasDb()) {
+      const toDel: string[] = [];
+      stateMap.forEach((_v, k) => { if (k.startsWith(`${d}:`)) toDel.push(k); });
+      toDel.forEach(k => stateMap.delete(k));
+      clearedKeys = toDel.length;
+    }
 
-    // If DB available, clear visit_state rows for that date
     if (hasDb()) {
       await dbQuery('delete from visit_state where date = $1', [d]);
     }
-    res.json({ ok: true, date: d, clearedKeys: toDel.length });
+    res.json({ ok: true, date: d, clearedKeys });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'reset error' });
   }
@@ -1979,7 +1963,7 @@ app.post('/api/admin/run-seed', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Automated report emails
-if (process.env.NODE_ENV !== 'test') {
+if (!IS_TEST) {
   // Weekly report to Tom - every Monday at 5am
   cron.schedule('0 5 * * 1', async () => {
     console.log('[CRON] Sending weekly report to Tom');
@@ -2015,9 +1999,9 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-const port = Number(process.env.PORT) || 5100;
-const host = process.env.HOST || '0.0.0.0';
-if (process.env.NODE_ENV !== 'test') {
+const port = PORT;
+const host = HOST;
+if (!IS_TEST) {
   app.listen(port, host, () => {
     console.log(`Listening on ${host}:${port}`);
   });

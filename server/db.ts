@@ -1,13 +1,14 @@
 import { Pool } from 'pg';
+import { DATABASE_URL, NODE_ENV, PGSSLMODE } from './config';
 
 let pool: Pool | null = null;
 
-const connStr = process.env.DATABASE_URL;
-if (connStr) {
+const connStr = DATABASE_URL;
+if (connStr && NODE_ENV !== 'test') {
   const useSSL = (() => {
     try {
       const u = new URL(connStr);
-      return process.env.PGSSLMODE === 'require' || process.env.NODE_ENV === 'production' || /amazonaws\.com$/.test(u.hostname);
+      return PGSSLMODE === 'require' || NODE_ENV === 'production' || /amazonaws\.com$/.test(u.hostname);
     } catch {
       return true;
     }
