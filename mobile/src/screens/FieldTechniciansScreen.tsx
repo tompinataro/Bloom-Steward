@@ -21,8 +21,6 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
   const [lastTemp, setLastTemp] = useState<{ name: string; password: string } | null>(null);
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
   const [serviceRoutes, setServiceRoutes] = useState<ServiceRoute[]>([]);
-  const [pwModal, setPwModal] = useState<{ id: number; name: string } | null>(null);
-  const [newPw, setNewPw] = useState('');
 
   const load = async () => {
     if (!token) return;
@@ -34,14 +32,21 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
       const techs = (usersRes?.users || []).filter(
         u => u.role === 'tech'
       );
-      if (!techs.length) {
+      const sortedTechs = techs.slice().sort((a, b) => {
+        const [aLast = '', aFirst = ''] = (a.name || '').trim().split(/\s+?(.+)?/).filter(Boolean).reverse();
+        const [bLast = '', bFirst = ''] = (b.name || '').trim().split(/\s+?(.+)?/).filter(Boolean).reverse();
+        const lastCmp = aLast.localeCompare(bLast, undefined, { sensitivity: 'base' });
+        if (lastCmp !== 0) return lastCmp;
+        return aFirst.localeCompare(bFirst, undefined, { sensitivity: 'base' });
+      });
+      if (!sortedTechs.length) {
         setTechUsers([
           { id: 9001, name: 'Jacob Daniels', email: 'jacob@b.com', role: 'tech' },
           { id: 9002, name: 'Sadie Percontra', email: 'sadie@b.com', role: 'tech' },
           { id: 9003, name: 'Chris Lane', email: 'chris@b.com', role: 'tech' },
         ] as any);
       } else {
-        setTechUsers(techs);
+        setTechUsers(sortedTechs);
       }
       setServiceRoutes(routesRes?.routes || []);
     } catch (err: any) {
@@ -105,26 +110,6 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
     }
   };
 
-  const updatePassword = async () => {
-    if (!token || !pwModal) return;
-    const trimmed = newPw.trim();
-    if (trimmed.length < 8) {
-      showBanner({ type: 'error', message: 'Password must be at least 8 characters.' });
-      return;
-    }
-    try {
-      await adminSetUserPassword(token, { userId: pwModal.id, newPassword: trimmed });
-      showBanner({ type: 'success', message: 'Password updated.' });
-      setNewPw('');
-      setPwModal(null);
-      // Clear temp password bubble and reload data to show new password
-      setLastTemp(null);
-      await load();
-    } catch (err: any) {
-      showBanner({ type: 'error', message: err?.message || 'Unable to update password.' });
-    }
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {!showAll && (
@@ -152,7 +137,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
             style={styles.input}
             value={phone}
             onChangeText={setPhone}
-            placeholder="Phone (optional)"
+            placeholder="Phone"
             placeholderTextColor={colors.muted}
             keyboardType="phone-pad"
             returnKeyType="done"
@@ -195,31 +180,11 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                     return <Text style={styles.routeNone}>No route assigned yet.</Text>;
                   })()}
                 </View>
-                <Pressable style={styles.pwChip} onPress={() => setPwModal({ id: user.id, name: user.name })}>
-                  <Text style={styles.pwChipText}>Reset password</Text>
-                </Pressable>
               </View>
             ))}
           </ScrollView>
           )}
       </View>
-      <Modal visible={!!pwModal} transparent animationType="fade" onRequestClose={() => setPwModal(null)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Update password for {pwModal?.name}</Text>
-            <TextInput
-              style={styles.input}
-              value={newPw}
-              onChangeText={setNewPw}
-              placeholder="New password"
-              placeholderTextColor={colors.muted}
-              secureTextEntry
-            />
-            <ThemedButton title="Save" onPress={updatePassword} />
-            <ThemedButton title="Cancel" variant="outline" onPress={() => setPwModal(null)} />
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -255,8 +220,6 @@ const styles = StyleSheet.create({
   notice: { marginTop: spacing(2), padding: spacing(2), backgroundColor: '#ecfdf5', borderRadius: 10, borderWidth: 1, borderColor: '#6ee7b7' },
   noticeText: { color: '#047857', fontWeight: '600' },
   pwInline: { fontSize: 14, fontWeight: '500', color: colors.muted },
-  pwChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(2), paddingVertical: spacing(1), alignSelf: 'flex-start' },
-  pwChipText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5) },
   listName: { fontWeight: '600', color: colors.text },
   listEmail: { color: colors.muted },
@@ -269,7 +232,4 @@ const styles = StyleSheet.create({
   listScroll: { maxHeight: 320 },
   listScrollFull: { maxHeight: undefined },
   listScrollContent: { paddingVertical: spacing(1), gap: spacing(1) },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: spacing(4) },
-  modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: 12, padding: spacing(4), gap: spacing(2), borderWidth: 1, borderColor: colors.border },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
 });

@@ -68,6 +68,7 @@ export default function AllServiceRoutesScreen({ navigation }: Props) {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerBackTitle: 'Back',
       headerRight: routes.length
         ? () => (
             <Pressable style={styles.headerChip} onPress={shareRoutes}>

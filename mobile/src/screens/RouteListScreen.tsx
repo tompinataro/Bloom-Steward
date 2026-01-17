@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   accountRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing(3) },
   secondaryBtn: { minWidth: 160 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing(4), paddingTop: spacing(3), paddingBottom: spacing(1) },
-  resetChip: { paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.5), borderRadius: 999, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent' },
+  resetChip: { paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.5), borderRadius: 999, borderWidth: 1, borderColor: colors.primary, backgroundColor: 'transparent', marginRight: spacing(5.5) },
   resetChipText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
   screenTitle: { fontSize: 22, fontWeight: '800', color: colors.text, flexShrink: 1 },
 });

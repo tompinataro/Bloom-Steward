@@ -50,6 +50,7 @@ export default function AllFieldTechniciansScreen({ navigation }: Props) {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerBackTitle: 'Back',
       headerRight: techs.length
         ? () => (
             <Pressable style={styles.headerChip} onPress={shareTechs}>
