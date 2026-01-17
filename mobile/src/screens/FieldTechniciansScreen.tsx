@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
-import { adminCreateUser, adminFetchUsers, adminFetchServiceRoutes, adminSetUserPassword, AdminUser, ServiceRoute } from '../api/client';
+import { adminCreateUser, adminFetchUsers, adminFetchServiceRoutes, AdminUser, ServiceRoute } from '../api/client';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 import { truncateText } from '../utils/text';
@@ -59,7 +59,10 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
   }, [token]);
 
   useEffect(() => {
-    navigation.setOptions({ title: showAll ? 'All Field Technicians' : 'Field Technicians' });
+    navigation.setOptions({
+      title: showAll ? 'All Field Technicians' : 'Field Technicians',
+      headerBackTitle: 'Back',
+    });
   }, [navigation, showAll]);
 
   useEffect(() => {
