@@ -208,7 +208,7 @@ export async function adminFetchClients(token: string): Promise<{ ok: boolean; c
 
 export async function adminCreateUser(
   token: string,
-  data: { name: string; email: string; role?: 'admin' | 'tech' }
+  data: { name: string; email: string; role?: 'admin' | 'tech'; phone?: string }
 ): Promise<{ ok: boolean; user: AdminUser; tempPassword: string }> {
   return fetchJson(withBase('/api/admin/users'), {
     method: 'POST',

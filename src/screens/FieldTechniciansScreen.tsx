@@ -16,6 +16,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
   const showAll = route.params?.mode === 'all';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [creating, setCreating] = useState(false);
   const [lastTemp, setLastTemp] = useState<{ name: string; password: string } | null>(null);
   const [techUsers, setTechUsers] = useState<AdminUser[]>([]);
@@ -75,7 +76,13 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
     }
     setCreating(true);
     try {
-      const res = await adminCreateUser(token, { name: trimmedName, email: trimmedEmail, role: 'tech' });
+      const trimmedPhone = phone.trim();
+      const res = await adminCreateUser(token, {
+        name: trimmedName,
+        email: trimmedEmail,
+        role: 'tech',
+        phone: trimmedPhone || undefined,
+      });
       if (res?.ok) {
         let temp = res.tempPassword;
         if (!temp || temp.length < 8) {
@@ -87,6 +94,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
         setLastTemp({ name: res.user.name, password: temp });
         setName('');
         setEmail('');
+        setPhone('');
         showBanner({ type: 'success', message: `Added ${res.user.name}. Share their temp password.` });
         await load();
       }
@@ -139,6 +147,15 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
             placeholderTextColor={colors.muted}
             autoCapitalize="none"
             keyboardType="email-address"
+            returnKeyType="done"
+          />
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Phone (optional)"
+            placeholderTextColor={colors.muted}
+            keyboardType="phone-pad"
             returnKeyType="done"
           />
           <ThemedButton title={creating ? 'Adding...' : 'Add Field Tech'} onPress={createTech} disabled={creating} />

@@ -1357,6 +1357,8 @@ app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
   const { name, email, role } = req.body ?? {};
   const trimmedName = typeof name === 'string' ? name.trim() : '';
   const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+  const rawPhone = typeof req.body?.phone === 'string' ? req.body.phone.trim() : '';
+  const phone = rawPhone || null;
   if (!trimmedName || !trimmedEmail) {
     return res.status(400).json({ ok: false, error: 'name and email required' });
   }
@@ -1368,11 +1370,11 @@ app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
   const tempPassword = generatePassword();
   const passwordHash = encryptLib.encryptPassword(tempPassword);
   try {
-    const result = await dbQuery<{ id: number; name: string; email: string; role: string; must_change_password: boolean; managed_password: string | null }>(
-      `insert into users (name, email, password_hash, role, must_change_password, managed_password)
-       values ($1, $2, $3, $4, true, $5)
-       returning id, name, email, coalesce(role, 'tech') as role, must_change_password, managed_password`,
-      [trimmedName, normalizedEmail, passwordHash, normalizedRole, tempPassword]
+    const result = await dbQuery<{ id: number; name: string; email: string; role: string; must_change_password: boolean; managed_password: string | null; phone: string | null }>(
+      `insert into users (name, email, password_hash, role, must_change_password, managed_password, phone)
+       values ($1, $2, $3, $4, true, $5, $6)
+       returning id, name, email, coalesce(role, 'tech') as role, must_change_password, managed_password, phone`,
+      [trimmedName, normalizedEmail, passwordHash, normalizedRole, tempPassword, phone]
     );
     const user = result?.rows?.[0];
     return res.json({
