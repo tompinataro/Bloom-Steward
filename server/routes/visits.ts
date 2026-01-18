@@ -230,6 +230,24 @@ export function createVisitsRouter(requireAuth: AuthMiddleware, requireAdmin: Au
     }
   });
 
+  // Reassign a client's routes to a field tech (user)
+  router.put('/visits/field-tech', requireAuth, requireAdmin, async (req, res) => {
+    const { clientName, fieldTechId } = req.body ?? {};
+    if (!clientName || !fieldTechId) return res.status(400).json({ ok: false, error: 'missing clientName or fieldTechId' });
+    try {
+      // Look up client id
+      const clientRes = await dbQuery<{ id: number }>('select id from clients where name = $1', [clientName]);
+      const clientId = clientRes?.rows?.[0]?.id;
+      if (!clientId) return res.status(404).json({ ok: false, error: 'client not found' });
+
+      // Update routes_today entries for this client
+      await dbQuery('update routes_today set user_id = $1 where client_id = $2', [fieldTechId, clientId]);
+      res.json({ ok: true });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, error: e?.message ?? 'update error' });
+    }
+  });
+
   router.post('/admin/visit-state/reset', requireAuth, requireAdmin, async (req, res) => {
     const d = (req.query.date as string) || dayKey();
     try {

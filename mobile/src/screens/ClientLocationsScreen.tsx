@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Share, FlatList, Linking, Platform } from 'react-native';
-import * as MailComposer from 'expo-mail-composer';
+import { Alert, ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -18,7 +17,10 @@ import {
   ServiceRoute
 } from '../api/client';
 import ThemedButton from '../components/Button';
+import HeaderEmailChip from '../components/HeaderEmailChip';
 import { colors, spacing } from '../theme';
+import { shareEmail } from '../utils/email';
+import { buildFullAddress } from '../utils/address';
 import { truncateText } from '../utils/text';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ClientLocations'>;
@@ -89,31 +91,11 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     navigation.setOptions({
       headerRight: showAll && uniqueClients.length
         ? () => (
-            <Pressable style={styles.headerChip} onPress={shareClients}>
-              <Text style={styles.headerChipText}>Email List</Text>
-            </Pressable>
+            <HeaderEmailChip onPress={shareClients} />
           )
         : undefined,
     });
   }, [navigation, showAll, uniqueClients.length]);
-
-  const buildFullAddress = (streetRaw: string, cityRaw: string, stateRaw: string, zipRaw: string) => {
-    const street = streetRaw.trim();
-    const cityPart = cityRaw.trim();
-    const statePart = stateRaw.trim();
-    const zipPart = zipRaw.trim();
-    let line2 = '';
-    if (cityPart) {
-      line2 += cityPart;
-    }
-    if (statePart) {
-      line2 += line2 ? `, ${statePart}` : statePart;
-    }
-    if (zipPart) {
-      line2 += line2 ? ` ${zipPart}` : zipPart;
-    }
-    return line2 ? `${street}, ${line2}` : street;
-  };
 
   const parseAddressParts = (value: string) => {
     const parts = value.split(',').map(part => part.trim()).filter(Boolean);
@@ -288,22 +270,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
     });
     const subject = 'Client Locations';
     const body = `Client Locations:\n\n${lines.join('\n\n')}`;
-    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    try {
-      if (await MailComposer.isAvailableAsync()) {
-        await MailComposer.composeAsync({ subject, body });
-        return;
-      }
-      const canMail = await Linking.canOpenURL(mailto);
-      if (canMail) {
-        await Linking.openURL(mailto);
-        return;
-      }
-      await Share.share({
-        title: subject,
-        message: body,
-      });
-    } catch {}
+    await shareEmail(subject, body);
   };
 
   const setLatLongToCurrentLocation = async () => {
@@ -677,6 +644,4 @@ const styles = StyleSheet.create({
   modalOptionSub: { fontSize: 13, color: colors.muted },
   cardHeader: { flexDirection: 'row', gap: spacing(2), width: '100%' },
   cardHeaderCentered: { alignItems: 'center', justifyContent: 'center' },
-  headerChip: { borderWidth: 1, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: spacing(1.5), paddingVertical: spacing(0.25), marginRight: spacing(5.5) },
-  headerChipText: { color: colors.primary, fontWeight: '700', fontSize: 11 },
 });
