@@ -40,3 +40,7 @@ export const HOST = process.env.HOST || '0.0.0.0';
 
 export const DATABASE_URL = process.env.DATABASE_URL || '';
 export const PGSSLMODE = process.env.PGSSLMODE || '';
+
+if (IS_PROD && !DATABASE_URL) {
+  throw new Error('DATABASE_URL is required in production.');
+}

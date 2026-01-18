@@ -12,14 +12,27 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 // Mock submitVisit to control success/failure
-vi.mock('../src/api/client', () => ({
+vi.mock('../../shared/api/client', () => ({
   submitVisit: vi.fn(async () => { throw new Error('network'); }),
 }));
 
-import { enqueueSubmission, flushQueue, getQueueStats } from '../src/offlineQueue';
+let enqueueSubmission: typeof import('../src/offlineQueue').enqueueSubmission;
+let flushQueue: typeof import('../src/offlineQueue').flushQueue;
+let getQueueStats: typeof import('../src/offlineQueue').getQueueStats;
+let resetOfflineQueueStoreForTests: typeof import('../src/offlineQueue').resetOfflineQueueStoreForTests;
 
 describe('offlineQueue', () => {
-  beforeEach(() => { store.clear(); });
+  beforeEach(async () => {
+    store.clear();
+    if (!enqueueSubmission) {
+      const mod = await import('../src/offlineQueue');
+      enqueueSubmission = mod.enqueueSubmission;
+      flushQueue = mod.flushQueue;
+      getQueueStats = mod.getQueueStats;
+      resetOfflineQueueStoreForTests = mod.resetOfflineQueueStoreForTests;
+    }
+    resetOfflineQueueStoreForTests?.();
+  });
 
   it('dedupes submissions by id:YYYY-MM-DD', async () => {
     await enqueueSubmission(123, { a: 1 });
@@ -38,4 +51,3 @@ describe('offlineQueue', () => {
     expect(typeof stats.oldestNextTryAt === 'string' || stats.oldestNextTryAt === undefined).toBe(true);
   });
 });
-
