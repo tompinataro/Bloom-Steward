@@ -11,6 +11,7 @@ import {
   ServiceRoute,
 } from '../api/client';
 import ThemedButton from '../components/Button';
+import Card from '../components/Card';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
 import { truncateText } from '../utils/text';
@@ -110,7 +111,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
   if (showAll) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
+        <Card>
           <Text style={styles.title}>All Service Routes</Text>
           {serviceRoutes.length === 0 ? (
             <Text style={styles.emptyCopy}>No service routes yet.</Text>
@@ -136,16 +137,16 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
               );
             })
           )}
-        </View>
+        </Card>
         {unassignedClients.length > 0 && (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.subTitle}>Unplaced Client Locations</Text>
             {unassignedClients.map(client => (
               <Text key={`${client.id}-${client.name}`} style={styles.clientItem}>
                 • {truncateText(client.name)} — {truncateText(client.address, 36)}
               </Text>
             ))}
-          </View>
+          </Card>
         )}
       </ScrollView>
     );
@@ -155,7 +156,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
         {!showAll && (
-          <View style={styles.card}>
+          <Card>
             <Text style={styles.title}>Create Service Route</Text>
             <TextInput
               style={styles.input}
@@ -170,10 +171,10 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
               onPress={createRoute}
               disabled={creatingRoute}
             />
-          </View>
+          </Card>
         )}
 
-        <View style={styles.card}>
+        <Card>
           <Text style={styles.subTitle}>Unassigned Service Routes</Text>
           {unassignedRoutes.length === 0 ? (
             <Text style={styles.emptyCopy}>All service routes are assigned.</Text>
@@ -194,7 +195,7 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
               ))}
             </ScrollView>
           )}
-        </View>
+        </Card>
 
       </ScrollView>
     </View>
@@ -203,7 +204,6 @@ export default function ServiceRoutesScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
   input: {

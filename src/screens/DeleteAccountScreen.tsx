@@ -3,6 +3,7 @@ import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
+import Card from '../components/Card';
 import { colors } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
 
@@ -49,7 +50,7 @@ export default function DeleteAccountScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <Text style={styles.title}>Delete Account</Text>
           <Text style={styles.body}>
             Deleting your account will permanently remove your profile, assigned routes, and related activity from
@@ -87,7 +88,7 @@ export default function DeleteAccountScreen({ navigation }: Props) {
               <Text style={styles.secondary}>Cancel</Text>
             </Pressable>
           </View>
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -105,10 +106,9 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 20,
-    borderRadius: 12,
-    backgroundColor: colors.card,
+    borderColor: '#d1d5db',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#d1d5db'
+    gap: 0
   },
   title: {
     fontSize: 22,

@@ -6,6 +6,8 @@ import { useAuth } from '../auth';
 import { showBanner } from '../components/globalBannerBus';
 import { adminCreateUser, adminFetchUsers, adminFetchServiceRoutes, AdminUser, ServiceRoute } from '../api/client';
 import ThemedButton from '../components/Button';
+import Card from '../components/Card';
+import ListRow from '../components/ListRow';
 import { colors, spacing } from '../theme';
 import { truncateText } from '../utils/text';
 
@@ -116,8 +118,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {!showAll && (
-        <View style={styles.card}>
-          <Text style={styles.title}>Create Field Tech</Text>
+        <Card>
           <TextInput
             style={styles.input}
             value={name}
@@ -154,9 +155,9 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
               </Text>
             </View>
           ) : null}
-        </View>
+        </Card>
       )}
-      <View style={styles.card}>
+      <Card>
         <Text style={styles.subTitle}>{showAll ? 'All Field Techs' : 'Current Field Techs'}</Text>
         {techUsers.length === 0 ? (
           <Text style={styles.emptyCopy}>No field techs yet.</Text>
@@ -167,7 +168,7 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
               nestedScrollEnabled
             >
               {techUsers.map(user => (
-                <View key={user.id} style={styles.listRow}>
+                <ListRow key={user.id} style={styles.listRow}>
                   <View style={{ flex: 1 }}>
                   <Text style={styles.listName}>
                     {truncateText(user.name, 32)}
@@ -184,11 +185,11 @@ export default function FieldTechniciansScreen({ route, navigation }: Props) {
                     return <Text style={styles.routeNone}>No route assigned yet.</Text>;
                   })()}
                 </View>
-              </View>
+                </ListRow>
             ))}
           </ScrollView>
           )}
-      </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -209,9 +210,7 @@ function generateTempPassword(len: number): string {
 
 const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  subTitle: { fontSize: 17, fontWeight: '700', color: colors.text, textAlign: 'center' },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -224,7 +223,7 @@ const styles = StyleSheet.create({
   notice: { marginTop: spacing(2), padding: spacing(2), backgroundColor: '#ecfdf5', borderRadius: 10, borderWidth: 1, borderColor: '#6ee7b7' },
   noticeText: { color: '#047857', fontWeight: '600' },
   pwInline: { fontSize: 14, fontWeight: '500', color: colors.muted },
-  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5) },
+  listRow: { paddingTop: spacing(1.5), paddingVertical: 0 },
   listName: { fontWeight: '600', color: colors.text },
   listEmail: { color: colors.muted },
   routeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(1), marginTop: spacing(0.5) },

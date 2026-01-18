@@ -7,6 +7,7 @@ import { useAuth } from '../auth';
 import { fetchTodayRoutes, TodayRoute, resetMyVisitState } from '../api/client';
 import { flushQueue, getQueueStats } from '../offlineQueue';
 import LoadingOverlay from '../components/LoadingOverlay';
+import Card from '../components/Card';
 import ThemedButton from '../components/Button';
 import { showBanner } from '../components/globalBannerBus';
 import { colors, spacing } from '../theme';
@@ -321,17 +322,19 @@ type ItemProps = {
         accessibilityLabel={`Open visit for ${route.clientName}`}
         accessibilityHint="Opens the visit details"
       >
-        <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }] }>
-          <View style={styles.rowTop}>
-            <View style={styles.leftWrap}>
-              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName, 14)}</Text>
-              <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(streetOnly, 22)}</Text>
+        <Animated.View style={{ transform: [{ scale: cardScale }] }}>
+          <Card style={styles.card}>
+            <View style={styles.rowTop}>
+              <View style={styles.leftWrap}>
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{truncateText(route.clientName, 14)}</Text>
+                <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">{truncateText(streetOnly, 22)}</Text>
+              </View>
+              <View style={styles.centerWrap}>
+                <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />
+              </View>
+              <MemoCheck done={isDone} progress={inProg && !isDone} label={isDone ? 'Completed' : inProg ? 'In progress' : 'Not started'} />
             </View>
-            <View style={styles.centerWrap}>
-              <MapButton onPress={() => onOpenMaps(route.address)} label={`Open directions for ${route.clientName}`} />
-            </View>
-            <MemoCheck done={isDone} progress={inProg && !isDone} label={isDone ? 'Completed' : inProg ? 'In progress' : 'Not started'} />
-          </View>
+          </Card>
         </Animated.View>
       </Pressable>
     );
@@ -457,12 +460,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     alignSelf: 'center',
-    padding: spacing(3),
-    backgroundColor: colors.card,
-    borderRadius: 12,
     marginBottom: spacing(3),
-    borderWidth: 1,
-    borderColor: colors.border,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 4,

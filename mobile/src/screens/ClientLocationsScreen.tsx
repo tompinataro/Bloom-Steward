@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, FlatList, Platform } from 'react-native';
+import { Alert, ScrollView, View, Text, TextInput, StyleSheet, Modal, Pressable, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
@@ -17,7 +17,9 @@ import {
   ServiceRoute
 } from '../api/client';
 import ThemedButton from '../components/Button';
+import Card from '../components/Card';
 import HeaderEmailChip from '../components/HeaderEmailChip';
+import ListRow from '../components/ListRow';
 import { colors, spacing } from '../theme';
 import { shareEmail } from '../utils/email';
 import { buildFullAddress } from '../utils/address';
@@ -315,7 +317,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
       nestedScrollEnabled
     >
       {!showAll && (
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <TextInput
             style={styles.input}
             value={name}
@@ -392,9 +394,9 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
           />
           <ThemedButton title="Set Lat/Long to Current Location" variant="outline" onPress={setLatLongToCurrentLocation} />
           <ThemedButton title={creating ? 'Adding...' : 'Add Client Location'} onPress={addClient} disabled={creating} />
-        </View>
+        </Card>
       )}
-      <View style={styles.card}>
+      <Card style={styles.card}>
         {!showAll && (
           <View style={[styles.cardHeader, styles.cardHeaderCentered]}>
             <Text style={styles.subTitle}>Locations Awaiting Placement</Text>
@@ -407,7 +409,7 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
         ) : (
           <View style={showAll ? styles.listScrollFull : styles.listScroll}>
             {listToRender.map(client => (
-              <View key={`${client.id}-${client.name}`} style={styles.listRow}>
+              <ListRow key={`${client.id}-${client.name}`} style={styles.listRow}>
                 <View style={styles.listMain}>
                   <Text style={styles.listName} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.name, 30)}</Text>
                   <Text style={styles.listMeta} numberOfLines={1} ellipsizeMode="tail">{truncateText(client.address, 17)}</Text>
@@ -449,11 +451,11 @@ export default function ClientLocationsScreen({ route, navigation }: Props) {
                     </Text>
                   </Pressable>
                 )}
-              </View>
+              </ListRow>
             ))}
           </View>
         )}
-      </View>
+      </Card>
       <Modal
         visible={!!pickerClient}
         transparent
@@ -598,8 +600,7 @@ export function useUniqueClients(clients: AdminClient[]): UniqueClient[] {
 
 const styles = StyleSheet.create({
   container: { padding: spacing(3), gap: spacing(2.5) },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(2), borderWidth: 1, borderColor: colors.border, gap: spacing(1.5) },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  card: { padding: spacing(2), gap: spacing(1.5) },
   subTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   input: {
     borderWidth: 1,
@@ -610,7 +611,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.card,
   },
-  listRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: spacing(1.5), gap: spacing(0.75), flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between' },
+  listRow: { paddingTop: spacing(1.5), paddingVertical: 0, gap: spacing(0.75) },
   listMain: { flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '60%', gap: spacing(0.25) },
   listName: { fontWeight: '600', color: colors.text },
   listMeta: { color: colors.text },

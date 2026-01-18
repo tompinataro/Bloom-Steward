@@ -100,7 +100,7 @@ if (SMTP_URL) {
 export async function buildSummary(startDate: Date, endDate: Date): Promise<ReportRow[]> {
   const rawRows = await buildReportRows(startDate, endDate);
   // Keep only completed visits (check-out present)
-  const completedRows = rawRows.filter(row => row.payload?.checkOutTs);
+  const completedRows = rawRows.filter(row => row.visit_time);
 
   // Get all unique tech IDs from completed rows
   const uniqueTechIds = Array.from(new Set(completedRows.map(r => r.tech_id).filter(Boolean))) as number[];
@@ -170,14 +170,22 @@ export async function buildSummary(startDate: Date, endDate: Date): Promise<Repo
       }
     } catch {}
     try {
-      if (typeof payload.checkOutTs === 'string') {
-        const d = new Date(payload.checkOutTs);
-        if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
-      } else if (payload.checkOutTs) {
-        const d = new Date(payload.checkOutTs as any);
+      if (row.visit_time) {
+        const d = new Date(row.visit_time as any);
         if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
       }
     } catch {}
+    if (!checkOutTs) {
+      try {
+        if (typeof payload.checkOutTs === 'string') {
+          const d = new Date(payload.checkOutTs);
+          if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
+        } else if (payload.checkOutTs) {
+          const d = new Date(payload.checkOutTs as any);
+          if (!Number.isNaN(d.getTime())) checkOutTs = d.toISOString();
+        }
+      } catch {}
+    }
     if (!checkInTs && row.created_at) {
       const d = new Date(row.created_at as any);
       if (!Number.isNaN(d.getTime())) checkInTs = d.toISOString();
@@ -187,13 +195,12 @@ export async function buildSummary(startDate: Date, endDate: Date): Promise<Repo
     }
     const inDate = checkInTs ? new Date(checkInTs) : null;
     const outDate = checkOutTs ? new Date(checkOutTs) : null;
-    const dateSource = checkInTs || checkOutTs || (row.created_at ? new Date(row.created_at as any).toISOString() : null);
-    const visitDate = dateSource ? (dateSource.includes('T') ? dateSource.split('T')[0] : dateSource.split(' ')[0]) : null;
+    const visitDate = checkOutTs ? checkOutTs.split('T')[0] : null;
     const durationMinutes = inDate && outDate ? Math.max(0, (outDate.getTime() - inDate.getTime()) / 60000) : 0;
     const durationFormatted = formatDuration(durationMinutes);
     const onSiteContact = payload.onSiteContact || null;
     const techNotes = payload.techNotes || payload.noteToOffice || payload.notes || null;
-    const odometerReading = payload.odometerReading ? Number(payload.odometerReading) : null;
+    const odometerReading = payload.odometerReading != null ? Number(payload.odometerReading) : null;
 
     let mileageDelta = 0;
     const rawLoc = payload.checkOutLoc;

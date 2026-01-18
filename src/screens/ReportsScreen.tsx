@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth';
 import ThemedButton from '../components/Button';
+import Card from '../components/Card';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
 import { adminFetchReportSummary, adminSendReport, ReportSummaryRow } from '../api/client';
@@ -269,7 +270,7 @@ export default function ReportsScreen(_props: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.card}>
+      <Card>
         <Text style={styles.heading}>Summary Report Generator</Text>
         <Text style={styles.label}>Recipients</Text>
         <View style={styles.recipientStack}>
@@ -341,8 +342,8 @@ export default function ReportsScreen(_props: Props) {
             style={[styles.actionButton, styles.sendBtn]}
           />
         </View>
-      </View>
-      <View style={styles.card}>
+      </Card>
+      <Card>
         <Text style={styles.heading}>Summary Report Preview</Text>
         {summary.length === 0 ? (
           <Text style={styles.muted}>{loadingSummary ? 'Loading…' : 'No visits recorded for this range.'}</Text>
@@ -407,7 +408,7 @@ export default function ReportsScreen(_props: Props) {
             </View>
           </ScrollView>
         )}
-      </View>
+      </Card>
     </ScrollView>
   );
 }
@@ -486,7 +487,6 @@ function formatTime(value?: string | null) {
 
 const styles = StyleSheet.create({
   container: { padding: spacing(4), gap: spacing(3) },
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: spacing(3), borderWidth: 1, borderColor: colors.border, gap: spacing(2) },
   heading: { fontSize: 20, fontWeight: '700', color: colors.text },
   label: { fontWeight: '600', color: colors.text },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing(2), color: colors.text },
