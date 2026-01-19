@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.pinataro.primesoloproject'
+    namespace 'com.pinataro.bloomsteward'
     defaultConfig {
-        applicationId 'com.pinataro.primesoloproject'
+        applicationId 'com.pinataro.bloomsteward'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

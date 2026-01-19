@@ -2,15 +2,17 @@
   "expo": {
     "extra": {
       "eas": {
-        "projectId": "f8e35076-3a92-4b1d-b324-c35896994cea"
+        "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"
       }
     },
+    "slug": "bloom-steward",
     "ios": {
       "bundleIdentifier": "com.pinataro.prime-solo-project"
     },
     "android": {
-      "package": "com.pinataro.primesoloproject"
-    }
+      "package": "com.pinataro.bloomsteward"
+    },
+    "owner": "pinataro"
   },
   "platforms": [
     "ios",
