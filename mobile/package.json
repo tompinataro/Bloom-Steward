@@ -1,6 +1,9 @@
 {
   "name": "mobile",
   "version": "1.0.3",
+  "npmConfig": {
+    "legacy-peer-deps": true
+  },
   "engines": {
     "node": ">=20.19.4"
   },
@@ -31,7 +34,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
-    "@types/react": "~19.1.10",
+    "@types/react": "~18.2.66",
     "axios": "^1.11.0",
     "expo": "^54.0.0",
     "expo-asset": "~12.0.9",
@@ -43,19 +46,23 @@
     "expo-status-bar": "~3.0.8",
     "expo-task-manager": "~14.0.8",
     "expo-updates": "~29.0.13",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-native": "0.81.5",
-    "react-native-gesture-handler": "~2.28.0",
-    "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "~4.16.0",
-    "react-native-web": "^0.21.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-native": "0.73.11",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.19.0",
+    "react-native-web": "^0.19.13",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/cli": "^0.24.20",
-    "@types/react": "~19.1.10"
+    "@types/react": "~18.2.66"
   },
   "private": true
 }
