@@ -1,6 +1,22 @@
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../auth/provider';
+import {
+  adminAssignServiceRoute,
+  adminFetchClients,
+  adminFetchServiceRoutes,
+  adminFetchUsers,
+} from '../api/client';
+import { showBanner } from '../components/globalBannerBus';
 import Card from '../components/Card';
+import HeaderEmailChip from '../components/HeaderEmailChip';
+import ThemedButton from '../components/Button';
+import { colors, spacing } from '../theme';
+import { formatRouteAddress } from '../utils/address';
+import { shareEmail } from '../utils/email';
+import { sortByLastName } from '../utils/sort';
+import { truncateText } from '../utils/text';
 
 type AdminUser = { id: number; name: string; role?: string; };
 type ServiceRoute = { id: number; name: string; user_name?: string | null; user_id?: number | null; };
@@ -187,6 +203,28 @@ export function createAllServiceRoutesScreen(deps: Deps) {
       </ScrollView>
     );
   };
+}
+
+const SharedAllServiceRoutesScreen = createAllServiceRoutesScreen({
+  useAuth,
+  adminAssignServiceRoute,
+  adminFetchClients,
+  adminFetchServiceRoutes,
+  adminFetchUsers,
+  showBanner,
+  truncateText,
+  formatRouteAddress,
+  shareEmail,
+  sortByLastName,
+  useFocusEffect,
+  ThemedButton,
+  HeaderEmailChip,
+  colors,
+  spacing,
+});
+
+export default function AllServiceRoutesScreen({ navigation }: Props) {
+  return <SharedAllServiceRoutesScreen navigation={navigation} />;
 }
 
 function RouteAssignModal({

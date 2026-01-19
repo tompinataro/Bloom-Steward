@@ -1,7 +1,17 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../auth/provider';
+import { adminClearRoutesForTech, adminFetchServiceRoutes, adminFetchUsers } from '../api/client';
+import { showBanner } from '../components/globalBannerBus';
 import Card from '../components/Card';
+import HeaderEmailChip from '../components/HeaderEmailChip';
 import ListRow from '../components/ListRow';
+import ThemedButton from '../components/Button';
+import { colors, spacing } from '../theme';
+import { shareEmail } from '../utils/email';
+import { sortByLastName } from '../utils/sort';
+import { truncateText } from '../utils/text';
 
 type AdminUser = {
   id: number;
@@ -160,6 +170,26 @@ export function createAllFieldTechniciansScreen(deps: Deps) {
       </ScrollView>
     );
   };
+}
+
+const SharedAllFieldTechniciansScreen = createAllFieldTechniciansScreen({
+  useAuth,
+  adminFetchUsers,
+  adminFetchServiceRoutes,
+  adminClearRoutesForTech,
+  showBanner,
+  truncateText,
+  shareEmail,
+  sortByLastName,
+  useFocusEffect,
+  ThemedButton,
+  HeaderEmailChip,
+  colors,
+  spacing,
+});
+
+export default function AllFieldTechniciansScreen({ navigation }: Props) {
+  return <SharedAllFieldTechniciansScreen navigation={navigation} />;
 }
 
 function createStyles(colors: Colors, spacing: (n: number) => number) {
