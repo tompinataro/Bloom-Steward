@@ -43,7 +43,8 @@
       "distribution": "store",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://bloom-steward-2a872c497756.herokuapp.com",
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "NPM_CONFIG_FORCE": "true"
       },
       "ios": {
         "resourceClass": "m-medium",
