@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/LoadingOverlay';
+export { default } from '../shared/components/LoadingOverlay';

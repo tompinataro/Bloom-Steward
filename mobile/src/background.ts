@@ -1,1 +1,1 @@
-export * from '../../shared/background';
+export * from './shared/background';

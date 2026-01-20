@@ -1,1 +1,1 @@
-export { default } from '../../../shared/screens/RouteListScreen';
+export { default } from '../shared/screens/RouteListScreen';

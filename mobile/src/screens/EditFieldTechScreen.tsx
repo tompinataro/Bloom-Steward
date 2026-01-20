@@ -1,1 +1,1 @@
-export { default } from '../../../shared/screens/EditFieldTechScreen';
+export { default } from '../shared/screens/EditFieldTechScreen';

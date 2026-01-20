@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/ErrorBoundary';
+export { default } from '../shared/components/ErrorBoundary';

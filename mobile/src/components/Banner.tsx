@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/Banner';
+export { default } from '../shared/components/Banner';

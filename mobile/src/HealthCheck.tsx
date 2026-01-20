@@ -1,1 +1,1 @@
-export { default } from '../../shared/components/HealthCheck';
+export { default } from './shared/components/HealthCheck';

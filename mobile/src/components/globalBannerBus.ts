@@ -1,1 +1,1 @@
-export * from '../../../shared/components/globalBannerBus';
+export * from '../shared/components/globalBannerBus';

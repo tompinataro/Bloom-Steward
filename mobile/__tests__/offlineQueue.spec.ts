@@ -12,7 +12,7 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 // Mock submitVisit to control success/failure
-vi.mock('../../shared/api/client', () => ({
+vi.mock('../src/shared/api/client', () => ({
   submitVisit: vi.fn(async () => { throw new Error('network'); }),
 }));
 

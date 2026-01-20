@@ -1,1 +1,1 @@
-export { default } from './shared/App';
+export { default } from './mobile/src/shared/App';

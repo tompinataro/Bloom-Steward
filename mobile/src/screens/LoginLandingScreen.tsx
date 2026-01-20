@@ -1,1 +1,1 @@
-export { default } from '../../../shared/screens/LoginLandingScreen';
+export { default } from '../shared/screens/LoginLandingScreen';

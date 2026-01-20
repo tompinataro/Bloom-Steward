@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/SignOutButton';
+export { default } from '../shared/components/SignOutButton';

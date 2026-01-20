@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/HeaderEmailChip';
+export { default } from '../shared/components/HeaderEmailChip';

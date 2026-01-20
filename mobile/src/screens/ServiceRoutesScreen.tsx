@@ -1,1 +1,1 @@
-export { default } from '../../../shared/screens/ServiceRoutesScreen';
+export { default } from '../shared/screens/ServiceRoutesScreen';

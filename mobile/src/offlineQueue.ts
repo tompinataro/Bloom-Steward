@@ -1,1 +1,1 @@
-export * from '../../shared/utils/offlineQueue';
+export * from './shared/utils/offlineQueue';

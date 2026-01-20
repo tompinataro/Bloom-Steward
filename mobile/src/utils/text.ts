@@ -1,1 +1,1 @@
-export * from '../../../shared/utils/text';
+export * from './shared/utils/text';

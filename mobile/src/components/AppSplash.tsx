@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/AppSplash';
+export { default } from '../shared/components/AppSplash';

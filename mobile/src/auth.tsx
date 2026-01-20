@@ -1,1 +1,1 @@
-export * from '../../shared/auth/provider';
+export * from './shared/auth/provider';

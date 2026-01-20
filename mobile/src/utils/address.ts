@@ -1,1 +1,1 @@
-export * from '../../../shared/utils/address';
+export * from './shared/utils/address';

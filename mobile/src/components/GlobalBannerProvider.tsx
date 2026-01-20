@@ -1,1 +1,1 @@
-export * from '../../../shared/components/GlobalBannerProvider';
+export * from '../shared/components/GlobalBannerProvider';

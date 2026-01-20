@@ -1,1 +1,1 @@
-export { default } from '../../../shared/components/ListRow';
+export { default } from '../shared/components/ListRow';
