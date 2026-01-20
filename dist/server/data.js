@@ -213,11 +213,7 @@ async function buildReportRows(startDate, endDate) {
     const submissionsRes = await (0, db_1.dbQuery)(`select
        vs.id as submission_id,
        vs.created_at,
-       coalesce(
-         nullif(vs.payload->>'checkOutTs', '')::timestamptz,
-         nullif(vs.payload->>'checkInTs', '')::timestamptz,
-         vs.created_at
-       ) as visit_time,
+       nullif(vs.payload->>'checkOutTs', '')::timestamptz as visit_time,
        v.id as visit_id,
        c.name as client_name,
        c.address,
@@ -232,11 +228,7 @@ async function buildReportRows(startDate, endDate) {
      join clients c on c.id = v.client_id
      left join service_routes sr on sr.id = c.service_route_id
      left join users u on u.id = sr.user_id
-     where coalesce(
-       nullif(vs.payload->>'checkOutTs', '')::timestamptz,
-       nullif(vs.payload->>'checkInTs', '')::timestamptz,
-       vs.created_at
-     ) between $1 and $2
+     where nullif(vs.payload->>'checkOutTs', '')::timestamptz between $1 and $2
      order by u.id nulls last, visit_time asc`, [startDate.toISOString(), endDate.toISOString()]);
     const submissionRows = submissionsRes?.rows ?? [];
     return submissionRows;
