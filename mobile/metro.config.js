@@ -1,7 +1,9 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
-const config = getDefaultConfig(__dirname);
-config.watchFolders = [path.resolve(__dirname, '..', 'shared')];
+const projectRoot = __dirname;
+const config = getDefaultConfig(projectRoot);
+config.watchFolders = [path.resolve(projectRoot, 'src', 'shared')];
+config.resolver.nodeModulesPaths = [path.resolve(projectRoot, 'node_modules')];
 
 module.exports = config;
