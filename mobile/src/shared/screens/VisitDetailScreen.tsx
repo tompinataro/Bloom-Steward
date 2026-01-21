@@ -9,7 +9,7 @@ import ThemedButton from '../components/Button';
 import Banner from '../components/Banner';
 import { colors, spacing } from '../theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { isSubmitDisabled } from '../logic/gates';
+import { isSubmitDisabled } from '../../logic/gates';
 import { formatTime } from '../utils/time';
 import { useVisitDetailData } from '../hooks/useVisitDetailData';
 
