@@ -1,1 +1,1 @@
-export { default } from './src/shared/App';
+export { default } from '../shared/App';

@@ -12,5 +12,5 @@ if (__DEV__) {
   // LogBox.ignoreAllLogs(true);
 }
 
-import App from './src/shared/App';
+import App from './App';
 registerRootComponent(App);
