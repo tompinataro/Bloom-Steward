@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
 const AppSplash = () => {
   return (
     <ImageBackground
-      source={require('../../assets/palms_splash.jpg')}
+      source={require('../../../assets/palms_splash.jpg')}
       resizeMode="cover"
       style={styles.bg}
       accessibilityLabel="Loading"

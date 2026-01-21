@@ -110,7 +110,7 @@ export default function LoginFormScreen(_props: Props) {
             )}
           </View>
           <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
-            <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -44,7 +44,7 @@ export default function LoginLandingScreen() {
       >
         <View style={[styles.content, { maxWidth: contentWidth }]}>
           <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
-            <Image source={require('../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
             <Text style={styles.rightsText}>All Rights Reserved. ©️ 2026</Text>
           </View>
           <Text style={styles.heading}>The Field Tech&apos;s Favorite Dashboard</Text>
