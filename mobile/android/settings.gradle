@@ -1,32 +1,39 @@
-rootProject.name = 'Bloom Steward'
+pluginManagement {
+  def reactNativeGradlePlugin = new File(
+    providers.exec {
+      workingDir(rootDir)
+      commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
+    }.standardOutput.asText.get().trim()
+  ).getParentFile().absolutePath
+  includeBuild(reactNativeGradlePlugin)
 
-def findNodeModulesFile(String relativePath) {
-  def current = rootDir
-  while (current != null) {
-    def candidate = new File(current, "node_modules/${relativePath}")
-    if (candidate.exists()) {
-      return candidate
-    }
-    current = current.getParentFile()
+  def expoPluginsPath = new File(
+    providers.exec {
+      workingDir(rootDir)
+      commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })")
+    }.standardOutput.asText.get().trim(),
+    "../android/expo-gradle-plugin"
+  ).absolutePath
+  includeBuild(expoPluginsPath)
+}
+
+plugins {
+  id("com.facebook.react.settings")
+  id("expo-autolinking-settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
+    ex.autolinkLibrariesFromCommand()
+  } else {
+    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
   }
-  return null
 }
+expoAutolinking.useExpoModules()
 
-def rnCliGradle = findNodeModulesFile("@react-native-community/cli-platform-android/native_modules.gradle")
-if (rnCliGradle == null) {
-  throw new GradleException("Could not find @react-native-community/cli-platform-android/native_modules.gradle in any node_modules")
-}
-apply from: rnCliGradle
-applyNativeModulesSettingsGradle(settings)
+rootProject.name = 'bloom-steward'
 
-def expoModulesPath = new File(
-  ["node", "--print", "require.resolve('expo-modules-autolinking/package.json')"].execute(null, rootDir).text.trim()
-).getParentFile().absolutePath
-apply from: new File(expoModulesPath, "scripts/android/autolinking_implementation.gradle")
-useExpoModules()
+expoAutolinking.useExpoVersionCatalog()
 
 include ':app'
-def rnGradlePlugin = findNodeModulesFile("@react-native/gradle-plugin")
-if (rnGradlePlugin != null) {
-  includeBuild(rnGradlePlugin.absolutePath)
-}
+includeBuild(expoAutolinking.reactNativeGradlePlugin)
