@@ -42,7 +42,9 @@ expoAutolinking.useExpoModules()
 
 rootProject.name = 'bloom-steward'
 
-expoAutolinking.useExpoVersionCatalog()
+expoAutolinking.useExpoVersionCatalog { catalog ->
+  catalog.version("kotlin", "2.0.21")
+}
 
 include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)
