@@ -1,19 +1,18 @@
 rootProject.name = 'Bloom Steward'
 
-def resolveFile(String relPath) {
-  return new File(rootDir, relPath)
+def findNodeModulesFile(String relativePath) {
+  def current = rootDir
+  while (current != null) {
+    def candidate = new File(current, "node_modules/${relativePath}")
+    if (candidate.exists()) {
+      return candidate
+    }
+    current = current.getParentFile()
+  }
+  return null
 }
 
-def rnCliGradle = resolveFile("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-if (!rnCliGradle.exists()) {
-  rnCliGradle = resolveFile("../../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-}
-if (!rnCliGradle.exists()) {
-  rnCliGradle = resolveFile("../../../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-}
-if (!rnCliGradle.exists()) {
-  rnCliGradle = resolveFile("../../../../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-}
+def rnCliGradle = findNodeModulesFile("@react-native-community/cli-platform-android/native_modules.gradle")
 apply from: rnCliGradle
 applyNativeModulesSettingsGradle(settings)
 
@@ -23,16 +22,7 @@ def expoModulesPath = new File(
 apply from: new File(expoModulesPath, "scripts/android/autolinking_implementation.gradle")
 useExpoModules()
 
-def rnGradlePlugin = resolveFile("../../node_modules/@react-native/gradle-plugin")
-if (!rnGradlePlugin.exists()) {
-  rnGradlePlugin = resolveFile("../../../node_modules/@react-native/gradle-plugin")
-}
-if (!rnGradlePlugin.exists()) {
-  rnGradlePlugin = resolveFile("../../../../node_modules/@react-native/gradle-plugin")
-}
-if (!rnGradlePlugin.exists()) {
-  rnGradlePlugin = resolveFile("../../../../../node_modules/@react-native/gradle-plugin")
-}
+def rnGradlePlugin = findNodeModulesFile("@react-native/gradle-plugin")
 
 include ':app'
 includeBuild(rnGradlePlugin.absolutePath)
