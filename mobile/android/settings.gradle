@@ -26,11 +26,10 @@ def rnCliGradle = new File(rootDir, "../node_modules/@react-native-community/cli
 if (!rnCliGradle.exists()) {
   rnCliGradle = new File(rootDir, "../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 }
-if (!rnCliGradle.exists()) {
-  throw new GradleException("Could not find @react-native-community/cli-platform-android/native_modules.gradle in node_modules")
+if (rnCliGradle.exists()) {
+  apply from: rnCliGradle
+  applyNativeModulesSettingsGradle(settings)
 }
-apply from: rnCliGradle
-applyNativeModulesSettingsGradle(settings)
 
 expoAutolinking.useExpoModules()
 
