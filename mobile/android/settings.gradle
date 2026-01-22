@@ -12,7 +12,25 @@ def findNodeModulesFile(String relativePath) {
   return null
 }
 
+pluginManagement {
+  def expoModulesPath = new File(
+    ["node", "--print", "require.resolve('expo-modules-autolinking/package.json')"].execute(null, rootDir).text.trim()
+  ).getParentFile().absolutePath
+  def expoGradlePlugin = new File(expoModulesPath, "android/expo-gradle-plugin")
+  if (expoGradlePlugin.exists()) {
+    includeBuild(expoGradlePlugin.absolutePath)
+  }
+
+  def rnGradlePlugin = findNodeModulesFile("@react-native/gradle-plugin")
+  if (rnGradlePlugin != null) {
+    includeBuild(rnGradlePlugin.absolutePath)
+  }
+}
+
 def rnCliGradle = findNodeModulesFile("@react-native-community/cli-platform-android/native_modules.gradle")
+if (rnCliGradle == null) {
+  throw new GradleException("Could not find @react-native-community/cli-platform-android/native_modules.gradle in any node_modules")
+}
 apply from: rnCliGradle
 applyNativeModulesSettingsGradle(settings)
 
@@ -22,12 +40,4 @@ def expoModulesPath = new File(
 apply from: new File(expoModulesPath, "scripts/android/autolinking_implementation.gradle")
 useExpoModules()
 
-def expoGradlePlugin = new File(expoModulesPath, "android/expo-gradle-plugin")
-if (expoGradlePlugin.exists()) {
-  includeBuild(expoGradlePlugin.absolutePath)
-}
-
-def rnGradlePlugin = findNodeModulesFile("@react-native/gradle-plugin")
-
 include ':app'
-includeBuild(rnGradlePlugin.absolutePath)
