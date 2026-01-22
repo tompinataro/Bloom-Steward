@@ -11,6 +11,10 @@ pluginManagement {
   }
   includeBuild(rnPlugin.absolutePath)
 
+  pluginManagement {
+    includeBuild(rnPlugin.absolutePath)
+  }
+
   def expoPlugin = new File(rootDir, "../node_modules/expo-modules-autolinking/android/expo-gradle-plugin")
   if (!expoPlugin.exists()) {
     throw new GradleException("Could not find expo-modules-autolinking android plugin in mobile/node_modules")
@@ -19,17 +23,18 @@ pluginManagement {
 }
 
 plugins {
-  id("com.facebook.react.settings")
   id("expo-autolinking-settings")
 }
 
-extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
-    ex.autolinkLibrariesFromCommand()
-  } else {
-    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
-  }
+def rnCliGradle = new File(rootDir, "../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+if (!rnCliGradle.exists()) {
+  rnCliGradle = new File(rootDir, "../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 }
+if (!rnCliGradle.exists()) {
+  throw new GradleException("Could not find @react-native-community/cli-platform-android/native_modules.gradle in node_modules")
+}
+apply from: rnCliGradle
+applyNativeModulesSettingsGradle(settings)
 
 expoAutolinking.useExpoModules()
 
