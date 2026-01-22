@@ -19,13 +19,18 @@ pluginManagement {
 }
 
 plugins {
-  id("com.facebook.react.settings")
   id("expo-autolinking-settings")
 }
 
-extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-  ex.autolinkLibrariesFromCommand()
+def rnCliGradle = new File(rootDir, "../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+if (!rnCliGradle.exists()) {
+  rnCliGradle = new File(rootDir, "../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 }
+if (!rnCliGradle.exists()) {
+  throw new GradleException("Could not find @react-native-community/cli-platform-android/native_modules.gradle in node_modules")
+}
+apply from: rnCliGradle
+applyNativeModulesSettingsGradle(settings)
 
 expoAutolinking.useExpoModules()
 
