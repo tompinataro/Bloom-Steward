@@ -46,3 +46,13 @@ expoAutolinking.useExpoVersionCatalog { catalog ->
 
 include ':app'
 includeBuild(new File(rootDir, "../node_modules/@react-native/gradle-plugin").absolutePath)
+
+def expoAndroid = new File(rootDir, "../node_modules/expo/android")
+if (!expoAndroid.exists()) {
+  expoAndroid = new File(rootDir, "../../node_modules/expo/android")
+}
+if (!expoAndroid.exists()) {
+  throw new GradleException("Could not find expo Android project in node_modules")
+}
+include(":expo")
+project(":expo").projectDir = expoAndroid
