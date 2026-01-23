@@ -20,6 +20,11 @@ pluginManagement {
 
 plugins {
   id("expo-autolinking-settings")
+  id("com.facebook.react.settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { config ->
+  config.autolinkLibrariesFromCommand()
 }
 
 def rnCliGradle = new File(rootDir, "../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
