@@ -27,6 +27,7 @@
     "build:android:internal": "eas build -p android --profile preview",
     "build:android:prod": "eas build -p android --profile production",
     "submit:android:latest": "eas submit -p android --latest",
+    "preflight": "npx expo-doctor --verbose && npx expo install --check",
     "postinstall": "node ./scripts/patch-background-fetch.js && node ./scripts/patch-rn-gradle-plugin.js"
   },
   "dependencies": {

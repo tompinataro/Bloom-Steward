@@ -3,42 +3,9 @@
     "name": "Bloom Steward",
     "slug": "bloom-steward",
     "version": "1.2.2",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/palms_splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": [
       "assets/*"
     ],
-    "android": {
-      "package": "com.pinataro.bloomsteward",
-      "versionCode": 30,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
-    "ios": {
-      "bundleIdentifier": "com.pinataro.bloomsteward",
-      "buildNumber": "52",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "NSExceptionDomains": {
-            "localhost": {
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            },
-            "192.168.1.100": {
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            }
-          }
-        }
-      }
-    },
     "extra": {
       "eas": {
         "projectId": "280ba249-4601-4642-b9fd-81b14869ba5e"

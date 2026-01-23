@@ -6,20 +6,6 @@
       }
     },
     "slug": "bloom-steward",
-    "ios": {
-      "bundleIdentifier": "com.pinataro.prime-solo-project"
-    },
-    "android": {
-      "package": "com.pinataro.bloomsteward",
-      "versionCode": 2
-    },
     "owner": "pinataro"
-  },
-  "platforms": [
-    "ios",
-    "android"
-  ],
-  "ios": {
-    "bundleIdentifier": "com.pinataro.bloomsteward"
   }
 }
