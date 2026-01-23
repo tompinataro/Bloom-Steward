@@ -45,8 +45,8 @@ expoAutolinking.useExpoModules()
 rootProject.name = 'bloom-steward'
 
 expoAutolinking.useExpoVersionCatalog { catalog ->
-  catalog.version("kotlin", "2.1.20")
-  catalog.version("ksp", "2.1.20-1.0.28")
+  catalog.version("kotlin", "2.0.21")
+  catalog.version("ksp", "2.0.21-1.0.28")
 }
 
 include ':app'
