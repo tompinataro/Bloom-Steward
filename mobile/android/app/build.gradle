@@ -60,6 +60,7 @@ react {
     // hermesFlags = ["-O", "-output-source-map"]
 
     // Autolinking handled by react-native CLI / Expo autolinking
+    autolinkLibrariesWithApp()
 }
 
 /**
@@ -92,9 +93,9 @@ android {
         compileSdk rootProject.ext.compileSdkVersion
     }
 
-    namespace 'com.pinataro.bloomsteward'
+    namespace 'com.tompinataro.bloomsteward'
     defaultConfig {
-        applicationId 'com.pinataro.bloomsteward'
+        applicationId 'com.tompinataro.bloomsteward'
         minSdkVersion rootProject.ext.has('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
         targetSdkVersion rootProject.ext.has('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
         versionCode 29
@@ -199,13 +200,4 @@ dependencies {
     } else {
         implementation jscFlavor
     }
-}
-
-def rnCliGradle = new File(rootDir, "../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-if (!rnCliGradle.exists()) {
-    rnCliGradle = new File(rootDir, "../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-}
-if (rnCliGradle.exists()) {
-    apply from: rnCliGradle
-    applyNativeModulesAppBuildGradle(project)
 }

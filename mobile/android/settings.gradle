@@ -4,6 +4,16 @@ pluginManagement {
     google()
     gradlePluginPortal()
   }
+  resolutionStrategy {
+    eachPlugin {
+      if (requested.id.id == "org.jetbrains.kotlin.android" ||
+          requested.id.id == "org.jetbrains.kotlin.jvm" ||
+          requested.id.id == "org.jetbrains.kotlin.kapt" ||
+          requested.id.id == "org.jetbrains.kotlin.plugin.serialization") {
+        useVersion("2.1.20")
+      }
+    }
+  }
 
   def rnPlugin = new File(rootDir, "../node_modules/@react-native/gradle-plugin")
   if (!rnPlugin.exists()) {
@@ -31,22 +41,13 @@ expoAutolinking {
   projectRoot = new File(rootDir, "..")
 }
 
-def rnCliGradle = new File(rootDir, "../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-if (!rnCliGradle.exists()) {
-  rnCliGradle = new File(rootDir, "../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-}
-if (rnCliGradle.exists()) {
-  apply from: rnCliGradle
-  applyNativeModulesSettingsGradle(settings)
-}
-
 expoAutolinking.useExpoModules()
 
 rootProject.name = 'bloom-steward'
 
 expoAutolinking.useExpoVersionCatalog { catalog ->
-  catalog.version("kotlin", "2.0.21")
-  catalog.version("ksp", "2.0.21-1.0.28")
+  catalog.version("kotlin", "2.1.20")
+  catalog.version("ksp", "2.1.20-2.0.1")
 }
 
 include ':app'

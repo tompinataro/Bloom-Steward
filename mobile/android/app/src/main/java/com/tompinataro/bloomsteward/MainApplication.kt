@@ -1,4 +1,4 @@
-package com.pinataro.bloomsteward
+package com.tompinataro.bloomsteward
 
 import android.app.Application
 import android.content.res.Configuration
