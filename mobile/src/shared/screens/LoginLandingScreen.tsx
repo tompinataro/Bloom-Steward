@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, useWindowDimensions, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, useWindowDimensions, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../auth/provider';
@@ -38,76 +38,87 @@ export default function LoginLandingScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingVertical: verticalPad, gap }]}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardWrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
       >
-        <View style={[styles.content, { maxWidth: contentWidth }]}>
-          <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
-            <Image source={require('../../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.rightsText}>All Rights Reserved. ©️ 2026</Text>
+        <ScrollView
+          contentContainerStyle={[styles.container, { paddingVertical: verticalPad, gap }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustKeyboardInsets
+        >
+          <View style={[styles.content, { maxWidth: contentWidth }]}>
+            <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
+              <Image source={require('../../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+              <Text style={styles.rightsText}>All Rights Reserved. ©️ 2026</Text>
+            </View>
+            <Text style={styles.heading}>The Field Tech&apos;s Favorite Dashboard</Text>
+            <Text style={styles.subtitle}>A Tixpy App</Text>
+            <View style={styles.inputsSection}>
+              <TextInput
+                style={styles.input}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email"
+                placeholderTextColor={colors.muted}
+                returnKeyType="next"
+                autoComplete="email"
+                textContentType="username"
+                autoCorrect={false}
+              />
+              <TextInput
+                style={styles.input}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password"
+                placeholderTextColor={colors.muted}
+                returnKeyType="next"
+                onSubmitEditing={onSubmit}
+                textContentType="oneTimeCode"
+                autoComplete="off"
+                autoCorrect={false}
+              />
+              <TextInput
+                style={styles.input}
+                keyboardType="numbers-and-punctuation"
+                value={initialOdometer}
+                onChangeText={setInitialOdometer}
+                placeholder="Starting Odometer (optional)"
+                placeholderTextColor={colors.muted}
+                returnKeyType="next"
+                autoComplete="off"
+                autoCorrect={false}
+                blurOnSubmit
+              />
+            </View>
           </View>
-          <Text style={styles.heading}>The Field Tech&apos;s Favorite Dashboard</Text>
-          <Text style={styles.subtitle}>A Tixpy App</Text>
-          <View style={styles.inputsSection}>
-            <TextInput
-              style={styles.input}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email"
-              placeholderTextColor={colors.muted}
-              returnKeyType="next"
-              autoComplete="email"
-              textContentType="username"
-              autoCorrect={false}
-            />
-            <TextInput
-              style={styles.input}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              placeholderTextColor={colors.muted}
-              returnKeyType="next"
-              onSubmitEditing={onSubmit}
-              textContentType="oneTimeCode"
-              autoComplete="off"
-              autoCorrect={false}
-            />
-            <TextInput
-              style={styles.input}
-              keyboardType="numbers-and-punctuation"
-              value={initialOdometer}
-              onChangeText={setInitialOdometer}
-              placeholder="Starting Odometer (optional)"
-              placeholderTextColor={colors.muted}
-              returnKeyType="next"
-              autoComplete="off"
-              autoCorrect={false}
-              blurOnSubmit
-            />
+          <View style={[styles.footer, { maxWidth: contentWidth }]}>
+            {loading ? (
+              <ActivityIndicator />
+            ) : (
+              <ThemedButton
+                title="Log In"
+                onPress={onSubmit}
+                style={styles.halfWidthBtn}
+              />
+            )}
           </View>
-        </View>
-        <View style={[styles.footer, { maxWidth: contentWidth }]}>
-          {loading ? (
-            <ActivityIndicator />
-          ) : (
-            <ThemedButton
-              title="Log In"
-              onPress={onSubmit}
-              style={styles.halfWidthBtn}
-            />
-          )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  keyboardWrap: { flex: 1 },
   container: {
     flexGrow: 1,
     width: '100%',

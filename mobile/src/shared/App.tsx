@@ -27,28 +27,20 @@ import ReportsScreen from './screens/ReportsScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-function RootNavigator() {
-  const { token, loading, user } = useAuth();
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#e7bfbf', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-  return token ? (
+function TechStack() {
+  return (
     <Stack.Navigator
-      initialRouteName={user?.role === 'admin' ? 'Account' : 'RouteList'}
+      initialRouteName="RouteList"
       screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}
-      key={user?.role === 'admin' ? 'admin-stack' : 'tech-stack'}
+      key="tech-stack"
     >
       <Stack.Screen
         name="RouteList"
         component={RouteListScreen}
-        options={({ navigation }) => ({
+        options={{
           title: "Today's Route",
           headerLeft: () => null,
-        })}
+        }}
       />
       <Stack.Screen
         name="VisitDetail"
@@ -70,6 +62,18 @@ function RootNavigator() {
         })}
       />
       <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="Home" component={HomeScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AdminStack() {
+  return (
+    <Stack.Navigator
+      initialRouteName="Account"
+      screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}
+      key="admin-stack"
+    >
       <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Admin Home' }} />
       <Stack.Screen
         name="FieldTechnicians"
@@ -103,8 +107,23 @@ function RootNavigator() {
         options={{ title: 'Reports', headerBackTitle: 'Back' }}
       />
       <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete Account' }} />
+      <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
+  );
+}
+
+function RootNavigator() {
+  const { token, loading, user } = useAuth();
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#e7bfbf', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+  return token ? (
+    user?.role === 'admin' ? <AdminStack /> : <TechStack />
   ) : (
     <Stack.Navigator initialRouteName="LoginLanding">
       <Stack.Screen name="LoginLanding" component={LoginLandingScreen} options={{ headerShown: false }} />

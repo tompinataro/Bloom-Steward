@@ -68,7 +68,10 @@ export function useVisitDetailData(options: Options) {
 
   useEffect(() => {
     (async () => {
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const res = await fetchVisit(id, token);

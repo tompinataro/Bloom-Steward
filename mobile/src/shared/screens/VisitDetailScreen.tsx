@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Switch, TextInput, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useHeaderHeight } from '@react-navigation/elements';
 import type { RootStackParamList } from '../navigationTypes';
 import { useAuth } from '../auth/provider';
 import LoadingOverlay from '../components/LoadingOverlay';
@@ -19,6 +20,8 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   const { id } = route.params;
   const { token } = useAuth();
   const isWeb = Platform.OS === 'web';
+  const headerHeight = useHeaderHeight();
+  const setTitle = useCallback((title: string) => navigation.setOptions({ title }), [navigation]);
   const {
     visit,
     loading,
@@ -43,13 +46,10 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
   } = useVisitDetailData({
     id,
     token,
-    setTitle: (title) => navigation.setOptions({ title }),
+    setTitle,
     locationProvider: isWeb ? undefined : Location,
     persistCheckInLocation: !isWeb,
   });
-
-  if (loading && !visit) return <View style={styles.center}><ActivityIndicator /></View>;
-  if (!visit) return <View style={styles.center}><Text>Visit not found</Text></View>;
 
   const onSubmitPress = useCallback(async () => {
     const result = await handleSubmit();
@@ -60,15 +60,22 @@ export default function VisitDetailScreen({ route, navigation }: Props) {
     }
   }, [handleSubmit, navigation]);
 
+  if (loading && !visit) return <View style={styles.center}><ActivityIndicator /></View>;
+  if (!visit) return <View style={styles.center}><Text>Visit not found</Text></View>;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight + 12 : 0}
     >
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: spacing(36) }]}
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.container, { paddingBottom: spacing(6) }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        contentInsetAdjustmentBehavior="automatic"
+        automaticallyAdjustKeyboardInsets
       >
         <View style={styles.content}>
           {submitError ? <Banner type="error" message={submitError} /> : null}
@@ -201,7 +208,7 @@ const styles = StyleSheet.create({
   timelyPlaceholder: { color: colors.muted, fontSize: 16 },
   timelyText: { paddingHorizontal: spacing(0.5), lineHeight: 20, marginTop: spacing(0.25) },
   submitBtn: { alignSelf: 'center', minWidth: 240, maxWidth: 360 },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: spacing(2), padding: spacing(3), paddingBottom: spacing(3.5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
+  stickyBar: { padding: spacing(3), paddingBottom: spacing(3.5), backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(3) },
   checkInWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing(3), paddingVertical: spacing(2) },
   checkInBtn: { minWidth: 220 },
