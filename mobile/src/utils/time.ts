@@ -1,1 +1,1 @@
-export * from './shared/utils/time';
+export * from '../shared/utils/time';

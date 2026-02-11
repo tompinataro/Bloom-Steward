@@ -98,8 +98,8 @@ android {
         applicationId 'com.tompinataro.bloomsteward'
         minSdkVersion rootProject.ext.has('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
         targetSdkVersion rootProject.ext.has('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
-        versionCode 30
-        versionName "1.2.1"
+        versionCode 31
+        versionName "1.2.2"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
