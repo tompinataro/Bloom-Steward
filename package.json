@@ -1,5 +1,5 @@
 {
-  "name": "prime-solo-project",
+  "name": "bloom-steward",
   "version": "1.0.0",
   "private": true,
   "npmConfig": {
@@ -64,8 +64,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "test": "vitest",
     "dev": "ts-node-dev --respawn --transpile-only server/server.ts",
-    "android": "expo run:android",
-    "ios": "expo run:ios"
+    "android": "npm --prefix mobile run android",
+    "ios": "npm --prefix mobile run ios"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

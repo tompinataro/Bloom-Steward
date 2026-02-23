@@ -23,7 +23,7 @@ pod 'ReactAppDependencyProvider', :path => '../node_modules/react-native/third-p
 
 prepare_react_native_project!
 
-target 'primesoloproject' do
+target 'BloomSteward' do
   use_expo_modules!
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
