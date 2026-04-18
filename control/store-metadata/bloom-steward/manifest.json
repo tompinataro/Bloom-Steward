@@ -1,0 +1,14 @@
+{
+  "slug": "bloom-steward",
+  "displayName": "Bloom Steward",
+  "repoPath": "/Users/tompinataro/My Projects/Bloom-Steward",
+  "bundleId": "com.tompinataro.bloomsteward",
+  "appleAppId": "6752444086",
+  "googlePlayPackage": "com.tompinataro.bloomsteward",
+  "links": {
+    "appStore": "https://apps.apple.com/us/app/id6752444086",
+    "googlePlay": "https://play.google.com/store/apps/details?id=com.tompinataro.bloomsteward"
+  },
+  "generatedAt": "2026-03-17T14:22:53.807Z",
+  "outDir": "/Users/tompinataro/My Projects/Canopi/control/store-metadata/apps/bloom-steward/out"
+}

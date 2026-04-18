@@ -1,0 +1,3 @@
+A Tixpy app — built for fast, reliable workflows with a clean, focused UI.
+
+Support: support@tixpy.com

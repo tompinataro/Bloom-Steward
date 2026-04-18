@@ -1,0 +1,8 @@
+Bloom Steward is a Tixpy app built for flower delivery and shop workflows.
+
+• Simple, fast routes and visit execution
+• Clean UI optimized for speed in the field
+• Reliable day-to-day operation
+
+Support
+support@tixpy.com
