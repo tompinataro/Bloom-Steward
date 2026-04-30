@@ -19,7 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'RouteList'>;
 export default function RouteListScreen({ navigation, route }: Props) {
   const { token, signOut, user } = useAuth();
   const [routes, setRoutes] = useState<TodayRoute[]>([]);
-  const title = user?.name ? `Today's Route for ${user.name.split(/\s+/)[0]}` : "Today's Route";
+  const title = user?.name ? `Today's Visits for ${user.name.split(/\s+/)[0]}` : "Today's Visits";
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   // Banners are now global; local state removed

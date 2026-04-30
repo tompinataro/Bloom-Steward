@@ -16,10 +16,11 @@ export default function LoginLandingScreen() {
   const logoSize = Math.min(contentWidth, Math.round(height * (isShort ? 0.34 : 0.4)));
   const verticalPad = isShort ? spacing(4) : spacing(6);
   const gap = isShort ? spacing(2) : spacing(3);
-  const [email, setEmail] = useState('tom@pinataro.com');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('jacob@b.com');
+  const [password, setPassword] = useState('Jacob123');
   const [initialOdometer, setInitialOdometer] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
 
   const onSubmit = async () => {
     setLoading(true);
@@ -35,6 +36,19 @@ export default function LoginLandingScreen() {
       setLoading(false);
     }
   };
+
+  const onAdminSubmit = async () => {
+    setAdminLoading(true);
+    try {
+      await signIn('demo@example.com', 'password');
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      showBanner({ type: 'error', message: `Admin login failed - ${msg}` });
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -99,6 +113,16 @@ export default function LoginLandingScreen() {
               style={styles.halfWidthBtn}
             />
           )}
+          {adminLoading ? (
+            <ActivityIndicator />
+          ) : (
+            <ThemedButton
+              title="Admin"
+              variant="outline"
+              onPress={onAdminSubmit}
+              style={styles.halfWidthBtn}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -139,6 +163,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     alignItems: 'center',
+    gap: spacing(2),
   },
   input: { width: '100%', borderColor: colors.border, color: colors.text, borderWidth: 1, padding: spacing(3), borderRadius: 8, backgroundColor: colors.card },
   halfWidthBtn: { alignSelf: 'center', width: '50%' },
