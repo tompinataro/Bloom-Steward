@@ -177,7 +177,7 @@ export default function RouteListScreen({ navigation, route }: Props) {
   return (
     <>
       {savedBanner ? (
-        <View style={styles.banner} accessibilityRole="status" accessibilityLabel="Saved">
+        <View style={styles.banner} accessibilityLabel="Saved">
           <Text style={styles.bannerText}>{savedBanner === 'offline' ? '✓ Saved offline — will sync when online' : '✓ Saved'}</Text>
         </View>
       ) : null}

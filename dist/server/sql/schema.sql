@@ -43,3 +43,12 @@ create table if not exists visit_submissions (
   created_at timestamptz not null default now()
 );
 
+-- Visit state per day and user (Sprint 8)
+create table if not exists visit_state (
+  visit_id integer not null references visits(id) on delete cascade,
+  date date not null,
+  user_id integer not null references users(id) on delete cascade,
+  status text not null check (status in ('in_progress','completed')),
+  created_at timestamptz not null default now(),
+  primary key (visit_id, date, user_id)
+);

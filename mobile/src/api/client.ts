@@ -33,7 +33,11 @@ export async function health(): Promise<{ ok: boolean; ts?: string; message?: st
   return fetchJson(withBase('/health'));
 }
 
-export type LoginResponse = { ok: boolean; token: string; user: { id: number; name: string; email: string } };
+export type LoginResponse = {
+  ok: boolean;
+  token: string;
+  user: { id: number; name: string; email: string; role?: 'admin' | 'user' };
+};
 export async function login(email: string, password: string): Promise<LoginResponse> {
   return fetchJson(withBase('/api/auth/login'), {
     method: 'POST',
@@ -105,6 +109,20 @@ export async function adminResetVisitState(date: string | undefined, token: stri
   const q = date ? `?date=${encodeURIComponent(date)}` : '';
   return fetchJson(withBase(`/api/admin/visit-state/reset${q}`), {
     method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type AdminUser = { id: number; email: string; name: string };
+export async function fetchAdminUsers(token: string): Promise<{ ok: boolean; users: AdminUser[] }> {
+  return fetchJson(withBase('/api/admin/users'), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type AdminClient = { id: number; name: string; address: string };
+export async function fetchAdminClients(token: string): Promise<{ ok: boolean; clients: AdminClient[] }> {
+  return fetchJson(withBase('/api/admin/clients'), {
     headers: { Authorization: `Bearer ${token}` },
   });
 }

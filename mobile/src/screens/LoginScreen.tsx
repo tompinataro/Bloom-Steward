@@ -12,9 +12,10 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen(_props: Props) {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('demo@example.com');
+  const [email, setEmail] = useState('jacob@example.com');
   const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async () => {
@@ -28,6 +29,20 @@ export default function LoginScreen(_props: Props) {
       Alert.alert('Login failed', msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onAdminSubmit = async () => {
+    setAdminLoading(true);
+    setError(null);
+    try {
+      await signIn('demo@example.com', 'password');
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      setError(msg);
+      Alert.alert('Admin login failed', msg);
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -65,8 +80,13 @@ export default function LoginScreen(_props: Props) {
         ) : (
           <ThemedButton title="Log In" onPress={onSubmit} style={styles.fullWidthBtn} />
         )}
+        {adminLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <ThemedButton title="Admin" variant="outline" onPress={onAdminSubmit} style={styles.fullWidthBtn} />
+        )}
         {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
-        <LoadingOverlay visible={loading} />
+        <LoadingOverlay visible={loading || adminLoading} />
       </View>
     </View>
   );

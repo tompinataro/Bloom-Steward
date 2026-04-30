@@ -1,16 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { colors, spacing } from '../theme';
 
 type Props = { type?: 'info' | 'success' | 'error'; message: string };
 
 export default function Banner({ type = 'info', message }: Props) {
-  const style = [styles.base];
+  const style: ViewStyle[] = [styles.base];
   if (type === 'success') style.push(styles.success);
   else if (type === 'error') style.push(styles.error);
   else style.push(styles.info);
   return (
-    <View style={style} accessibilityRole="status">
+    <View style={style} accessibilityRole={type === 'error' ? 'alert' : undefined}>
       <Text style={styles.text}>{message}</Text>
     </View>
   );
@@ -29,4 +29,3 @@ const styles = StyleSheet.create({
   success: { backgroundColor: colors.successBg, borderColor: '#86efac' },
   error: { backgroundColor: '#fee2e2', borderColor: '#fecaca' },
 });
-

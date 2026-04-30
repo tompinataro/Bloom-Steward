@@ -105,6 +105,19 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
   return next();
 }
 
+async function getDemoIdentity(email: string, fallback: JwtUser): Promise<JwtUser> {
+  if (!hasDb()) return fallback;
+  try {
+    const q = await dbQuery<{ id: number; email: string; name: string }>(
+      'select id, email, name from users where email = $1 limit 1',
+      [email]
+    );
+    const row = q?.rows?.[0];
+    if (row) return { ...fallback, id: row.id, name: row.name, email: row.email };
+  } catch {}
+  return fallback;
+}
+
 // API routes (DB-backed when configured; demo otherwise)
 // Sprint 8 controls: visit state read strategy
 type ReadMode = 'db' | 'memory' | 'shadow';
@@ -113,13 +126,18 @@ const defaultReadMode: ReadMode = hasDb()
   : 'memory';
 const READ_MODE: ReadMode = ((process.env.VISIT_STATE_READ_MODE || defaultReadMode) as ReadMode);
 const shadowLogOncePerDay = new Set<string>();
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body ?? {};
-  const DEMO_EMAIL = process.env.DEMO_EMAIL || 'demo@example.com';
+  const DEMO_USER_EMAIL = process.env.DEMO_USER_EMAIL || 'jacob@example.com';
+  const DEMO_ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.DEMO_ADMIN_EMAIL || 'demo@example.com';
   const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password';
-  if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-    const isAdmin = (process.env.ADMIN_EMAIL || DEMO_EMAIL) === email;
-    const user: JwtUser = { id: 1, name: 'Demo User', email, role: isAdmin ? 'admin' : 'user' };
+  if (email === DEMO_USER_EMAIL && password === DEMO_PASSWORD) {
+    const user = await getDemoIdentity(email, { id: 1, name: 'Jacob', email, role: 'user' });
+    const token = signToken(user);
+    return res.json({ ok: true, token, user });
+  }
+  if (email === DEMO_ADMIN_EMAIL && password === DEMO_PASSWORD) {
+    const user = await getDemoIdentity(email, { id: 999, name: 'Admin Demo', email, role: 'admin' });
     const token = signToken(user);
     return res.json({ ok: true, token, user });
   }
@@ -139,7 +157,7 @@ app.post('/api/auth/refresh', requireAuth, (req, res) => {
 
 app.get('/api/routes/today', requireAuth, async (req, res) => {
   try {
-    const routes = await getTodayRoutes(1);
+    const routes = await getTodayRoutes(req.user?.id || 1);
     const userId = req.user?.id;
     let withFlags = routes.map(r => ({ ...r, completedToday: false, inProgress: false }));
     const day = dayKey();
@@ -228,7 +246,15 @@ app.post('/api/visits/:id/submit', requireAuth, async (req, res) => {
 app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
   try {
     const q = await dbQuery<{ id: number; email: string; name: string }>('select id, email, name from users order by id asc');
-    res.json({ ok: true, users: q?.rows ?? [] });
+    const users = q?.rows ?? [];
+    const demoUserEmail = process.env.DEMO_USER_EMAIL || 'jacob@example.com';
+    const demoAdminEmail = process.env.DEMO_ADMIN_EMAIL || 'demo@example.com';
+    if (!users.some(u => u.email === demoUserEmail)) users.push({ id: 1, email: demoUserEmail, name: 'Jacob' });
+    if (!users.some(u => u.email === demoAdminEmail)) users.push({ id: 999, email: demoAdminEmail, name: 'Admin Demo' });
+    res.json({
+      ok: true,
+      users
+    });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'users error' });
   }
@@ -237,7 +263,14 @@ app.get('/api/admin/users', requireAuth, requireAdmin, async (_req, res) => {
 app.get('/api/admin/clients', requireAuth, requireAdmin, async (_req, res) => {
   try {
     const q = await dbQuery<{ id: number; name: string; address: string }>('select id, name, address from clients order by id asc');
-    res.json({ ok: true, clients: q?.rows ?? [] });
+    res.json({
+      ok: true,
+      clients: q?.rows ?? [
+        { id: 101, name: 'Acme HQ', address: '123 Main St' },
+        { id: 102, name: 'Blue Sky Co', address: '456 Oak Ave' },
+        { id: 103, name: 'Sunset Mall', address: '789 Pine Rd' }
+      ]
+    });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? 'clients error' });
   }

@@ -50,12 +50,10 @@ async function getVisit(id) {
         ]
     };
 }
-async function saveVisit(id, notes, checklist) {
+async function saveVisit(id, data) {
     if ((0, db_1.hasDb)()) {
-        // Enforce real persistence when a DB is available; let errors propagate
-        await (0, db_1.dbQuery)(`insert into visit_submissions (visit_id, notes, payload, created_at) values ($1, $2, $3, now())`, [id, notes ?? null, JSON.stringify(checklist)]);
+        await (0, db_1.dbQuery)(`insert into visit_submissions (visit_id, notes, payload, created_at) values ($1, $2, $3, now())`, [id, data?.notes ?? null, JSON.stringify(data)]);
         return { ok: true };
     }
-    // No DB configured (local dev without DATABASE_URL) — accept in-memory
     return { ok: true };
 }

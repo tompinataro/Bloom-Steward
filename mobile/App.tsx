@@ -12,20 +12,25 @@ import AboutScreen from './src/screens/AboutScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RouteListScreen from './src/screens/RouteListScreen';
 import VisitDetailScreen from './src/screens/VisitDetailScreen';
-import SignOutButton from './src/components/SignOutButton';
+import AdminScreen from './src/screens/AdminScreen';
 import AppSplash from './src/components/AppSplash';
 import { adminResetVisitState } from './src/api/client';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  const { token, loading } = useAuth();
+  const { token, user, loading } = useAuth();
   // Simple splash while restoring token
   if (loading) {
     return <AppSplash />;
   }
   return token ? (
-    <Stack.Navigator initialRouteName="RouteList" screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
+    <Stack.Navigator initialRouteName={user?.role === 'admin' ? 'Admin' : 'RouteList'} screenOptions={{ headerTitleAlign: 'center', headerTitleStyle: { fontWeight: '700' } }}>
+      <Stack.Screen
+        name="Admin"
+        component={AdminScreen}
+        options={{ title: 'Admin Demo' }}
+      />
       <Stack.Screen
         name="RouteList"
         component={RouteListScreen}
@@ -41,8 +46,8 @@ function RootNavigator() {
               const { clearAllProgress } = await import('./src/completed');
               try { await clearAllProgress(); } catch {}
               try { navigation.setParams({ devResetTS: Date.now() } as any); } catch {}
-            }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Today's Route (Dev Reset)">
-              <Text style={{ fontWeight: '700', fontSize: 17 }}>Today{"'"}s Route</Text>
+            }} hitSlop={12} accessibilityRole="button" accessibilityLabel="Today's Visits (Dev Reset)">
+              <Text style={{ fontWeight: '700', fontSize: 17 }}>Today{"'"}s Visits for {user?.name || 'Jacob'}</Text>
             </Pressable>
           ),
           // Dev/Admin: server-state reset button (staging/demo convenience)
