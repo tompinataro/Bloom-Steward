@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bloom Steward",
     "slug": "bloom-steward",
-    "version": "1.2.1",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -24,7 +24,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.pinataro.bloomsteward",
-      "buildNumber": "53",
+      "buildNumber": "56",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
