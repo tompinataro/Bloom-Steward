@@ -59,6 +59,7 @@
     "client": "vite",
     "server": "node dist/server/server.js",
     "build": "tsc && cp -R server/sql dist/server/ && cp -R server/modules dist/server/",
+    "build:web:github": "EXPO_PUBLIC_API_URL=https://bloom-steward-2a872c497756.herokuapp.com vite build --base=/Bloom-Steward/app/ --outDir docs/app --emptyOutDir",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",

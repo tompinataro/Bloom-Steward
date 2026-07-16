@@ -12,7 +12,7 @@ npx vite preview --host 0.0.0.0 --outDir build
 The GitHub Pages build script uses:
 
 ```bash
-VITE_API_BASE_URL=https://bloom-steward-2a872c497756.herokuapp.com
+EXPO_PUBLIC_API_URL=https://bloom-steward-2a872c497756.herokuapp.com
 ```
 
 ## Deploy
