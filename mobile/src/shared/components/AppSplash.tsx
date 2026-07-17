@@ -1,5 +1,6 @@
 import React from 'react';
 import { ImageBackground, StyleSheet } from 'react-native';
+import palmsSplash from '../../../assets/palms_splash.jpg';
 
 const styles = StyleSheet.create({
   bg: {
@@ -12,7 +13,7 @@ const styles = StyleSheet.create({
 const AppSplash = () => {
   return (
     <ImageBackground
-      source={require('../../../assets/palms_splash.jpg')}
+      source={palmsSplash as any}
       resizeMode="cover"
       style={styles.bg}
       accessibilityLabel="Loading"

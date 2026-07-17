@@ -9,6 +9,7 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import ThemedButton from '../components/Button';
 import { colors, spacing } from '../theme';
 import { showBanner } from '../components/globalBannerBus';
+import brandLogo from '../../../assets/brand-logo.png';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LoginForm'>;
 
@@ -110,7 +111,7 @@ export default function LoginFormScreen(_props: Props) {
             )}
           </View>
           <View style={[styles.logoFrame, { width: logoSize, height: logoSize }]}>
-            <Image source={require('../../../assets/brand-logo.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={brandLogo as any} style={styles.logo} resizeMode="contain" />
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -15,6 +15,7 @@ import RouteListScreen from './screens/RouteListScreen';
 import VisitDetailScreen from './screens/VisitDetailScreen';
 import { GlobalBannerProvider } from './components/GlobalBannerProvider';
 import Constants from 'expo-constants';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import DeleteAccountScreen from './screens/DeleteAccountScreen';
 import AccountScreen from './screens/AccountScreen';
 import FieldTechniciansScreen from './screens/FieldTechniciansScreen';
@@ -155,25 +156,27 @@ export default function App() {
     }
   }, []);
   return (
-    <AuthProvider>
-      <GlobalBannerProvider>
-        <NavigationContainer
-          theme={{
-            ...DefaultTheme,
-            colors: {
-              ...DefaultTheme.colors,
-              primary: colors.primary,
-              background: colors.background,
-              card: colors.card,
-              text: colors.text,
-              border: colors.border,
-            },
-          }}
-        >
-          <StatusBar style="auto" />
-          <RootNavigator />
-        </NavigationContainer>
-      </GlobalBannerProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <GlobalBannerProvider>
+          <NavigationContainer
+            theme={{
+              ...DefaultTheme,
+              colors: {
+                ...DefaultTheme.colors,
+                primary: colors.primary,
+                background: colors.background,
+                card: colors.card,
+                text: colors.text,
+                border: colors.border,
+              },
+            }}
+          >
+            <StatusBar style="auto" />
+            <RootNavigator />
+          </NavigationContainer>
+        </GlobalBannerProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
