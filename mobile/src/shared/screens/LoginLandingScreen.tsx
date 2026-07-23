@@ -17,8 +17,8 @@ export default function LoginLandingScreen() {
   const logoSize = Math.min(contentWidth, Math.round(height * (isShort ? 0.34 : 0.4)));
   const verticalPad = isShort ? spacing(4) : spacing(6);
   const gap = isShort ? spacing(2) : spacing(3);
-  const [email, setEmail] = useState('demo@example.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('jacob@b.com');
+  const [password, setPassword] = useState('Jacob123');
   const [initialOdometer, setInitialOdometer] = useState('');
   const [loading, setLoading] = useState(false);
 
